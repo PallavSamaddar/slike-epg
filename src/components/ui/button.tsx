@@ -18,6 +18,13 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        // Broadcast-specific variants
+        broadcast: "bg-broadcast-blue text-white hover:bg-broadcast-blue-light shadow-broadcast",
+        live: "bg-pcr-live text-white hover:bg-pcr-live-glow animate-pulse-live",
+        scheduled: "bg-status-scheduled text-black hover:bg-status-scheduled/90",
+        offline: "bg-status-offline text-white hover:bg-status-offline/90",
+        playlist: "bg-mcr-playlist text-white hover:bg-mcr-playlist-light",
+        control: "bg-control-surface text-foreground border border-border hover:bg-control-surface/80",
       },
       size: {
         default: "h-10 px-4 py-2",

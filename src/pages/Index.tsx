@@ -1,11 +1,36 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useState } from 'react';
+import { EPGNavigation } from '@/components/EPGNavigation';
+import { EPGDashboard } from '@/components/EPGDashboard';
+import { EPGScheduler } from '@/components/EPGScheduler';
+import { ContentLibrary } from '@/components/ContentLibrary';
+import { LiveEventsManager } from '@/components/LiveEventsManager';
+import { EPGPreview } from '@/components/EPGPreview';
 
 const Index = () => {
+  const [activeView, setActiveView] = useState('dashboard');
+
+  const renderActiveView = () => {
+    switch (activeView) {
+      case 'dashboard':
+        return <EPGDashboard />;
+      case 'scheduler':
+        return <EPGScheduler />;
+      case 'content':
+        return <ContentLibrary />;
+      case 'live':
+        return <LiveEventsManager />;
+      case 'preview':
+        return <EPGPreview />;
+      default:
+        return <EPGDashboard />;
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="min-h-screen bg-background flex">
+      <EPGNavigation activeView={activeView} onViewChange={setActiveView} />
+      <div className="flex-1 overflow-auto">
+        {renderActiveView()}
       </div>
     </div>
   );
