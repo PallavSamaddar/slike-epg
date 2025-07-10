@@ -26,8 +26,8 @@ export const EPGScheduler = () => {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
     {
       id: '1',
-      time: '08:00',
-      duration: 60,
+      time: '00:00',
+      duration: 90,
       title: 'Morning News Live',
       type: 'PCR',
       status: 'live',
@@ -37,8 +37,8 @@ export const EPGScheduler = () => {
     },
     {
       id: '2',
-      time: '09:00',
-      duration: 180,
+      time: '02:00',
+      duration: 60,
       title: 'Classic Movies',
       type: 'MCR',
       status: 'scheduled',
@@ -218,13 +218,55 @@ export const EPGScheduler = () => {
       <div className="grid grid-cols-12 gap-6">
         {/* Left Panel - Controls */}
         <div className="col-span-3 space-y-4">
+          {/* Live Broadcast Preview */}
+          <Card className="bg-card-dark border-border">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">Live Broadcast</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="relative aspect-video bg-black rounded overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-broadcast-blue/30 to-pcr-live/30 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-pcr-live flex items-center justify-center animate-pulse-live">
+                      <div className="w-6 h-6 bg-white rounded-full"></div>
+                    </div>
+                    <p className="text-xs text-white/80">Studio 1 - LIVE</p>
+                  </div>
+                </div>
+                <div className="absolute top-2 left-2">
+                  <Badge className="bg-pcr-live text-white text-xs animate-pulse-live">
+                    ● LIVE
+                  </Badge>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card className="bg-card-dark border-border">
             <CardHeader>
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <AddBlockDialog type="PCR" />
-              <AddBlockDialog type="MCR" />
+              <Button variant="live" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                + Slike Video
+              </Button>
+              <Button variant="playlist" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                + Live Recording
+              </Button>
+              <Button variant="control" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                + Live Feed
+              </Button>
+              <Button variant="control" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                + Live Event
+              </Button>
+              <Button variant="outline" size="sm" className="w-full">
+                <Plus className="h-4 w-4 mr-2" />
+                + YouTube Link
+              </Button>
             </CardContent>
           </Card>
 
