@@ -42,7 +42,7 @@ export const LiveEventsManager = () => {
   const mockSources: LiveSource[] = [
     {
       id: 'studio-1',
-      name: 'Main Studio Camera 1',
+      name: 'Fast Channel 1',
       studioId: 'STU-001',
       status: 'online',
       streamHealth: 98,
@@ -55,7 +55,7 @@ export const LiveEventsManager = () => {
     },
     {
       id: 'studio-2',
-      name: 'News Studio Camera 2',
+      name: 'Fast Channel 2',
       studioId: 'STU-002',
       status: 'online',
       streamHealth: 95,
@@ -68,7 +68,7 @@ export const LiveEventsManager = () => {
     },
     {
       id: 'studio-3',
-      name: 'Sports Studio Camera 1',
+      name: 'Fast Channel 3',
       studioId: 'STU-003',
       status: 'warning',
       streamHealth: 75,
@@ -81,7 +81,7 @@ export const LiveEventsManager = () => {
     },
     {
       id: 'remote-1',
-      name: 'Remote Field Camera',
+      name: 'Fast Channel 4',
       studioId: 'REM-001',
       status: 'offline',
       streamHealth: 0,
@@ -225,7 +225,7 @@ export const LiveEventsManager = () => {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Live Events Manager</h1>
+          <h1 className="text-2xl font-bold text-foreground">Fast Channel Status</h1>
           <p className="text-muted-foreground">Monitor live sources and manage real-time programming</p>
         </div>
         <div className="flex items-center gap-4">

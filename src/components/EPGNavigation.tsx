@@ -36,7 +36,7 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
     },
     {
       id: 'live',
-      label: 'Live Events',
+      label: 'Fast Channels',
       icon: Radio,
       badge: liveCount,
       description: 'Live sources and monitoring'
