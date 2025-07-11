@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Radio, AlertTriangle, CheckCircle, XCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,6 +39,7 @@ interface LiveEvent {
 }
 
 export const LiveEventsManager = () => {
+  const navigate = useNavigate();
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState<LiveSource | null>(null);
@@ -248,7 +250,13 @@ export const LiveEventsManager = () => {
                         ? 'border-broadcast-blue bg-broadcast-blue/10' 
                         : 'border-border bg-control-surface hover:border-broadcast-blue/50'
                     }`}
-                    onClick={() => setSelectedSource(source.id)}
+                    onClick={(e) => {
+                      // Only navigate if clicking outside the details button area
+                      if (!(e.target as HTMLElement).closest('[data-details-button]')) {
+                        setSelectedSource(source.id);
+                        navigate('/epg-scheduler');
+                      }
+                    }}
                   >
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -315,14 +323,20 @@ export const LiveEventsManager = () => {
                         )}
                         <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
                           <DialogTrigger asChild>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => setPreviewSource(source)}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Details
-                            </Button>
+                            <div data-details-button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                className="px-4 py-2"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewSource(source);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Details
+                              </Button>
+                            </div>
                           </DialogTrigger>
                           <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-card-dark border-border">
                             <DialogHeader>
