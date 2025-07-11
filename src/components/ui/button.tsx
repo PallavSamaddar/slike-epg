@@ -9,22 +9,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-slate-600 text-white hover:bg-broadcast-blue border-slate-600 hover:border-broadcast-blue transition-colors",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+          "border border-slate-600 bg-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+          "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         // Broadcast-specific variants
-        broadcast: "bg-broadcast-blue text-white hover:bg-broadcast-blue-light shadow-broadcast",
-        live: "bg-pcr-live text-white hover:bg-pcr-live-glow animate-pulse-live",
-        scheduled: "bg-status-scheduled text-black hover:bg-status-scheduled/90",
+        broadcast: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+        live: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+        scheduled: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
         offline: "bg-status-offline text-white hover:bg-status-offline/90",
-        playlist: "bg-mcr-playlist text-white hover:bg-mcr-playlist-light",
-        control: "bg-control-surface text-foreground border border-border hover:bg-control-surface/80",
+        playlist: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+        control: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
       },
       size: {
         default: "h-10 px-4 py-2",
