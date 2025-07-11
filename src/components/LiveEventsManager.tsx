@@ -425,7 +425,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
 
                   {/* Channel Details */}
                   <div className="space-y-4">
-                    <Card className="bg-control-surface border-border">
+                    <Card className="bg-slate-800 border-slate-700">
                       <CardHeader>
                         <CardTitle className="text-lg text-white">Stream Information</CardTitle>
                       </CardHeader>
@@ -459,7 +459,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       </CardContent>
                     </Card>
 
-                    <Card className="bg-control-surface border-border">
+                    <Card className="bg-slate-800 border-slate-700">
                       <CardHeader>
                         <CardTitle className="text-lg text-white">Program Information</CardTitle>
                       </CardHeader>
