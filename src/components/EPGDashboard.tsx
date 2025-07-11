@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Radio, PlayCircle, Calendar, Globe, AlertTriangle, AlertCircle, WifiOff } from 'lucide-react';
+import { Clock, Radio, PlayCircle, Calendar, Globe, XCircle, AlertCircle, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -104,7 +104,7 @@ export const EPGDashboard = () => {
                 <p className="text-sm text-muted-foreground">Errors</p>
                 <p className="text-2xl font-bold text-red-500">8</p>
               </div>
-              <AlertTriangle className="h-8 w-8 text-red-500" />
+              <XCircle className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
