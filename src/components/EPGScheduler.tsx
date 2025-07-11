@@ -286,63 +286,46 @@ export const EPGScheduler = () => {
       <div className="mb-6">
         <h2 className="text-xl font-semibold text-foreground mb-4">Fast Channel 1</h2>
         <div className="grid grid-cols-10 gap-4">
-          {/* On Air Section - 70% width */}
-          <div className="col-span-7">
+          {/* On Air Section - 60% width */}
+          <div className="col-span-6">
             <Card className="bg-card-dark border-border">
               <CardHeader>
                 <CardTitle className="text-lg text-foreground flex items-center gap-2">
                   On Air
                   <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-lg font-medium">Morning News Live</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-foreground">Morning News Live</h3>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-foreground">Start Time: 02:00</span>
+                    <span className="text-foreground">End Time: 03:00</span>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-sm text-muted-foreground">Start Time</label>
-                      <p className="text-foreground font-medium">02:00</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">End Time</label>
-                      <p className="text-foreground font-medium">03:00</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Playback Time</label>
-                      <p className="text-foreground font-medium">25:30</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">Remaining Time</label>
-                      <p className="text-foreground font-medium">34:30</p>
-                    </div>
+                  <div className="flex justify-between">
+                    <span className="text-foreground">Playback Time: 25:30</span>
+                    <span className="text-foreground">Remaining Time: 34:30</span>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Next In Queue Section - 30% width */}
-          <div className="col-span-3">
+          {/* Next In Queue Section - 40% width */}
+          <div className="col-span-4">
             <Card className="bg-card-dark border-border">
               <CardHeader>
-                <CardTitle className="text-lg text-foreground">Next In Queue</CardTitle>
+                <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                  Next In Queue
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-lg font-medium">Talk Show Today</span>
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-medium text-foreground">Talk Show Today</h3>
-                  </div>
-                  <div className="space-y-2">
-                    <div>
-                      <label className="text-sm text-muted-foreground">Start Time</label>
-                      <p className="text-foreground font-medium">03:00</p>
-                    </div>
-                    <div>
-                      <label className="text-sm text-muted-foreground">End Time</label>
-                      <p className="text-foreground font-medium">04:00</p>
-                    </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-foreground">Start Time: 03:00</span>
+                    <span className="text-foreground">End Time: 04:00</span>
                   </div>
                 </div>
               </CardContent>
