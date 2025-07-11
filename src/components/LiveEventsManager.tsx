@@ -51,7 +51,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     {
       id: 'studio-1',
       name: 'Fast Channel 1',
-      studioId: 'STU-001',
+      studioId: 'TIL-001',
       status: 'online',
       streamHealth: 98,
       bitrate: '8.5 Mbps',
@@ -64,7 +64,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     {
       id: 'studio-2',
       name: 'Fast Channel 2',
-      studioId: 'STU-002',
+      studioId: 'TIL-002',
       status: 'online',
       streamHealth: 95,
       bitrate: '8.2 Mbps',
@@ -77,7 +77,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     {
       id: 'studio-3',
       name: 'Fast Channel 3',
-      studioId: 'STU-003',
+      studioId: 'TIL-003',
       status: 'warning',
       streamHealth: 75,
       bitrate: '6.1 Mbps',
@@ -235,7 +235,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
                   <Tv className="h-5 w-5 text-broadcast-blue" />
-                  Live Sources Status
+                  Channel Status
                 </span>
                 <div className="text-sm text-muted-foreground">
                   {mockSources.filter(s => s.status === 'online').length} of {mockSources.length} online
@@ -325,9 +325,9 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                         )}
                         <div data-details-button>
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="sm"
-                            className="px-4 py-2"
+                            className="px-4 py-2 bg-slate-600 text-white border-slate-600 hover:bg-slate-700 hover:border-slate-700"
                             onClick={(e) => {
                               e.stopPropagation();
                               setPreviewSource(source);
