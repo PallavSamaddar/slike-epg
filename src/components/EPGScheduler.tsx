@@ -350,23 +350,23 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Slike Video
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Live Recording
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Live Feed
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Live Event
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 YouTube Link
               </Button>
@@ -380,7 +380,7 @@ export const EPGScheduler = () => {
             <CardContent className="space-y-3">
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button variant="control" size="sm" className="w-full">
+                  <Button variant="control" size="sm" className="w-full justify-start">
                     <Settings className="h-4 w-4 mr-2" />
                     Configure AD
                   </Button>
@@ -442,15 +442,15 @@ export const EPGScheduler = () => {
                   </div>
                 </DialogContent>
               </Dialog>
-              <Button variant="control" size="sm" className="w-full">
+              <Button variant="control" size="sm" className="w-full justify-start">
                 <Copy className="h-4 w-4 mr-2" />
                 Copy to Tomorrow
               </Button>
-              <Button variant="control" size="sm" className="w-full">
+              <Button variant="control" size="sm" className="w-full justify-start">
                 <Calendar className="h-4 w-4 mr-2" />
                 Repeat Weekly
               </Button>
-              <Button variant="control" size="sm" className="w-full">
+              <Button variant="control" size="sm" className="w-full justify-start">
                 <MapPin className="h-4 w-4 mr-2" />
                 Geo Override
               </Button>
