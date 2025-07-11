@@ -402,7 +402,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     <div className="flex gap-3 justify-center">
                        <Button variant="outline" className="border-white text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue">
                          <Settings className="h-4 w-4 mr-2" />
-                         Source Settings
+                         Manage Event
                        </Button>
                       <Button 
                         variant={previewSource.status === 'offline' ? 'default' : 'destructive'}
