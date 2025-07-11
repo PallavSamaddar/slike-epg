@@ -18,7 +18,7 @@ const Index = () => {
       case 'content':
         return <ContentLibrary />;
       case 'live':
-        return <LiveEventsManager />;
+        return <LiveEventsManager onNavigate={setActiveView} />;
       case 'preview':
         return <EPGPreview />;
       default:

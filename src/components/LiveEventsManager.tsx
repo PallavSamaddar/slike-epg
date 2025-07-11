@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Radio, AlertTriangle, CheckCircle, XCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,8 +37,11 @@ interface LiveEvent {
   tags: string[];
 }
 
-export const LiveEventsManager = () => {
-  const navigate = useNavigate();
+interface Props {
+  onNavigate?: (view: string) => void;
+}
+
+export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState<LiveSource | null>(null);
@@ -254,7 +256,7 @@ export const LiveEventsManager = () => {
                       // Only navigate if clicking outside the details button area
                       if (!(e.target as HTMLElement).closest('[data-details-button]')) {
                         setSelectedSource(source.id);
-                        navigate('/epg-scheduler');
+                        onNavigate?.('scheduler');
                       }
                     }}
                   >
