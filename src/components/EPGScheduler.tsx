@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -378,6 +378,70 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Schedule Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="control" size="sm" className="w-full">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Configure AD
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card-dark border-border">
+                  <DialogHeader>
+                    <DialogTitle className="text-foreground">Ad Configuration</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label htmlFor="ad-interval">Ad Interval (Hours)</Label>
+                      <Select>
+                        <SelectTrigger className="bg-control-surface border-border text-foreground">
+                          <SelectValue placeholder="Select ad interval" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="00:15">00:15</SelectItem>
+                          <SelectItem value="00:30">00:30</SelectItem>
+                          <SelectItem value="00:45">00:45</SelectItem>
+                          <SelectItem value="01:00">01:00</SelectItem>
+                          <SelectItem value="01:15">01:15</SelectItem>
+                          <SelectItem value="01:30">01:30</SelectItem>
+                          <SelectItem value="01:45">01:45</SelectItem>
+                          <SelectItem value="02:00">02:00</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="ad-duration">Ad Duration (Mins)</Label>
+                      <Select>
+                        <SelectTrigger className="bg-control-surface border-border text-foreground">
+                          <SelectValue placeholder="Select ad duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="00:10">00:10</SelectItem>
+                          <SelectItem value="00:15">00:15</SelectItem>
+                          <SelectItem value="00:20">00:20</SelectItem>
+                          <SelectItem value="00:25">00:25</SelectItem>
+                          <SelectItem value="00:30">00:30</SelectItem>
+                          <SelectItem value="00:35">00:35</SelectItem>
+                          <SelectItem value="00:40">00:40</SelectItem>
+                          <SelectItem value="00:45">00:45</SelectItem>
+                          <SelectItem value="00:50">00:50</SelectItem>
+                          <SelectItem value="00:55">00:55</SelectItem>
+                          <SelectItem value="01:00">01:00</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex gap-2">
+                      <Button variant="broadcast" className="flex-1">
+                        Save Configuration
+                      </Button>
+                      <Button variant="outline" className="flex-1">
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
               <Button variant="control" size="sm" className="w-full">
                 <Copy className="h-4 w-4 mr-2" />
                 Copy to Tomorrow
@@ -419,7 +483,7 @@ export const EPGScheduler = () => {
           <Card className="bg-card-dark border-border">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>Schedule Grid - {new Date(selectedDate).toLocaleDateString()}</span>
+                <span>Program Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
