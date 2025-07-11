@@ -1,11 +1,12 @@
 import { useState } from 'react';
-import { Radio, AlertTriangle, CheckCircle, XCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power } from 'lucide-react';
+import { Radio, AlertTriangle, CheckCircle, XCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -40,6 +41,7 @@ export const LiveEventsManager = () => {
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState<LiveSource | null>(null);
+  const [feedType, setFeedType] = useState<'input' | 'output'>('output');
 
   const mockSources: LiveSource[] = [
     {
@@ -225,18 +227,66 @@ export const LiveEventsManager = () => {
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">Live Channel Status</h1>
-          <p className="text-muted-foreground">Monitor live sources and manage real-time programming</p>
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-broadcast-blue to-broadcast-blue-light bg-clip-text text-transparent">
+              Live Channel Status
+            </h1>
+            <p className="text-muted-foreground">Real-time monitoring and control of live streaming channels</p>
+          </div>
         </div>
-        <div className="flex items-center gap-4">
-          <EmergencyOverrideDialog />
-          <Button variant="broadcast">
-            <Settings className="h-4 w-4 mr-2" />
-            Source Settings
-          </Button>
-        </div>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <Card className="bg-card-dark border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Live Now</p>
+                <p className="text-2xl font-bold text-pcr-live">2</p>
+              </div>
+              <Radio className="h-8 w-8 text-pcr-live animate-pulse-live" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card-dark border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Scheduled</p>
+                <p className="text-2xl font-bold text-status-scheduled">8</p>
+              </div>
+              <Calendar className="h-8 w-8 text-status-scheduled" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card-dark border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Playlists</p>
+                <p className="text-2xl font-bold text-mcr-playlist">12</p>
+              </div>
+              <PlayCircle className="h-8 w-8 text-mcr-playlist" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card-dark border-border">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Geo Zones</p>
+                <p className="text-2xl font-bold text-broadcast-blue">5</p>
+              </div>
+              <Globe className="h-8 w-8 text-broadcast-blue" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-12 gap-6">
@@ -340,7 +390,7 @@ export const LiveEventsManager = () => {
                               Details
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto bg-card-dark border-border">
+                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-card-dark border-border">
                             <DialogHeader>
                               <DialogTitle className="flex items-center gap-2 text-foreground">
                                 <Radio className="h-5 w-5 text-broadcast-blue" />
@@ -352,21 +402,70 @@ export const LiveEventsManager = () => {
                                 {/* Live Preview and Details Side by Side */}
                                 <div className="grid grid-cols-2 gap-6">
                                   {/* Live Preview */}
-                                  <div className="bg-black rounded-lg aspect-video flex items-center justify-center">
-                                    {previewSource.status === 'online' ? (
-                                      <div className="text-white text-center">
-                                        <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                                        <p className="text-lg">Live Stream Preview</p>
-                                        <p className="text-sm opacity-75">{previewSource.name}</p>
-                                        <p className="text-xs opacity-50 mt-2">Resolution: {previewSource.resolution}</p>
+                                  <div className="space-y-4">
+                                    {/* Feed Selection */}
+                                    <Tabs value={feedType} onValueChange={(value) => setFeedType(value as 'input' | 'output')}>
+                                      <TabsList className="grid w-full grid-cols-2">
+                                        <TabsTrigger value="input">Input Feed</TabsTrigger>
+                                        <TabsTrigger value="output">Output Feed</TabsTrigger>
+                                      </TabsList>
+                                    </Tabs>
+                                    
+                                    <div className="bg-black rounded-lg aspect-video flex items-center justify-center relative">
+                                      <div className="absolute top-2 left-2">
+                                        <Badge variant="outline" className="bg-black/50 text-white border-white/20">
+                                          {feedType === 'input' ? 'INPUT' : 'OUTPUT'}
+                                        </Badge>
                                       </div>
-                                    ) : (
-                                      <div className="text-white text-center">
-                                        <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-status-offline" />
-                                        <p className="text-lg">Stream Offline</p>
-                                        <p className="text-sm opacity-75">No signal available</p>
+                                      <div className="absolute top-2 right-2">
+                                        <Badge variant={previewSource.status === 'online' ? 'default' : 'secondary'} 
+                                               className={previewSource.status === 'online' ? 'bg-red-600 text-white animate-pulse' : ''}>
+                                          {previewSource.status === 'online' ? 'LIVE' : previewSource.status.toUpperCase()}
+                                        </Badge>
                                       </div>
-                                    )}
+                                      {previewSource.status === 'online' ? (
+                                        <div className="text-white text-center">
+                                          <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                                          <p className="text-lg">Live Stream Preview</p>
+                                          <p className="text-sm opacity-75">{previewSource.name}</p>
+                                          <p className="text-xs opacity-50 mt-2">Resolution: {previewSource.resolution}</p>
+                                        </div>
+                                      ) : (
+                                        <div className="text-white text-center">
+                                          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-status-offline" />
+                                          <p className="text-lg">Stream Offline</p>
+                                          <p className="text-sm opacity-75">No signal available</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                    
+                                    {/* Action Buttons */}
+                                    <div className="flex gap-3 justify-center">
+                                      <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
+                                        <AlertTriangle className="h-4 w-4 mr-2" />
+                                        Emergency Override
+                                      </Button>
+                                      <Button variant="outline" className="border-broadcast-blue text-broadcast-blue hover:bg-broadcast-blue hover:text-white">
+                                        <Settings className="h-4 w-4 mr-2" />
+                                        Source Settings
+                                      </Button>
+                                      <Button 
+                                        variant={previewSource.status === 'offline' ? 'default' : 'destructive'}
+                                        className={previewSource.status === 'offline' ? 'bg-green-600 hover:bg-green-700' : ''}
+                                      >
+                                        {previewSource.status === 'offline' ? (
+                                          <>
+                                            <Power className="h-4 w-4 mr-2" />
+                                            Start Now
+                                          </>
+                                        ) : (
+                                          <>
+                                            <RotateCcw className="h-4 w-4 mr-2" />
+                                            Reboot Channel
+                                          </>
+                                        )}
+                                      </Button>
+                                    </div>
                                   </div>
 
                                   {/* Channel Details */}
