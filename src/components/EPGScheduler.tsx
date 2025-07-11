@@ -249,23 +249,23 @@ export const EPGScheduler = () => {
             <CardContent className="space-y-3">
               <Button variant="live" size="sm" className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                + Slike Video
+                Slike Video
               </Button>
               <Button variant="playlist" size="sm" className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                + Live Recording
+                Live Recording
               </Button>
               <Button variant="control" size="sm" className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                + Live Feed
+                Live Feed
               </Button>
               <Button variant="control" size="sm" className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                + Live Event
+                Live Event
               </Button>
               <Button variant="outline" size="sm" className="w-full">
                 <Plus className="h-4 w-4 mr-2" />
-                + YouTube Link
+                YouTube Link
               </Button>
             </CardContent>
           </Card>
