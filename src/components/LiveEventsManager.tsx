@@ -169,7 +169,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold bg-gradient-to-r from-broadcast-blue to-broadcast-blue-light bg-clip-text text-transparent">
-              Live Channel Status
+              Fast Channels
             </h1>
             <p className="text-muted-foreground">Real-time monitoring and control of live streaming channels</p>
           </div>
