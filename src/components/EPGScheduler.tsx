@@ -26,69 +26,69 @@ export const EPGScheduler = () => {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
     {
       id: '1',
-      time: '05:00',
-      duration: 120,
-      title: 'Early Morning News',
-      type: 'PCR',
-      status: 'completed',
-      geoZone: 'Global',
-      tags: ['News', 'Morning'],
-      description: 'Early morning news bulletin'
-    },
-    {
-      id: '2',
-      time: '07:00',
-      duration: 180,
-      title: 'Morning Show Live',
+      time: '02:00',
+      duration: 60,
+      title: 'Morning News Live',
       type: 'PCR',
       status: 'live',
       geoZone: 'Global',
-      tags: ['Live', 'Talk Show'],
-      description: 'Morning talk show with interviews'
+      tags: ['Live', 'News'],
+      description: 'Live morning news broadcast'
+    },
+    {
+      id: '2',
+      time: '03:00',
+      duration: 60,
+      title: 'Talk Show Today',
+      type: 'PCR',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['Talk', 'Entertainment'],
+      description: 'Morning talk show'
     },
     {
       id: '3',
-      time: '10:00',
+      time: '04:00',
       duration: 60,
-      title: 'Coffee Break Shows',
+      title: 'Coffee Break Show',
       type: 'MCR',
       status: 'scheduled',
       geoZone: 'US/EU',
-      tags: ['Entertainment', 'Lifestyle'],
+      tags: ['Lifestyle', 'Entertainment'],
       description: 'Light entertainment programming'
     },
     {
       id: '4',
-      time: '11:00',
-      duration: 120,
-      title: 'Game Show Spectacular',
+      time: '05:00',
+      duration: 60,
+      title: 'Game Time',
       type: 'MCR',
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Games', 'Fun'],
-      description: 'Interactive game show content'
+      description: 'Interactive game show'
     },
     {
       id: '5',
-      time: '13:00',
+      time: '06:00',
       duration: 60,
-      title: 'Lunch Hour News',
-      type: 'PCR',
-      status: 'scheduled',
-      geoZone: 'Global',
-      tags: ['News', 'Breaking'],
-      description: 'Midday news update'
-    },
-    {
-      id: '6',
-      time: '14:00',
-      duration: 90,
-      title: 'Afternoon Movies',
+      title: 'Morning Movies',
       type: 'MCR',
       status: 'scheduled',
       geoZone: 'US/EU',
       tags: ['Movies', 'Classic'],
       description: 'Classic movie collection'
+    },
+    {
+      id: '6',
+      time: '07:00',
+      duration: 60,
+      title: 'Breakfast Special',
+      type: 'PCR',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['Special', 'Morning'],
+      description: 'Special morning programming'
     }
   ]);
 
