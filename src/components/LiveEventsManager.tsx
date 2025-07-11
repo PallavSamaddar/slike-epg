@@ -323,204 +323,21 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                         ) : (
                           <WifiOff className="h-4 w-4 text-status-offline" />
                         )}
-                        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-                          <DialogTrigger asChild>
-                            <div data-details-button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                className="px-4 py-2"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewSource(source);
-                                  setPreviewDialogOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                Details
-                              </Button>
-                            </div>
-                          </DialogTrigger>
-                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-card-dark border-border">
-                            <DialogHeader>
-                              <DialogTitle className="flex items-center gap-2 text-foreground">
-                                <Radio className="h-5 w-5 text-broadcast-blue" />
-                                {previewSource?.name} - Live Preview
-                              </DialogTitle>
-                            </DialogHeader>
-                            {previewSource && (
-                              <div className="space-y-6">
-                                {/* Live Preview and Details Side by Side */}
-                                <div className="grid grid-cols-2 gap-6">
-                                  {/* Live Preview */}
-                                  <div className="space-y-4">
-                                    {/* Feed Selection */}
-                                    <Tabs value={feedType} onValueChange={(value) => setFeedType(value as 'input' | 'output')}>
-                                      <TabsList className="grid w-full grid-cols-2">
-                                        <TabsTrigger value="input">Input Feed</TabsTrigger>
-                                        <TabsTrigger value="output">Output Feed</TabsTrigger>
-                                      </TabsList>
-                                    </Tabs>
-                                    
-                                    <div className="bg-black rounded-lg aspect-video flex items-center justify-center relative">
-                                      <div className="absolute top-2 left-2">
-                                        <Badge variant="outline" className="bg-black/50 text-white border-white/20">
-                                          {feedType === 'input' ? 'INPUT' : 'OUTPUT'}
-                                        </Badge>
-                                      </div>
-                                      <div className="absolute top-2 right-2">
-                                        <Badge variant={previewSource.status === 'online' ? 'default' : 'secondary'} 
-                                               className={previewSource.status === 'online' ? 'bg-red-600 text-white animate-pulse' : ''}>
-                                          {previewSource.status === 'online' ? 'LIVE' : previewSource.status.toUpperCase()}
-                                        </Badge>
-                                      </div>
-                                      {previewSource.status === 'online' ? (
-                                        <div className="text-white text-center">
-                                          <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                                          <p className="text-lg">Live Stream Preview</p>
-                                          <p className="text-sm opacity-75">{previewSource.name}</p>
-                                          <p className="text-xs opacity-50 mt-2">Resolution: {previewSource.resolution}</p>
-                                        </div>
-                                      ) : (
-                                        <div className="text-white text-center">
-                                          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-status-offline" />
-                                          <p className="text-lg">Stream Offline</p>
-                                          <p className="text-sm opacity-75">No signal available</p>
-                                        </div>
-                                      )}
-                                    </div>
-                                    
-                                    {/* Action Buttons */}
-                                    <div className="flex gap-3 justify-center">
-                                      <Button variant="outline" className="border-broadcast-blue text-broadcast-blue hover:bg-broadcast-blue hover:text-white">
-                                        <Settings className="h-4 w-4 mr-2" />
-                                        Source Settings
-                                      </Button>
-                                      <Button 
-                                        variant={previewSource.status === 'offline' ? 'default' : 'destructive'}
-                                        className={previewSource.status === 'offline' ? 'bg-green-600 hover:bg-green-700' : ''}
-                                      >
-                                        {previewSource.status === 'offline' ? (
-                                          <>
-                                            <Power className="h-4 w-4 mr-2" />
-                                            Start Now
-                                          </>
-                                        ) : (
-                                          <>
-                                            <RotateCcw className="h-4 w-4 mr-2" />
-                                            Reboot Channel
-                                          </>
-                                        )}
-                                      </Button>
-                                    </div>
-                                  </div>
-
-                                  {/* Channel Details */}
-                                  <div className="space-y-4">
-                                    <Card className="bg-control-surface border-border">
-                                      <CardHeader>
-                                        <CardTitle className="text-lg text-foreground">Stream Information</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-3">
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Studio ID:</span>
-                                          <span className="font-mono text-foreground">{previewSource.studioId}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Status:</span>
-                                          <Badge className={getStatusColor(previewSource.status)}>
-                                            {previewSource.status}
-                                          </Badge>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Stream Health:</span>
-                                          <span className="font-semibold text-foreground">{previewSource.streamHealth}%</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Resolution:</span>
-                                          <span className="text-foreground">{previewSource.resolution}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Bitrate:</span>
-                                          <span className="text-foreground">{previewSource.bitrate}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Last Heartbeat:</span>
-                                          <span className="text-foreground">{previewSource.lastHeartbeat}</span>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-
-                                    <Card className="bg-control-surface border-border">
-                                      <CardHeader>
-                                        <CardTitle className="text-lg text-foreground">Program Information</CardTitle>
-                                      </CardHeader>
-                                      <CardContent className="space-y-3">
-                                        {previewSource.currentProgram ? (
-                                          <>
-                                            <div className="flex justify-between">
-                                              <span className="text-muted-foreground">Current Program:</span>
-                                              <span className="text-foreground font-medium">{previewSource.currentProgram}</span>
-                                            </div>
-                                            {previewSource.nextProgram && (
-                                              <>
-                                                <div className="flex justify-between">
-                                                  <span className="text-muted-foreground">Next Program:</span>
-                                                  <span className="text-foreground">{previewSource.nextProgram}</span>
-                                                </div>
-                                                <div className="flex justify-between">
-                                                  <span className="text-muted-foreground">Next Start Time:</span>
-                                                  <span className="text-foreground">{previewSource.nextProgramTime}</span>
-                                                </div>
-                                              </>
-                                            )}
-                                          </>
-                                        ) : (
-                                          <div className="text-center text-muted-foreground">
-                                            <p>No program information available</p>
-                                          </div>
-                                        )}
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Signal Strength:</span>
-                                          <span className="text-foreground">{previewSource.status === 'online' ? 'Strong' : 'No Signal'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Audio Levels:</span>
-                                          <span className="text-foreground">{previewSource.status === 'online' ? '-12dB' : 'Muted'}</span>
-                                        </div>
-                                        <div className="flex justify-between">
-                                          <span className="text-muted-foreground">Uptime:</span>
-                                          <span className="text-foreground">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
-                                        </div>
-                                      </CardContent>
-                                    </Card>
-                                  </div>
-                                </div>
-
-                                {/* Action Button */}
-                                <div className="flex justify-center pt-4 border-t border-border">
-                                  <Button
-                                    variant={previewSource.status === 'offline' ? 'default' : 'control'}
-                                    size="lg"
-                                    className="flex items-center gap-2"
-                                  >
-                                    {previewSource.status === 'offline' ? (
-                                      <>
-                                        <Power className="h-4 w-4" />
-                                        Start Now
-                                      </>
-                                    ) : (
-                                      <>
-                                        <RotateCcw className="h-4 w-4" />
-                                        Reboot Channel
-                                      </>
-                                    )}
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
-                        </Dialog>
+                        <div data-details-button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            className="px-4 py-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewSource(source);
+                              setPreviewDialogOpen(true);
+                            }}
+                          >
+                            <Eye className="h-4 w-4 mr-1" />
+                            Details
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -529,6 +346,168 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Preview Dialog */}
+        <Dialog open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-card-dark border-border">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-foreground">
+                <Radio className="h-5 w-5 text-broadcast-blue" />
+                {previewSource?.name} - Live Preview
+              </DialogTitle>
+            </DialogHeader>
+            {previewSource && (
+              <div className="space-y-6">
+                {/* Live Preview and Details Side by Side */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Live Preview */}
+                  <div className="space-y-4">
+                    {/* Feed Selection */}
+                    <Tabs value={feedType} onValueChange={(value) => setFeedType(value as 'input' | 'output')}>
+                      <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="input">Input Feed</TabsTrigger>
+                        <TabsTrigger value="output">Output Feed</TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                    
+                    <div className="bg-black rounded-lg aspect-video flex items-center justify-center relative">
+                      <div className="absolute top-2 left-2">
+                        <Badge variant="outline" className="bg-black/50 text-white border-white/20">
+                          {feedType === 'input' ? 'INPUT' : 'OUTPUT'}
+                        </Badge>
+                      </div>
+                      <div className="absolute top-2 right-2">
+                        <Badge variant={previewSource.status === 'online' ? 'default' : 'secondary'} 
+                               className={previewSource.status === 'online' ? 'bg-red-600 text-white animate-pulse' : ''}>
+                          {previewSource.status === 'online' ? 'LIVE' : previewSource.status.toUpperCase()}
+                        </Badge>
+                      </div>
+                      {previewSource.status === 'online' ? (
+                        <div className="text-white text-center">
+                          <Play className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg">Live Stream Preview</p>
+                          <p className="text-sm opacity-75">{previewSource.name}</p>
+                          <p className="text-xs opacity-50 mt-2">Resolution: {previewSource.resolution}</p>
+                        </div>
+                      ) : (
+                        <div className="text-white text-center">
+                          <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-status-offline" />
+                          <p className="text-lg">Stream Offline</p>
+                          <p className="text-sm opacity-75">No signal available</p>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex gap-3 justify-center">
+                      <Button variant="outline" className="border-broadcast-blue text-broadcast-blue hover:bg-broadcast-blue hover:text-white">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Source Settings
+                      </Button>
+                      <Button 
+                        variant={previewSource.status === 'offline' ? 'default' : 'destructive'}
+                        className={previewSource.status === 'offline' ? 'bg-green-600 hover:bg-green-700' : ''}
+                      >
+                        {previewSource.status === 'offline' ? (
+                          <>
+                            <Power className="h-4 w-4 mr-2" />
+                            Start Now
+                          </>
+                        ) : (
+                          <>
+                            <RotateCcw className="h-4 w-4 mr-2" />
+                            Reboot Channel
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Channel Details */}
+                  <div className="space-y-4">
+                    <Card className="bg-control-surface border-border">
+                      <CardHeader>
+                        <CardTitle className="text-lg text-foreground">Stream Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Studio ID:</span>
+                          <span className="font-mono text-foreground">{previewSource.studioId}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Status:</span>
+                          <Badge className={getStatusColor(previewSource.status)}>
+                            {previewSource.status}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Stream Health:</span>
+                          <span className="font-semibold text-foreground">{previewSource.streamHealth}%</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Resolution:</span>
+                          <span className="text-foreground">{previewSource.resolution}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Bitrate:</span>
+                          <span className="text-foreground">{previewSource.bitrate}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Last Heartbeat:</span>
+                          <span className="text-foreground">{previewSource.lastHeartbeat}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-control-surface border-border">
+                      <CardHeader>
+                        <CardTitle className="text-lg text-foreground">Program Information</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {previewSource.currentProgram ? (
+                          <>
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">Current Program:</span>
+                              <span className="text-foreground font-medium">{previewSource.currentProgram}</span>
+                            </div>
+                            {previewSource.nextProgram && (
+                              <>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Next Program:</span>
+                                  <span className="text-foreground">{previewSource.nextProgram}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Next Start Time:</span>
+                                  <span className="text-foreground">{previewSource.nextProgramTime}</span>
+                                </div>
+                              </>
+                            )}
+                          </>
+                        ) : (
+                          <div className="text-center text-muted-foreground">
+                            <p>No program information available</p>
+                          </div>
+                        )}
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Signal Strength:</span>
+                          <span className="text-foreground">{previewSource.status === 'online' ? 'Strong' : 'No Signal'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Audio Levels:</span>
+                          <span className="text-foreground">{previewSource.status === 'online' ? '-12dB' : 'Muted'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Uptime:</span>
+                          <span className="text-foreground">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Current Events Panel */}
         <div className="col-span-4 space-y-6">
