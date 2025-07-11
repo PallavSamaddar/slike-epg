@@ -102,9 +102,9 @@ export const EPGDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Errors</p>
-                <p className="text-2xl font-bold text-status-scheduled">8</p>
+                <p className="text-2xl font-bold text-red-500">8</p>
               </div>
-              <Calendar className="h-8 w-8 text-status-scheduled" />
+              <Calendar className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
@@ -114,9 +114,9 @@ export const EPGDashboard = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Warnings</p>
-                <p className="text-2xl font-bold text-mcr-playlist">12</p>
+                <p className="text-2xl font-bold text-orange-500">12</p>
               </div>
-              <PlayCircle className="h-8 w-8 text-mcr-playlist" />
+              <PlayCircle className="h-8 w-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
