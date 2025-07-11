@@ -123,9 +123,9 @@ export const EPGScheduler = () => {
 
   const getBlockColor = (type: string, status: string) => {
     if (status === 'live') return 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50 text-white';
-    if (status === 'completed') return 'bg-gray-300 border-gray-200 text-gray-800';
+    if (status === 'completed') return 'bg-gray-300 border-gray-200 text-black';
     if (status === 'scheduled') return 'bg-orange-300 border-orange-200 text-orange-900';
-    return 'bg-gray-300 border-gray-200 text-gray-800';
+    return 'bg-gray-300 border-gray-200 text-black';
   };
 
   const AddBlockDialog = ({ type }: { type: 'PCR' | 'MCR' }) => (
