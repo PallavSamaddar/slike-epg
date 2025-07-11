@@ -18,7 +18,7 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       label: 'Dashboard',
       icon: Monitor,
       badge: null,
-      description: 'Overview and quick stats'
+      description: 'Live Channel Status'
     },
     {
       id: 'scheduler',
@@ -39,7 +39,7 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       label: 'Fast Channels',
       icon: Radio,
       badge: liveCount,
-      description: 'Live sources and monitoring'
+      description: 'EPG Control Center'
     },
     {
       id: 'preview',

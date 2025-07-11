@@ -12,17 +12,17 @@ const Index = () => {
   const renderActiveView = () => {
     switch (activeView) {
       case 'dashboard':
-        return <EPGDashboard />;
+        return <LiveEventsManager onNavigate={setActiveView} />;
       case 'scheduler':
         return <EPGScheduler />;
       case 'content':
         return <ContentLibrary />;
       case 'live':
-        return <LiveEventsManager onNavigate={setActiveView} />;
+        return <EPGDashboard />;
       case 'preview':
         return <EPGPreview />;
       default:
-        return <EPGDashboard />;
+        return <LiveEventsManager onNavigate={setActiveView} />;
     }
   };
 
