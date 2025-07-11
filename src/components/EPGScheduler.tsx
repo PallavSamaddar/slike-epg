@@ -26,25 +26,69 @@ export const EPGScheduler = () => {
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
     {
       id: '1',
-      time: '00:00',
-      duration: 90,
-      title: 'Morning News Live',
+      time: '05:00',
+      duration: 120,
+      title: 'Early Morning News',
       type: 'PCR',
-      status: 'live',
+      status: 'completed',
       geoZone: 'Global',
-      tags: ['Breaking', 'News'],
-      description: 'Live morning news broadcast'
+      tags: ['News', 'Morning'],
+      description: 'Early morning news bulletin'
     },
     {
       id: '2',
-      time: '02:00',
+      time: '07:00',
+      duration: 180,
+      title: 'Morning Show Live',
+      type: 'PCR',
+      status: 'live',
+      geoZone: 'Global',
+      tags: ['Live', 'Talk Show'],
+      description: 'Morning talk show with interviews'
+    },
+    {
+      id: '3',
+      time: '10:00',
       duration: 60,
-      title: 'Classic Movies',
+      title: 'Coffee Break Shows',
       type: 'MCR',
       status: 'scheduled',
       geoZone: 'US/EU',
-      tags: ['Movies', 'Entertainment'],
-      description: 'Automated movie playlist'
+      tags: ['Entertainment', 'Lifestyle'],
+      description: 'Light entertainment programming'
+    },
+    {
+      id: '4',
+      time: '11:00',
+      duration: 120,
+      title: 'Game Show Spectacular',
+      type: 'MCR',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['Games', 'Fun'],
+      description: 'Interactive game show content'
+    },
+    {
+      id: '5',
+      time: '13:00',
+      duration: 60,
+      title: 'Lunch Hour News',
+      type: 'PCR',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['News', 'Breaking'],
+      description: 'Midday news update'
+    },
+    {
+      id: '6',
+      time: '14:00',
+      duration: 90,
+      title: 'Afternoon Movies',
+      type: 'MCR',
+      status: 'scheduled',
+      geoZone: 'US/EU',
+      tags: ['Movies', 'Classic'],
+      description: 'Classic movie collection'
     }
   ]);
 
@@ -55,9 +99,10 @@ export const EPGScheduler = () => {
   });
 
   const getBlockColor = (type: string, status: string) => {
-    if (status === 'live') return 'bg-pcr-live border-pcr-live-glow shadow-live';
-    if (type === 'PCR') return 'bg-pcr-live/20 border-pcr-live hover:bg-pcr-live/30';
-    return 'bg-mcr-playlist/20 border-mcr-playlist hover:bg-mcr-playlist/30';
+    if (status === 'live') return 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50 text-white';
+    if (status === 'completed') return 'bg-gray-500 border-gray-400 text-white';
+    if (status === 'scheduled') return 'bg-orange-500 border-orange-400 text-white';
+    return 'bg-gray-500 border-gray-400 text-white';
   };
 
   const AddBlockDialog = ({ type }: { type: 'PCR' | 'MCR' }) => (
@@ -296,16 +341,16 @@ export const EPGScheduler = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-pcr-live rounded animate-pulse-live"></div>
-                <span className="text-sm text-muted-foreground">Live (PCR)</span>
+                <div className="w-4 h-4 bg-green-500 rounded animate-pulse"></div>
+                <span className="text-sm text-muted-foreground">Live Programs</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-mcr-playlist rounded"></div>
-                <span className="text-sm text-muted-foreground">Playlist (MCR)</span>
+                <div className="w-4 h-4 bg-gray-500 rounded"></div>
+                <span className="text-sm text-muted-foreground">Finished Programs</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-status-scheduled rounded"></div>
-                <span className="text-sm text-muted-foreground">Scheduled</span>
+                <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                <span className="text-sm text-muted-foreground">Upcoming Programs</span>
               </div>
             </CardContent>
           </Card>
@@ -350,10 +395,10 @@ export const EPGScheduler = () => {
                                     height: `${Math.max(60, block.duration / 30 * 30)}px` 
                                   }}
                                 >
-                                  <div className="flex items-center justify-between mb-1">
-                                    <span className="font-medium text-sm text-foreground">
-                                      {block.title}
-                                    </span>
+                                   <div className="flex items-center justify-between mb-1">
+                                     <span className="font-medium text-sm text-white">
+                                       {block.title}
+                                     </span>
                                     <div className="flex items-center gap-1">
                                       <Badge 
                                         className={`text-xs ${
@@ -369,16 +414,16 @@ export const EPGScheduler = () => {
                                       )}
                                     </div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
-                                    {block.duration}min • {block.geoZone}
-                                  </div>
+                                   <div className="text-xs text-white/80">
+                                     {block.duration}min • {block.geoZone}
+                                   </div>
                                   {block.tags.length > 0 && (
                                     <div className="flex gap-1 mt-1">
-                                      {block.tags.slice(0, 2).map((tag, idx) => (
-                                        <span key={idx} className="text-xs px-1 py-0.5 bg-black/20 rounded">
-                                          {tag}
-                                        </span>
-                                      ))}
+                                       {block.tags.slice(0, 2).map((tag, idx) => (
+                                         <span key={idx} className="text-xs px-1 py-0.5 bg-black/30 text-white rounded">
+                                           {tag}
+                                         </span>
+                                       ))}
                                     </div>
                                   )}
                                 </div>
