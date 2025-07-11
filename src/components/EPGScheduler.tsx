@@ -262,15 +262,6 @@ export const EPGScheduler = () => {
           <p className="text-muted-foreground">Drag & drop programming schedule</p>
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <Input 
-              type="date" 
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-              className="bg-control-surface border-border text-foreground"
-            />
-          </div>
           <Button variant="control">
             <Copy className="h-4 w-4 mr-2" />
             Copy Schedule
@@ -429,9 +420,20 @@ export const EPGScheduler = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span>Schedule Grid - {new Date(selectedDate).toLocaleDateString()}</span>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  24-hour view
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      type="date" 
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      className="bg-control-surface border-border text-foreground w-40"
+                    />
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Clock className="h-4 w-4" />
+                    24-hour view
+                  </div>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -448,6 +450,12 @@ export const EPGScheduler = () => {
                         <div className="flex-1 min-h-[60px] relative">
                           {/* Drop zone for scheduling */}
                           <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
+                            {/* Ad Break every 30 minutes */}
+                            {time.endsWith('30') && (
+                              <div className="bg-yellow-500 border border-yellow-400 text-black rounded p-2 mb-2 text-xs font-medium">
+                                Ad Break - 30s
+                              </div>
+                            )}
                             {/* Scheduled blocks */}
                             {scheduleBlocks
                               .filter(block => block.time === time)
