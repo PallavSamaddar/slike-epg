@@ -282,6 +282,75 @@ export const EPGScheduler = () => {
         </div>
       </div>
 
+      {/* Fast Channel Section */}
+      <div className="mb-6">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Fast Channel 1</h2>
+        <div className="grid grid-cols-10 gap-4">
+          {/* On Air Section - 70% width */}
+          <div className="col-span-7">
+            <Card className="bg-card-dark border-border">
+              <CardHeader>
+                <CardTitle className="text-lg text-foreground flex items-center gap-2">
+                  On Air
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-foreground">Morning News Live</h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Start Time</label>
+                      <p className="text-foreground font-medium">02:00</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">End Time</label>
+                      <p className="text-foreground font-medium">03:00</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Playback Time</label>
+                      <p className="text-foreground font-medium">25:30</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">Remaining Time</label>
+                      <p className="text-foreground font-medium">34:30</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Next In Queue Section - 30% width */}
+          <div className="col-span-3">
+            <Card className="bg-card-dark border-border">
+              <CardHeader>
+                <CardTitle className="text-lg text-foreground">Next In Queue</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="text-lg font-medium text-foreground">Talk Show Today</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="text-sm text-muted-foreground">Start Time</label>
+                      <p className="text-foreground font-medium">03:00</p>
+                    </div>
+                    <div>
+                      <label className="text-sm text-muted-foreground">End Time</label>
+                      <p className="text-foreground font-medium">04:00</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-12 gap-6">
         {/* Left Panel - Controls */}
         <div className="col-span-3 space-y-4">
