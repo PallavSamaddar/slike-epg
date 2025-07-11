@@ -182,7 +182,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Live Now</p>
+                <p className="text-sm text-muted-foreground">Live Channels</p>
                 <p className="text-2xl font-bold text-pcr-live">2</p>
               </div>
               <Radio className="h-8 w-8 text-pcr-live animate-pulse-live" />
@@ -194,7 +194,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Scheduled</p>
+                <p className="text-sm text-muted-foreground">Errors</p>
                 <p className="text-2xl font-bold text-status-scheduled">8</p>
               </div>
               <Calendar className="h-8 w-8 text-status-scheduled" />
@@ -206,7 +206,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Playlists</p>
+                <p className="text-sm text-muted-foreground">Warnings</p>
                 <p className="text-2xl font-bold text-mcr-playlist">12</p>
               </div>
               <PlayCircle className="h-8 w-8 text-mcr-playlist" />
@@ -218,7 +218,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Geo Zones</p>
+                <p className="text-sm text-muted-foreground">Off Line</p>
                 <p className="text-2xl font-bold text-broadcast-blue">5</p>
               </div>
               <Globe className="h-8 w-8 text-broadcast-blue" />
