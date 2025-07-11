@@ -536,7 +536,9 @@ export const EPGScheduler = () => {
                                   }}
                                 >
                                    <div className="flex items-center justify-between mb-1">
-                                     <span className="font-medium text-sm text-white">
+                                     <span className={`font-medium text-sm ${
+                                       block.status === 'completed' ? 'text-black' : 'text-white'
+                                     }`}>
                                        {block.title}
                                      </span>
                                     <div className="flex items-center gap-1">
@@ -554,13 +556,19 @@ export const EPGScheduler = () => {
                                       )}
                                     </div>
                                   </div>
-                                   <div className="text-xs text-white/80">
+                                   <div className={`text-xs ${
+                                     block.status === 'completed' ? 'text-black/70' : 'text-white/80'
+                                   }`}>
                                      {block.duration}min • {block.geoZone}
                                    </div>
                                   {block.tags.length > 0 && (
                                     <div className="flex gap-1 mt-1">
                                        {block.tags.slice(0, 2).map((tag, idx) => (
-                                         <span key={idx} className="text-xs px-1 py-0.5 bg-black/30 text-white rounded">
+                                         <span key={idx} className={`text-xs px-1 py-0.5 rounded ${
+                                           block.status === 'completed' 
+                                             ? 'bg-black/10 text-black' 
+                                             : 'bg-black/30 text-white'
+                                         }`}>
                                            {tag}
                                          </span>
                                        ))}
