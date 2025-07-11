@@ -25,7 +25,29 @@ export const EPGScheduler = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
     {
+      id: '0',
+      time: '00:00',
+      duration: 60,
+      title: 'Midnight Movies',
+      type: 'MCR',
+      status: 'completed',
+      geoZone: 'Global',
+      tags: ['Movies', 'Late Night'],
+      description: 'Late night movie programming'
+    },
+    {
       id: '1',
+      time: '01:00',
+      duration: 60,
+      title: 'Night Talk Show',
+      type: 'PCR',
+      status: 'completed',
+      geoZone: 'US/EU',
+      tags: ['Talk', 'Late Night'],
+      description: 'Late night talk show'
+    },
+    {
+      id: '2',
       time: '02:00',
       duration: 60,
       title: 'Morning News Live',
@@ -36,7 +58,7 @@ export const EPGScheduler = () => {
       description: 'Live morning news broadcast'
     },
     {
-      id: '2',
+      id: '3',
       time: '03:00',
       duration: 60,
       title: 'Talk Show Today',
@@ -47,7 +69,7 @@ export const EPGScheduler = () => {
       description: 'Morning talk show'
     },
     {
-      id: '3',
+      id: '4',
       time: '04:00',
       duration: 60,
       title: 'Coffee Break Show',
@@ -58,7 +80,7 @@ export const EPGScheduler = () => {
       description: 'Light entertainment programming'
     },
     {
-      id: '4',
+      id: '5',
       time: '05:00',
       duration: 60,
       title: 'Game Time',
@@ -69,7 +91,7 @@ export const EPGScheduler = () => {
       description: 'Interactive game show'
     },
     {
-      id: '5',
+      id: '6',
       time: '06:00',
       duration: 60,
       title: 'Morning Movies',
@@ -80,7 +102,7 @@ export const EPGScheduler = () => {
       description: 'Classic movie collection'
     },
     {
-      id: '6',
+      id: '7',
       time: '07:00',
       duration: 60,
       title: 'Breakfast Special',
