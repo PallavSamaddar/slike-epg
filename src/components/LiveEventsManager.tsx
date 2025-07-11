@@ -427,79 +427,79 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   <div className="space-y-4">
                     <Card className="bg-control-surface border-border">
                       <CardHeader>
-                        <CardTitle className="text-lg text-foreground">Stream Information</CardTitle>
+                        <CardTitle className="text-lg text-white">Stream Information</CardTitle>
                       </CardHeader>
-                      <CardContent className="space-y-3">
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Studio ID:</span>
-                          <span className="font-mono text-foreground">{previewSource.studioId}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Status:</span>
-                          <Badge className={getStatusColor(previewSource.status)}>
-                            {previewSource.status}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Stream Health:</span>
-                          <span className="font-semibold text-foreground">{previewSource.streamHealth}%</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Resolution:</span>
-                          <span className="text-foreground">{previewSource.resolution}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Bitrate:</span>
-                          <span className="text-foreground">{previewSource.bitrate}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Last Heartbeat:</span>
-                          <span className="text-foreground">{previewSource.lastHeartbeat}</span>
-                        </div>
+                       <CardContent className="space-y-3">
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Studio ID:</span>
+                           <span className="font-mono text-white">{previewSource.studioId}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Status:</span>
+                           <Badge className={getStatusColor(previewSource.status)}>
+                             {previewSource.status}
+                           </Badge>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Stream Health:</span>
+                           <span className="font-semibold text-white">{previewSource.streamHealth}%</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Resolution:</span>
+                           <span className="text-white">{previewSource.resolution}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Bitrate:</span>
+                           <span className="text-white">{previewSource.bitrate}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Last Heartbeat:</span>
+                           <span className="text-white">{previewSource.lastHeartbeat}</span>
+                         </div>
                       </CardContent>
                     </Card>
 
                     <Card className="bg-control-surface border-border">
                       <CardHeader>
-                        <CardTitle className="text-lg text-foreground">Program Information</CardTitle>
+                        <CardTitle className="text-lg text-white">Program Information</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {previewSource.currentProgram ? (
                           <>
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">Current Program:</span>
-                              <span className="text-foreground font-medium">{previewSource.currentProgram}</span>
-                            </div>
-                            {previewSource.nextProgram && (
-                              <>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Next Program:</span>
-                                  <span className="text-foreground">{previewSource.nextProgram}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                  <span className="text-muted-foreground">Next Start Time:</span>
-                                  <span className="text-foreground">{previewSource.nextProgramTime}</span>
-                                </div>
-                              </>
-                            )}
-                          </>
-                        ) : (
-                          <div className="text-center text-muted-foreground">
-                            <p>No program information available</p>
-                          </div>
-                        )}
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Signal Strength:</span>
-                          <span className="text-foreground">{previewSource.status === 'online' ? 'Strong' : 'No Signal'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Audio Levels:</span>
-                          <span className="text-foreground">{previewSource.status === 'online' ? '-12dB' : 'Muted'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span className="text-muted-foreground">Uptime:</span>
-                          <span className="text-foreground">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
-                        </div>
+                             <div className="flex justify-between">
+                               <span className="text-slate-300">Current Program:</span>
+                               <span className="text-white font-medium">{previewSource.currentProgram}</span>
+                             </div>
+                             {previewSource.nextProgram && (
+                               <>
+                                 <div className="flex justify-between">
+                                   <span className="text-slate-300">Next Program:</span>
+                                   <span className="text-white">{previewSource.nextProgram}</span>
+                                 </div>
+                                 <div className="flex justify-between">
+                                   <span className="text-slate-300">Next Start Time:</span>
+                                   <span className="text-white">{previewSource.nextProgramTime}</span>
+                                 </div>
+                               </>
+                             )}
+                           </>
+                         ) : (
+                           <div className="text-center text-slate-400">
+                             <p>No program information available</p>
+                           </div>
+                         )}
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Signal Strength:</span>
+                           <span className="text-white">{previewSource.status === 'online' ? 'Strong' : 'No Signal'}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Audio Levels:</span>
+                           <span className="text-white">{previewSource.status === 'online' ? '-12dB' : 'Muted'}</span>
+                         </div>
+                         <div className="flex justify-between">
+                           <span className="text-slate-300">Uptime:</span>
+                           <span className="text-white">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
+                         </div>
                       </CardContent>
                     </Card>
                   </div>
