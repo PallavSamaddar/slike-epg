@@ -364,9 +364,19 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   <div className="space-y-4">
                     {/* Feed Selection */}
                     <Tabs value={feedType} onValueChange={(value) => setFeedType(value as 'input' | 'output')}>
-                      <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="input">Input Feed</TabsTrigger>
-                        <TabsTrigger value="output">Output Feed</TabsTrigger>
+                      <TabsList className="grid w-full grid-cols-2 bg-slate-700 p-1">
+                        <TabsTrigger 
+                          value="input"
+                          className="text-slate-300 data-[state=active]:bg-broadcast-blue data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200"
+                        >
+                          Input Feed
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          value="output"
+                          className="text-slate-300 data-[state=active]:bg-broadcast-blue data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200"
+                        >
+                          Output Feed
+                        </TabsTrigger>
                       </TabsList>
                     </Tabs>
                     
