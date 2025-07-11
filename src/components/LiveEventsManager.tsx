@@ -157,72 +157,6 @@ export const LiveEventsManager = () => {
     }
   };
 
-  const EmergencyOverrideDialog = () => (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button variant="offline" size="sm">
-          <AlertTriangle className="h-4 w-4 mr-2" />
-          Emergency Override
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="bg-card-dark border-border">
-        <DialogHeader>
-          <DialogTitle className="text-foreground flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-status-offline" />
-            Emergency EPG Override
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <Alert className="border-status-offline bg-status-offline/10">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="text-foreground">
-              This will interrupt current programming and override the EPG schedule.
-            </AlertDescription>
-          </Alert>
-
-          <div>
-            <Label htmlFor="override-title">Emergency Program Title</Label>
-            <Input 
-              id="override-title" 
-              placeholder="Breaking News: Emergency Broadcast"
-              className="bg-control-surface border-border text-foreground"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="override-source">Live Source</Label>
-            <select className="w-full p-2 rounded bg-control-surface border border-border text-foreground">
-              {mockSources
-                .filter(source => source.status === 'online')
-                .map(source => (
-                  <option key={source.id} value={source.id}>
-                    {source.name} ({source.studioId})
-                  </option>
-                ))}
-            </select>
-          </div>
-
-          <div>
-            <Label htmlFor="override-message">Emergency Message</Label>
-            <Textarea 
-              id="override-message" 
-              placeholder="Describe the emergency or special broadcast..."
-              className="bg-control-surface border-border text-foreground"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="offline" className="flex-1">
-              Activate Emergency Override
-            </Button>
-            <Button variant="outline" className="flex-1">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
@@ -441,10 +375,6 @@ export const LiveEventsManager = () => {
                                     
                                     {/* Action Buttons */}
                                     <div className="flex gap-3 justify-center">
-                                      <Button variant="destructive" className="bg-red-600 hover:bg-red-700">
-                                        <AlertTriangle className="h-4 w-4 mr-2" />
-                                        Emergency Override
-                                      </Button>
                                       <Button variant="outline" className="border-broadcast-blue text-broadcast-blue hover:bg-broadcast-blue hover:text-white">
                                         <Settings className="h-4 w-4 mr-2" />
                                         Source Settings
