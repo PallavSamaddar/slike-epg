@@ -297,15 +297,8 @@ export const EPGScheduler = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-foreground">Start Time: 02:00</span>
-                    <span className="text-foreground">End Time: 03:00</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-foreground">Playback Time: 25:30</span>
-                    <span className="text-foreground">Remaining Time: 34:30</span>
-                  </div>
+                <div className="text-foreground">
+                  Start Time: 02:00 | End Time: 03:00 | Playback Time: 25:30 | Remaining Time: 34:30
                 </div>
               </CardContent>
             </Card>
