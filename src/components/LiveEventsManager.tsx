@@ -333,6 +333,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   setPreviewSource(source);
+                                  setPreviewDialogOpen(true);
                                 }}
                               >
                                 <Eye className="h-4 w-4 mr-1" />
