@@ -23,6 +23,7 @@ interface ScheduleBlock {
 
 export const EPGScheduler = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
     {
       id: '0',
@@ -378,7 +379,7 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Schedule Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Dialog>
+              <Dialog open={isAdConfigOpen} onOpenChange={setIsAdConfigOpen}>
                 <DialogTrigger asChild>
                   <Button variant="control" size="sm" className="w-full justify-start">
                     <Settings className="h-4 w-4 mr-2" />
@@ -432,10 +433,10 @@ export const EPGScheduler = () => {
                     </div>
 
                     <div className="flex gap-2">
-                      <Button variant="broadcast" className="flex-1">
+                      <Button variant="broadcast" className="flex-1" onClick={() => setIsAdConfigOpen(false)}>
                         Save Configuration
                       </Button>
-                      <Button variant="outline" className="flex-1">
+                      <Button variant="outline" className="flex-1" onClick={() => setIsAdConfigOpen(false)}>
                         Cancel
                       </Button>
                     </div>
