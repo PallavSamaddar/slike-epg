@@ -247,23 +247,23 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" size="sm" className="w-full bg-muted text-foreground hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Slike Video
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-muted text-foreground hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Live Recording
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-muted text-foreground hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Live Feed
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-muted text-foreground hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 Live Event
               </Button>
-              <Button variant="outline" size="sm" className="w-full bg-muted text-foreground hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
+              <Button variant="outline" size="sm" className="w-full bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 YouTube Link
               </Button>
