@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Clock, Radio, PlayCircle, Calendar, Globe, AlertTriangle } from 'lucide-react';
+import { Clock, Radio, PlayCircle, Calendar, Globe, AlertTriangle, AlertCircle, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -104,7 +104,7 @@ export const EPGDashboard = () => {
                 <p className="text-sm text-muted-foreground">Errors</p>
                 <p className="text-2xl font-bold text-red-500">8</p>
               </div>
-              <Calendar className="h-8 w-8 text-red-500" />
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
@@ -116,7 +116,7 @@ export const EPGDashboard = () => {
                 <p className="text-sm text-muted-foreground">Warnings</p>
                 <p className="text-2xl font-bold text-orange-500">12</p>
               </div>
-              <PlayCircle className="h-8 w-8 text-orange-500" />
+              <AlertCircle className="h-8 w-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -128,7 +128,7 @@ export const EPGDashboard = () => {
                 <p className="text-sm text-muted-foreground">Off Line</p>
                 <p className="text-2xl font-bold text-broadcast-blue">5</p>
               </div>
-              <Globe className="h-8 w-8 text-broadcast-blue" />
+              <WifiOff className="h-8 w-8 text-broadcast-blue" />
             </div>
           </CardContent>
         </Card>

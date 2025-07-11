@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, AlertTriangle, CheckCircle, XCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe } from 'lucide-react';
+import { Radio, AlertTriangle, AlertCircle, CheckCircle, XCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -197,7 +197,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 <p className="text-sm text-muted-foreground">Errors</p>
                 <p className="text-2xl font-bold text-red-500">8</p>
               </div>
-              <Calendar className="h-8 w-8 text-red-500" />
+              <AlertTriangle className="h-8 w-8 text-red-500" />
             </div>
           </CardContent>
         </Card>
@@ -209,7 +209,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 <p className="text-sm text-muted-foreground">Warnings</p>
                 <p className="text-2xl font-bold text-orange-500">12</p>
               </div>
-              <PlayCircle className="h-8 w-8 text-orange-500" />
+              <AlertCircle className="h-8 w-8 text-orange-500" />
             </div>
           </CardContent>
         </Card>
@@ -221,7 +221,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 <p className="text-sm text-muted-foreground">Off Line</p>
                 <p className="text-2xl font-bold text-broadcast-blue">5</p>
               </div>
-              <Globe className="h-8 w-8 text-broadcast-blue" />
+              <WifiOff className="h-8 w-8 text-broadcast-blue" />
             </div>
           </CardContent>
         </Card>
