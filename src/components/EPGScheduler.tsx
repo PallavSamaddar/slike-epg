@@ -123,9 +123,9 @@ export const EPGScheduler = () => {
 
   const getBlockColor = (type: string, status: string) => {
     if (status === 'live') return 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50 text-white';
-    if (status === 'completed') return 'bg-gray-500 border-gray-400 text-white';
-    if (status === 'scheduled') return 'bg-orange-500 border-orange-400 text-white';
-    return 'bg-gray-500 border-gray-400 text-white';
+    if (status === 'completed') return 'bg-gray-300 border-gray-200 text-gray-800';
+    if (status === 'scheduled') return 'bg-orange-300 border-orange-200 text-orange-900';
+    return 'bg-gray-300 border-gray-200 text-gray-800';
   };
 
   const AddBlockDialog = ({ type }: { type: 'PCR' | 'MCR' }) => (
@@ -468,11 +468,11 @@ export const EPGScheduler = () => {
                 <span className="text-sm text-muted-foreground">Live Programs</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-500 rounded"></div>
+                <div className="w-4 h-4 bg-gray-300 rounded"></div>
                 <span className="text-sm text-muted-foreground">Finished Programs</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-orange-500 rounded"></div>
+                <div className="w-4 h-4 bg-orange-300 rounded"></div>
                 <span className="text-sm text-muted-foreground">Upcoming Programs</span>
               </div>
             </CardContent>
@@ -517,7 +517,7 @@ export const EPGScheduler = () => {
                           <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
                             {/* Ad Break every 30 minutes */}
                             {time.endsWith('30') && (
-                              <div className="bg-yellow-500 border border-yellow-400 text-black rounded p-2 mb-2 text-xs font-medium">
+                              <div className="bg-yellow-200 border border-yellow-100 text-yellow-800 rounded p-2 mb-2 text-xs font-medium">
                                 Ad Break - 30s
                               </div>
                             )}
