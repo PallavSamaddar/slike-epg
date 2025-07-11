@@ -59,7 +59,7 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
             <Radio className="h-4 w-4 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-foreground">EPG CMS</h1>
+            <h1 className="font-bold text-foreground">Slike Studio</h1>
             <p className="text-xs text-muted-foreground">v2.1.0</p>
           </div>
         </div>

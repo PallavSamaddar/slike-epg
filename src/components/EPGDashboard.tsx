@@ -136,18 +136,15 @@ export const EPGDashboard = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="today" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 bg-control-surface">
+        <TabsList className="grid w-full grid-cols-4 bg-control-surface">
           <TabsTrigger value="today" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
             Today
           </TabsTrigger>
           <TabsTrigger value="week" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
             Week View
           </TabsTrigger>
-          <TabsTrigger value="pcr" className="data-[state=active]:bg-pcr-live data-[state=active]:text-white">
-            PCR Only
-          </TabsTrigger>
-          <TabsTrigger value="mcr" className="data-[state=active]:bg-mcr-playlist data-[state=active]:text-white">
-            MCR Only
+          <TabsTrigger value="monthly" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
+            Monthly View
           </TabsTrigger>
           <TabsTrigger value="geo" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
             Geo Filter
@@ -236,25 +233,13 @@ export const EPGDashboard = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="pcr" className="mt-6">
+        <TabsContent value="monthly" className="mt-6">
           <Card className="bg-card-dark border-border">
             <CardContent className="p-6">
               <div className="text-center text-muted-foreground">
-                <Radio className="h-12 w-12 mx-auto mb-4 text-pcr-live" />
-                <h3 className="text-lg font-semibold mb-2">Live Studio Content (PCR)</h3>
-                <p>Production Control Room live programming view</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="mcr" className="mt-6">
-          <Card className="bg-card-dark border-border">
-            <CardContent className="p-6">
-              <div className="text-center text-muted-foreground">
-                <PlayCircle className="h-12 w-12 mx-auto mb-4 text-mcr-playlist" />
-                <h3 className="text-lg font-semibold mb-2">Playlist Content (MCR)</h3>
-                <p>Master Control Room automated playlist scheduling</p>
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-broadcast-blue" />
+                <h3 className="text-lg font-semibold mb-2">Monthly Schedule View</h3>
+                <p>30-day EPG scheduling calendar will be displayed here</p>
               </div>
             </CardContent>
           </Card>
