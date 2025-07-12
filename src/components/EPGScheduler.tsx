@@ -205,10 +205,15 @@ export const EPGScheduler = () => {
   });
 
   const getBlockColor = (time: string, status: string) => {
-    // Only the 02:00 time slot gets green color, rest are orange
+    // Midnight Movies (00:00) and Night Talk Show (01:00) get light gray
+    if (time === '00:00' || time === '01:00') {
+      return 'border-2 bg-gray-300 text-black border-gray-300';
+    }
+    // Only the 02:00 time slot gets green color
     if (time === '02:00') {
       return 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
     }
+    // Rest are orange
     return 'border-2 bg-[#FFA55D] text-white border-[#FFA55D]';
   };
 
