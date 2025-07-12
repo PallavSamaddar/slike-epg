@@ -33,7 +33,7 @@ interface ScheduleBlock {
   isEditing?: boolean;
 }
 
-const DraggableVideo = ({ video, blockId }: { video: Video; blockId: string }) => {
+const DraggableVideo = ({ video, blockId, blockTime }: { video: Video; blockId: string; blockTime: string }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
     id: `${blockId}-${video.id}`,
     data: { video, blockId }
@@ -45,6 +45,14 @@ const DraggableVideo = ({ video, blockId }: { video: Video; blockId: string }) =
     opacity: isDragging ? 0.5 : 1,
   };
 
+  // Determine text color based on block time
+  const getTextColor = () => {
+    if (blockTime === '00:00' || blockTime === '01:00') {
+      return 'text-gray-500'; // Gray cards use gray text
+    }
+    return 'text-white'; // Green and orange cards use white text
+  };
+
   return (
     <div
       ref={setNodeRef}
@@ -53,9 +61,9 @@ const DraggableVideo = ({ video, blockId }: { video: Video; blockId: string }) =
       {...listeners}
       className="flex items-center gap-2 p-1 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
     >
-      <GripVertical className="h-3 w-3 text-gray-500" />
+      <GripVertical className={`h-3 w-3 ${getTextColor()}`} />
       <span className="flex-1 truncate">{video.name}</span>
-      <span className="text-gray-500">{video.duration}m</span>
+      <span className={getTextColor()}>{video.duration}m</span>
     </div>
   );
 };
@@ -835,13 +843,14 @@ export const EPGScheduler = () => {
                                           strategy={verticalListSortingStrategy}
                                         >
                                           <div className="space-y-1">
-                                            {block.videos.map(video => (
-                                              <DraggableVideo 
-                                                key={video.id} 
-                                                video={video} 
-                                                blockId={block.id} 
-                                              />
-                                            ))}
+                                             {block.videos.map(video => (
+                                               <DraggableVideo 
+                                                 key={video.id} 
+                                                 video={video} 
+                                                 blockId={block.id} 
+                                                 blockTime={block.time}
+                                               />
+                                             ))}
                                           </div>
                                         </SortableContext>
                                       </div>
