@@ -213,8 +213,8 @@ export const EPGScheduler = () => {
     if (time === '02:00') {
       return 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
     }
-    // Rest are orange
-    return 'border-2 bg-[#FFA55D] text-white border-[#FFA55D]';
+    // Rest are light yellow-green
+    return 'border-2 bg-[#F0F2B6] text-white border-[#F0F2B6]';
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
