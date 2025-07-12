@@ -205,9 +205,15 @@ export const EPGScheduler = () => {
   });
 
   const getBlockColor = (type: string, status: string) => {
-    if (status === 'live') return 'bg-green-500 border-green-400 shadow-lg shadow-green-500/50 text-white';
+    if (status === 'live') return 'border-2' 
+      + (type === 'Event' 
+        ? ' bg-[#ACC572] text-white border-[#ACC572]' 
+        : ' bg-[#FFA55D] text-white border-[#FFA55D]');
     if (status === 'completed') return 'bg-gray-300 border-gray-200 text-black';
-    if (status === 'scheduled') return 'bg-orange-300 border-orange-200 text-orange-900';
+    if (status === 'scheduled') return 'border-2' 
+      + (type === 'Event' 
+        ? ' bg-[#ACC572] text-white border-[#ACC572]' 
+        : ' bg-[#FFA55D] text-white border-[#FFA55D]');
     return 'bg-gray-300 border-gray-200 text-black';
   };
 
@@ -701,7 +707,7 @@ export const EPGScheduler = () => {
                             <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
                               {/* Ad Break markers every 30 minutes */}
                               {time.endsWith('30') && (
-                                <div className="absolute -left-2 top-2 w-2 h-2 bg-yellow-400 rounded-full"></div>
+                                <div className="absolute -left-2 top-2 w-2 h-2 bg-[#F68537] rounded-full"></div>
                               )}
                               {/* Scheduled blocks */}
                               {scheduleBlocks
@@ -718,13 +724,8 @@ export const EPGScheduler = () => {
                                     }}
                                     data-block-id={block.id}
                                   >
-                                    <div className="flex items-center justify-between mb-2">
-                                      <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <div className={`text-xs px-2 py-1 rounded ${
-                                          block.status === 'completed' ? 'bg-black/10 text-black' : 'bg-black/30 text-white'
-                                        }`}>
-                                          60min
-                                        </div>
+                                     <div className="flex items-center justify-between mb-2">
+                                       <div className="flex items-center gap-2 flex-1 min-w-0">
                                         {block.isEditing ? (
                                           <Input
                                             value={block.title}
@@ -740,29 +741,27 @@ export const EPGScheduler = () => {
                                             className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
                                             autoFocus
                                           />
-                                        ) : (
-                                          <span className={`font-medium text-sm truncate ${
-                                            block.status === 'completed' ? 'text-black' : 'text-white'
-                                          }`}>
-                                            {block.title}
-                                          </span>
-                                        )}
-                                        <button
-                                          onClick={() => toggleEditMode(block.id)}
-                                          className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
-                                            block.status === 'completed' ? 'text-black/60' : 'text-white/60'
-                                          }`}
-                                        >
-                                          <Edit className="h-3 w-3" />
-                                        </button>
+                                         ) : (
+                                           <span className="font-medium text-sm truncate text-white">
+                                             {block.title}
+                                           </span>
+                                         )}
+                                         <button
+                                           onClick={() => toggleEditMode(block.id)}
+                                           className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
+                                             block.status === 'completed' ? 'text-black/60' : 'text-white/60'
+                                           }`}
+                                         >
+                                           <Edit className="h-3 w-3" />
+                                         </button>
                                         <div className="flex gap-1 ml-2 relative">
                                           {block.tags.slice(0, 2).map((tag, idx) => (
                                             <div key={idx} className="relative group">
-                                              <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
-                                                block.status === 'completed' 
-                                                  ? 'bg-black/10 text-black' 
-                                                  : 'bg-black/30 text-white'
-                                              }`}>
+                                               <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
+                                                 block.status === 'completed' 
+                                                   ? 'bg-black/10 text-black' 
+                                                   : 'bg-black/30 text-white'
+                                               }`}>
                                                 {tag}
                                                 {editingGenres === block.id && (
                                                   <button
@@ -775,14 +774,14 @@ export const EPGScheduler = () => {
                                               </span>
                                             </div>
                                           ))}
-                                          <button
-                                            onClick={() => toggleGenreEdit(block.id)}
-                                            className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
-                                              block.status === 'completed' ? 'text-black/60' : 'text-white/60'
-                                            }`}
-                                          >
-                                            <Edit className="h-2 w-2" />
-                                          </button>
+                                           <button
+                                             onClick={() => toggleGenreEdit(block.id)}
+                                             className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
+                                               block.status === 'completed' ? 'text-black/60' : 'text-white/60'
+                                             }`}
+                                           >
+                                             <Edit className="h-2 w-2" />
+                                           </button>
                                           {editingGenres === block.id && (
                                             <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
                                               <div className="flex flex-wrap gap-1 w-48">
@@ -809,15 +808,11 @@ export const EPGScheduler = () => {
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-1">
-                                         <Badge 
-                                           className={`text-xs ${
-                                             block.type === 'Event' 
-                                               ? 'bg-orange-600 text-white' 
-                                               : 'bg-purple-600 text-white'
-                                           }`}
-                                         >
-                                           {block.type}
-                                         </Badge>
+                                          <Badge 
+                                            className="text-xs bg-black/30 text-white"
+                                          >
+                                            {block.type}
+                                          </Badge>
                                         {block.status === 'live' && (
                                           <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
                                         )}
@@ -843,14 +838,14 @@ export const EPGScheduler = () => {
                                         </SortableContext>
                                       </div>
                                       
-                                      {/* Block Info */}
-                                      <div className="flex-shrink-0 text-right">
-                                        <div className={`text-xs ${
-                                          block.status === 'completed' ? 'text-black/70' : 'text-white/80'
-                                        }`}>
-                                          {block.duration}min
-                                        </div>
-                                      </div>
+                                       {/* Block Info */}
+                                       <div className="flex-shrink-0 text-right">
+                                         <div className={`text-xs ${
+                                           block.status === 'completed' ? 'text-black/70' : 'text-white/80'
+                                         }`}>
+                                           {block.duration}min
+                                         </div>
+                                       </div>
                                     </div>
                                   </div>
                                 ))}
