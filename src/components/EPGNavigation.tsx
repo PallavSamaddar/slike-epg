@@ -162,7 +162,7 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
 
       {/* Settings */}
       <div className="mt-8 pt-4 border-t border-border">
-        <Button variant="ghost" size="sm" className="w-full justify-start text-muted-foreground">
+        <Button variant="control" size="sm" className="w-full justify-start">
           <Settings className="h-4 w-4 mr-2" />
           Settings
         </Button>

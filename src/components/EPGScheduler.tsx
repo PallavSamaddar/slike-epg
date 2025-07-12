@@ -1,5 +1,9 @@
 import { useState } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +12,12 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+
+interface Video {
+  id: string;
+  name: string;
+  duration: number;
+}
 
 interface ScheduleBlock {
   id: string;
@@ -19,7 +29,36 @@ interface ScheduleBlock {
   geoZone: string;
   tags: string[];
   description?: string;
+  videos: Video[];
+  isEditing?: boolean;
 }
+
+const DraggableVideo = ({ video, blockId }: { video: Video; blockId: string }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+    id: `${blockId}-${video.id}`,
+    data: { video, blockId }
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="flex items-center gap-2 p-1 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+    >
+      <GripVertical className="h-3 w-3 text-gray-500" />
+      <span className="flex-1 truncate">{video.name}</span>
+      <span className="text-gray-500">{video.duration}m</span>
+    </div>
+  );
+};
 
 export const EPGScheduler = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
@@ -34,7 +73,11 @@ export const EPGScheduler = () => {
       status: 'completed',
       geoZone: 'Global',
       tags: ['Movies', 'Late Night'],
-      description: 'Late night movie programming'
+      description: 'Late night movie programming',
+      videos: [
+        { id: 'v1', name: 'Classic Horror Movie', duration: 90 },
+        { id: 'v2', name: 'Sci-Fi Thriller', duration: 105 }
+      ]
     },
     {
       id: '1',
@@ -45,7 +88,11 @@ export const EPGScheduler = () => {
       status: 'completed',
       geoZone: 'US/EU',
       tags: ['Talk', 'Late Night'],
-      description: 'Late night talk show'
+      description: 'Late night talk show',
+      videos: [
+        { id: 'v3', name: 'Celebrity Interview', duration: 25 },
+        { id: 'v4', name: 'Comedy Segment', duration: 15 }
+      ]
     },
     {
       id: '2',
@@ -56,7 +103,12 @@ export const EPGScheduler = () => {
       status: 'live',
       geoZone: 'Global',
       tags: ['Live', 'News'],
-      description: 'Live morning news broadcast'
+      description: 'Live morning news broadcast',
+      videos: [
+        { id: 'v5', name: 'Breaking News Report', duration: 20 },
+        { id: 'v6', name: 'Weather Update', duration: 10 },
+        { id: 'v7', name: 'Sports Highlights', duration: 15 }
+      ]
     },
     {
       id: '3',
@@ -67,7 +119,12 @@ export const EPGScheduler = () => {
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Talk', 'Entertainment'],
-      description: 'Morning talk show'
+      description: 'Morning talk show',
+      videos: [
+        { id: 'v8', name: 'Guest Interview 1', duration: 20 },
+        { id: 'v9', name: 'Musical Performance', duration: 15 },
+        { id: 'v10', name: 'Guest Interview 2', duration: 20 }
+      ]
     },
     {
       id: '4',
@@ -78,7 +135,11 @@ export const EPGScheduler = () => {
       status: 'scheduled',
       geoZone: 'US/EU',
       tags: ['Lifestyle', 'Entertainment'],
-      description: 'Light entertainment programming'
+      description: 'Light entertainment programming',
+      videos: [
+        { id: 'v11', name: 'Cooking Segment', duration: 25 },
+        { id: 'v12', name: 'Home Tips', duration: 20 }
+      ]
     },
     {
       id: '5',
@@ -89,7 +150,11 @@ export const EPGScheduler = () => {
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Games', 'Fun'],
-      description: 'Interactive game show'
+      description: 'Interactive game show',
+      videos: [
+        { id: 'v13', name: 'Trivia Round', duration: 30 },
+        { id: 'v14', name: 'Prize Challenge', duration: 25 }
+      ]
     },
     {
       id: '6',
@@ -100,7 +165,11 @@ export const EPGScheduler = () => {
       status: 'scheduled',
       geoZone: 'US/EU',
       tags: ['Movies', 'Classic'],
-      description: 'Classic movie collection'
+      description: 'Classic movie collection',
+      videos: [
+        { id: 'v15', name: 'Family Adventure', duration: 95 },
+        { id: 'v16', name: 'Comedy Classic', duration: 85 }
+      ]
     },
     {
       id: '7',
@@ -111,9 +180,20 @@ export const EPGScheduler = () => {
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Special', 'Morning'],
-      description: 'Special morning programming'
+      description: 'Special morning programming',
+      videos: [
+        { id: 'v17', name: 'Morning Yoga', duration: 20 },
+        { id: 'v18', name: 'Healthy Recipes', duration: 25 }
+      ]
     }
   ]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const timeSlots = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2);
@@ -126,6 +206,86 @@ export const EPGScheduler = () => {
     if (status === 'completed') return 'bg-gray-300 border-gray-200 text-black';
     if (status === 'scheduled') return 'bg-orange-300 border-orange-200 text-orange-900';
     return 'bg-gray-300 border-gray-200 text-black';
+  };
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over) return;
+
+    const activeData = active.data.current;
+    const overData = over.data.current;
+    
+    // If dragging to a different block
+    if (activeData?.blockId !== overData?.blockId && overData?.blockId) {
+      const sourceBlockId = activeData?.blockId;
+      const targetBlockId = overData?.blockId;
+      const video = activeData?.video;
+      
+      if (sourceBlockId && targetBlockId && video) {
+        setScheduleBlocks(prev => {
+          const newBlocks = [...prev];
+          
+          // Remove video from source block
+          const sourceBlock = newBlocks.find(b => b.id === sourceBlockId);
+          if (sourceBlock) {
+            sourceBlock.videos = sourceBlock.videos.filter(v => v.id !== video.id);
+          }
+          
+          // Add video to target block
+          const targetBlock = newBlocks.find(b => b.id === targetBlockId);
+          if (targetBlock) {
+            targetBlock.videos = [...targetBlock.videos, video];
+          }
+          
+          return newBlocks;
+        });
+      }
+    }
+    // If reordering within the same block
+    else if (activeData?.blockId === overData?.blockId) {
+      const blockId = activeData?.blockId;
+      const activeVideoId = active.id.toString().split('-')[1];
+      const overVideoId = over.id.toString().split('-')[1];
+      
+      if (blockId && activeVideoId !== overVideoId) {
+        setScheduleBlocks(prev => {
+          const newBlocks = [...prev];
+          const block = newBlocks.find(b => b.id === blockId);
+          
+          if (block) {
+            const oldIndex = block.videos.findIndex(v => v.id === activeVideoId);
+            const newIndex = block.videos.findIndex(v => v.id === overVideoId);
+            
+            if (oldIndex !== -1 && newIndex !== -1) {
+              block.videos = arrayMove(block.videos, oldIndex, newIndex);
+            }
+          }
+          
+          return newBlocks;
+        });
+      }
+    }
+  };
+
+  const updateBlockTitle = (blockId: string, newTitle: string) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === blockId 
+          ? { ...block, title: newTitle, isEditing: false }
+          : block
+      )
+    );
+  };
+
+  const toggleEditMode = (blockId: string) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === blockId 
+          ? { ...block, isEditing: !block.isEditing }
+          : { ...block, isEditing: false }
+      )
+    );
   };
 
   const AddBlockDialog = ({ type }: { type: 'PCR' | 'MCR' }) => (
@@ -481,110 +641,170 @@ export const EPGScheduler = () => {
 
         {/* Main Schedule Grid */}
         <div className="col-span-9">
-          <Card className="bg-card-dark border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span>Program Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      type="date" 
-                      value={selectedDate}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="bg-control-surface border-border text-foreground w-40"
-                    />
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <Card className="bg-card-dark border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                  <span>Program Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        type="date" 
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="bg-control-surface border-border text-foreground w-40"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      24-hour view
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    24-hour view
-                  </div>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative">
-                {/* Time Slots */}
-                <div className="grid grid-cols-1 gap-1">
-                  {timeSlots.map((time, index) => (
-                    <div key={time} className="relative">
-                      <div className="flex items-center gap-4 py-2 border-b border-border/30">
-                        <div className="w-16 text-xs text-muted-foreground font-mono">
-                          {time}
-                        </div>
-                        <div className="flex-1 min-h-[60px] relative">
-                          {/* Drop zone for scheduling */}
-                          <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
-                            {/* Ad Break every 30 minutes */}
-                            {time.endsWith('30') && (
-                              <div className="bg-yellow-200 border border-yellow-100 text-yellow-800 rounded p-2 mb-2 text-xs font-medium">
-                                Ad Break - 30s
-                              </div>
-                            )}
-                            {/* Scheduled blocks */}
-                            {scheduleBlocks
-                              .filter(block => block.time === time)
-                              .map(block => (
-                                <div
-                                  key={block.id}
-                                  className={`
-                                    p-3 rounded border-2 cursor-pointer transition-all
-                                    ${getBlockColor(block.type, block.status)}
-                                  `}
-                                  style={{ 
-                                    height: `${Math.max(60, block.duration / 30 * 30)}px` 
-                                  }}
-                                >
-                                   <div className="flex items-center justify-between mb-1">
-                                     <span className={`font-medium text-sm ${
-                                       block.status === 'completed' ? 'text-black' : 'text-white'
-                                     }`}>
-                                       {block.title}
-                                     </span>
-                                    <div className="flex items-center gap-1">
-                                      <Badge 
-                                        className={`text-xs ${
-                                          block.type === 'PCR' 
-                                            ? 'bg-pcr-live text-white' 
-                                            : 'bg-mcr-playlist text-white'
-                                        }`}
-                                      >
-                                        {block.type}
-                                      </Badge>
-                                      {block.status === 'live' && (
-                                        <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
-                                      )}
-                                    </div>
-                                  </div>
-                                   <div className={`text-xs ${
-                                     block.status === 'completed' ? 'text-black/70' : 'text-white/80'
-                                   }`}>
-                                     {block.duration}min • {block.geoZone}
-                                   </div>
-                                  {block.tags.length > 0 && (
-                                    <div className="flex gap-1 mt-1">
-                                       {block.tags.slice(0, 2).map((tag, idx) => (
-                                         <span key={idx} className={`text-xs px-1 py-0.5 rounded ${
-                                           block.status === 'completed' 
-                                             ? 'bg-black/10 text-black' 
-                                             : 'bg-black/30 text-white'
-                                         }`}>
-                                           {tag}
-                                         </span>
-                                       ))}
-                                    </div>
-                                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative">
+                  {/* Time Slots */}
+                  <div className="grid grid-cols-1 gap-1">
+                    {timeSlots.map((time, index) => (
+                      <div key={time} className="relative">
+                        <div className="flex items-center gap-4 py-2 border-b border-border/30">
+                          <div className="w-16 text-xs text-muted-foreground font-mono">
+                            {time}
+                          </div>
+                          <div className="flex-1 min-h-[60px] relative">
+                            {/* Drop zone for scheduling */}
+                            <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
+                              {/* Ad Break every 30 minutes */}
+                              {time.endsWith('30') && (
+                                <div className="bg-yellow-200 border border-yellow-100 text-yellow-800 rounded p-2 mb-2 text-xs font-medium">
+                                  Ad Break - 30s
                                 </div>
-                              ))}
+                              )}
+                              {/* Scheduled blocks */}
+                              {scheduleBlocks
+                                .filter(block => block.time === time)
+                                .map(block => (
+                                  <div
+                                    key={block.id}
+                                    className={`
+                                      p-3 rounded border-2 cursor-pointer transition-all
+                                      ${getBlockColor(block.type, block.status)}
+                                    `}
+                                    style={{ 
+                                      height: `${Math.max(120, block.duration / 30 * 30)}px` 
+                                    }}
+                                    data-block-id={block.id}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        {block.isEditing ? (
+                                          <Input
+                                            value={block.title}
+                                            onChange={(e) => setScheduleBlocks(prev => 
+                                              prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b)
+                                            )}
+                                            onBlur={() => updateBlockTitle(block.id, block.title)}
+                                            onKeyDown={(e) => {
+                                              if (e.key === 'Enter') {
+                                                updateBlockTitle(block.id, block.title);
+                                              }
+                                            }}
+                                            className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
+                                            autoFocus
+                                          />
+                                        ) : (
+                                          <span className={`font-medium text-sm truncate ${
+                                            block.status === 'completed' ? 'text-black' : 'text-white'
+                                          }`}>
+                                            {block.title}
+                                          </span>
+                                        )}
+                                        <button
+                                          onClick={() => toggleEditMode(block.id)}
+                                          className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
+                                            block.status === 'completed' ? 'text-black/60' : 'text-white/60'
+                                          }`}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Badge 
+                                          className={`text-xs ${
+                                            block.type === 'PCR' 
+                                              ? 'bg-pcr-live text-white' 
+                                              : 'bg-mcr-playlist text-white'
+                                          }`}
+                                        >
+                                          {block.type}
+                                        </Badge>
+                                        {block.status === 'live' && (
+                                          <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
+                                        )}
+                                      </div>
+                                    </div>
+                                    
+                                    <div className="flex gap-3">
+                                      {/* Videos List */}
+                                      <div className="flex-1">
+                                        <SortableContext 
+                                          items={block.videos.map(v => `${block.id}-${v.id}`)} 
+                                          strategy={verticalListSortingStrategy}
+                                        >
+                                          <div className="space-y-1">
+                                            {block.videos.map(video => (
+                                              <DraggableVideo 
+                                                key={video.id} 
+                                                video={video} 
+                                                blockId={block.id} 
+                                              />
+                                            ))}
+                                          </div>
+                                        </SortableContext>
+                                      </div>
+                                      
+                                      {/* Block Info */}
+                                      <div className="flex-shrink-0 text-right">
+                                        <div className={`text-xs ${
+                                          block.status === 'completed' ? 'text-black/70' : 'text-white/80'
+                                        }`}>
+                                          {block.duration}min
+                                        </div>
+                                        <div className={`text-xs ${
+                                          block.status === 'completed' ? 'text-black/70' : 'text-white/80'
+                                        }`}>
+                                          {block.geoZone}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    
+                                    {block.tags.length > 0 && (
+                                      <div className="flex gap-1 mt-2">
+                                         {block.tags.slice(0, 2).map((tag, idx) => (
+                                           <span key={idx} className={`text-xs px-1 py-0.5 rounded ${
+                                             block.status === 'completed' 
+                                               ? 'bg-black/10 text-black' 
+                                               : 'bg-black/30 text-white'
+                                           }`}>
+                                             {tag}
+                                           </span>
+                                         ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                            </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </DndContext>
         </div>
       </div>
     </div>
