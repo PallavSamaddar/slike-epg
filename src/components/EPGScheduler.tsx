@@ -840,11 +840,6 @@ export const EPGScheduler = () => {
                                       
                                        {/* Block Info */}
                                        <div className="flex-shrink-0 text-right">
-                                         <div className={`text-xs ${
-                                           block.status === 'completed' ? 'text-black/70' : 'text-white/80'
-                                         }`}>
-                                           {block.duration}min
-                                         </div>
                                        </div>
                                     </div>
                                   </div>
