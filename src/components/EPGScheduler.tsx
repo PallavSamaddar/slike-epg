@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -12,6 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface Video {
   id: string;
@@ -33,7 +34,194 @@ interface ScheduleBlock {
   isEditing?: boolean;
 }
 
-const DraggableVideo = ({ video, blockId, blockTime }: { video: Video; blockId: string; blockTime: string }) => {
+// Video Preview Dialog Component
+const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDelete }: {
+  video: Video;
+  isOpen: boolean;
+  onClose: () => void;
+  isEditMode?: boolean;
+  onDelete?: () => void;
+}) => {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [inMarker, setInMarker] = useState(0);
+  const [outMarker, setOutMarker] = useState(video.duration * 60); // Convert minutes to seconds
+  const videoRef = useRef<HTMLVideoElement>(null);
+
+  const totalDuration = video.duration * 60; // Convert minutes to seconds
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handlePlayPause = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const handleSeek = (value: number[]) => {
+    setCurrentTime(value[0]);
+  };
+
+  const handleMarkIn = () => {
+    setInMarker(currentTime);
+  };
+
+  const handleMarkOut = () => {
+    setOutMarker(currentTime);
+  };
+
+  const handleSkipBack = () => {
+    const newTime = Math.max(0, currentTime - 10);
+    setCurrentTime(newTime);
+  };
+
+  const handleSkipForward = () => {
+    const newTime = Math.min(totalDuration, currentTime + 10);
+    setCurrentTime(newTime);
+  };
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying) {
+      interval = setInterval(() => {
+        setCurrentTime(prev => {
+          if (prev >= totalDuration) {
+            setIsPlaying(false);
+            return totalDuration;
+          }
+          return prev + 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, totalDuration]);
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="bg-card-dark border-border max-w-4xl">
+        <DialogHeader>
+          <DialogTitle className="text-foreground flex items-center justify-between">
+            {isEditMode ? 'Edit Video' : 'Preview Video'} - {video.name}
+            {isEditMode && onDelete && (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => {
+                  onDelete();
+                  onClose();
+                }}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-4">
+          {/* Video Player Placeholder */}
+          <div className="relative aspect-video bg-black rounded overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-gray-800 to-gray-900 flex items-center justify-center">
+              <div className="text-center text-white">
+                <div className="text-4xl mb-2">📹</div>
+                <p className="text-lg">{video.name}</p>
+                <p className="text-sm opacity-70">Duration: {video.duration} minutes</p>
+              </div>
+            </div>
+            {/* Play/Pause overlay */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={handlePlayPause}
+                className="bg-black/50 text-white hover:bg-black/70"
+              >
+                {isPlaying ? <Pause className="h-8 w-8" /> : <Play className="h-8 w-8" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Video Controls */}
+          <div className="space-y-3">
+            {/* Seekbar */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>{formatTime(currentTime)}</span>
+                <div className="flex-1 relative">
+                  <input
+                    type="range"
+                    min={0}
+                    max={totalDuration}
+                    value={currentTime}
+                    onChange={(e) => setCurrentTime(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer"
+                  />
+                  {isEditMode && (
+                    <>
+                      {/* In Marker */}
+                      <div
+                        className="absolute top-0 w-2 h-2 bg-green-500 rounded-full transform -translate-y-1"
+                        style={{ left: `${(inMarker / totalDuration) * 100}%` }}
+                        title="In Marker"
+                      >
+                        <div className="absolute -top-6 -left-1 text-xs text-green-500">IN</div>
+                      </div>
+                      {/* Out Marker */}
+                      <div
+                        className="absolute top-0 w-2 h-2 bg-red-500 rounded-full transform -translate-y-1"
+                        style={{ left: `${(outMarker / totalDuration) * 100}%` }}
+                        title="Out Marker"
+                      >
+                        <div className="absolute -top-6 -left-2 text-xs text-red-500">OUT</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+                <span>{formatTime(totalDuration)}</span>
+              </div>
+            </div>
+
+            {/* Control Buttons */}
+            <div className="flex items-center justify-center gap-4">
+              <Button variant="outline" size="sm" onClick={handleSkipBack}>
+                <SkipBack className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={handlePlayPause}>
+                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleSkipForward}>
+                <SkipForward className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Mark In/Out Buttons (Edit Mode Only) */}
+            {isEditMode && (
+              <div className="flex items-center justify-center gap-4">
+                <Button variant="secondary" size="sm" onClick={handleMarkIn}>
+                  Mark IN ({formatTime(inMarker)})
+                </Button>
+                <Button variant="secondary" size="sm" onClick={handleMarkOut}>
+                  Mark OUT ({formatTime(outMarker)})
+                </Button>
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: { 
+  video: Video; 
+  blockId: string; 
+  blockTime: string;
+  onDeleteVideo: (videoId: string) => void;
+}) => {
+  const [showPreview, setShowPreview] = useState(false);
+  const [showEdit, setShowEdit] = useState(false);
+  
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
     id: `${blockId}-${video.id}`,
     data: { video, blockId }
@@ -53,18 +241,80 @@ const DraggableVideo = ({ video, blockId, blockTime }: { video: Video; blockId: 
     return 'text-white'; // Green and orange cards use white text
   };
 
+  const handleDelete = () => {
+    onDeleteVideo(video.id);
+  };
+
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="flex items-center gap-2 p-1 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-    >
-      <GripVertical className={`h-3 w-3 ${getTextColor()}`} />
-      <span className="flex-1 truncate">{video.name}</span>
-      <span className={getTextColor()}>{video.duration}m</span>
-    </div>
+    <>
+      <div
+        ref={setNodeRef}
+        style={style}
+        className="flex items-center gap-2 p-1 bg-black/10 rounded text-xs"
+      >
+        <div
+          {...attributes}
+          {...listeners}
+          className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
+        >
+          <GripVertical className={`h-3 w-3 ${getTextColor()}`} />
+          <span className="flex-1 truncate">{video.name}</span>
+          <span className={getTextColor()}>{video.duration}m</span>
+        </div>
+        
+        {/* Three Dot Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-6 w-6 p-0 hover:bg-black/20 ${getTextColor()}`}
+            >
+              <MoreVertical className="h-3 w-3" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="bg-card-dark border-border">
+            <DropdownMenuItem 
+              onClick={() => setShowPreview(true)}
+              className="text-foreground hover:bg-accent"
+            >
+              <Eye className="h-4 w-4 mr-2" />
+              Preview
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={() => setShowEdit(true)}
+              className="text-foreground hover:bg-accent"
+            >
+              <Edit className="h-4 w-4 mr-2" />
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem 
+              onClick={handleDelete}
+              className="text-red-400 hover:bg-red-400/10"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      {/* Preview Dialog */}
+      <VideoPreviewDialog
+        video={video}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+      />
+
+      {/* Edit Dialog */}
+      <VideoPreviewDialog
+        video={video}
+        isOpen={showEdit}
+        onClose={() => setShowEdit(false)}
+        isEditMode={true}
+        onDelete={handleDelete}
+      />
+    </>
   );
 };
 
@@ -338,6 +588,16 @@ export const EPGScheduler = () => {
       prev.map(block => 
         block.id === blockId 
           ? { ...block, tags: block.tags.filter(tag => tag !== genreToRemove) }
+          : block
+      )
+    );
+  };
+
+  const deleteVideoFromBlock = (blockId: string, videoId: string) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === blockId 
+          ? { ...block, videos: block.videos.filter(video => video.id !== videoId) }
           : block
       )
     );
@@ -849,6 +1109,7 @@ export const EPGScheduler = () => {
                                                  video={video} 
                                                  blockId={block.id} 
                                                  blockTime={block.time}
+                                                 onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
                                                />
                                              ))}
                                           </div>
