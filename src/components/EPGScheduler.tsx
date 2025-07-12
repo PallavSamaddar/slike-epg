@@ -24,7 +24,7 @@ interface ScheduleBlock {
   time: string;
   duration: number;
   title: string;
-  type: 'PCR' | 'MCR';
+  type: 'VOD' | 'Event';
   status: 'scheduled' | 'live' | 'completed';
   geoZone: string;
   tags: string[];
@@ -69,7 +69,7 @@ export const EPGScheduler = () => {
       time: '00:00',
       duration: 60,
       title: 'Midnight Movies',
-      type: 'MCR',
+      type: 'VOD',
       status: 'completed',
       geoZone: 'Global',
       tags: ['Movies', 'Late Night'],
@@ -84,7 +84,7 @@ export const EPGScheduler = () => {
       time: '01:00',
       duration: 60,
       title: 'Night Talk Show',
-      type: 'PCR',
+      type: 'Event',
       status: 'completed',
       geoZone: 'US/EU',
       tags: ['Talk', 'Late Night'],
@@ -99,7 +99,7 @@ export const EPGScheduler = () => {
       time: '02:00',
       duration: 60,
       title: 'Morning News Live',
-      type: 'PCR',
+      type: 'Event',
       status: 'live',
       geoZone: 'Global',
       tags: ['Live', 'News'],
@@ -115,7 +115,7 @@ export const EPGScheduler = () => {
       time: '03:00',
       duration: 60,
       title: 'Talk Show Today',
-      type: 'PCR',
+      type: 'Event',
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Talk', 'Entertainment'],
@@ -131,7 +131,7 @@ export const EPGScheduler = () => {
       time: '04:00',
       duration: 60,
       title: 'Coffee Break Show',
-      type: 'MCR',
+      type: 'VOD',
       status: 'scheduled',
       geoZone: 'US/EU',
       tags: ['Lifestyle', 'Entertainment'],
@@ -146,7 +146,7 @@ export const EPGScheduler = () => {
       time: '05:00',
       duration: 60,
       title: 'Game Time',
-      type: 'MCR',
+      type: 'VOD',
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Games', 'Fun'],
@@ -161,7 +161,7 @@ export const EPGScheduler = () => {
       time: '06:00',
       duration: 60,
       title: 'Morning Movies',
-      type: 'MCR',
+      type: 'VOD',
       status: 'scheduled',
       geoZone: 'US/EU',
       tags: ['Movies', 'Classic'],
@@ -176,7 +176,7 @@ export const EPGScheduler = () => {
       time: '07:00',
       duration: 60,
       title: 'Breakfast Special',
-      type: 'PCR',
+      type: 'Event',
       status: 'scheduled',
       geoZone: 'Global',
       tags: ['Special', 'Morning'],
@@ -288,11 +288,11 @@ export const EPGScheduler = () => {
     );
   };
 
-  const AddBlockDialog = ({ type }: { type: 'PCR' | 'MCR' }) => (
+  const AddBlockDialog = ({ type }: { type: 'VOD' | 'Event' }) => (
     <Dialog>
       <DialogTrigger asChild>
         <Button 
-          variant={type === 'PCR' ? 'live' : 'playlist'} 
+          variant={type === 'Event' ? 'live' : 'playlist'} 
           size="sm"
           className="w-full"
         >
@@ -303,7 +303,7 @@ export const EPGScheduler = () => {
       <DialogContent className="bg-card-dark border-border">
         <DialogHeader>
           <DialogTitle className="text-foreground">
-            Add {type === 'PCR' ? 'Live Studio' : 'Playlist'} Block
+            Add {type === 'Event' ? 'Live Event' : 'VOD Content'} Block
           </DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
@@ -336,7 +336,7 @@ export const EPGScheduler = () => {
             />
           </div>
 
-          {type === 'PCR' && (
+          {type === 'Event' && (
             <div>
               <Label htmlFor="studio">Studio ID</Label>
               <Select>
@@ -352,12 +352,12 @@ export const EPGScheduler = () => {
             </div>
           )}
 
-          {type === 'MCR' && (
+          {type === 'VOD' && (
             <div>
-              <Label htmlFor="playlist">Playlist</Label>
+              <Label htmlFor="playlist">Content Library</Label>
               <Select>
                 <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue placeholder="Select playlist" />
+                  <SelectValue placeholder="Select content" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="movies-classic">Classic Movies</SelectItem>
@@ -511,22 +511,8 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
-                <Plus className="h-4 w-4 mr-2" />
-                Slike Video
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
-                <Plus className="h-4 w-4 mr-2" />
-                Live Recording
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
-                <Plus className="h-4 w-4 mr-2" />
-                Live Feed
-              </Button>
-              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
-                <Plus className="h-4 w-4 mr-2" />
-                Live Event
-              </Button>
+              <AddBlockDialog type="VOD" />
+              <AddBlockDialog type="Event" />
               <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
                 <Plus className="h-4 w-4 mr-2" />
                 YouTube Link
@@ -729,15 +715,15 @@ export const EPGScheduler = () => {
                                         </button>
                                       </div>
                                       <div className="flex items-center gap-1">
-                                        <Badge 
-                                          className={`text-xs ${
-                                            block.type === 'PCR' 
-                                              ? 'bg-pcr-live text-white' 
-                                              : 'bg-mcr-playlist text-white'
-                                          }`}
-                                        >
-                                          {block.type}
-                                        </Badge>
+                                         <Badge 
+                                           className={`text-xs ${
+                                             block.type === 'Event' 
+                                               ? 'bg-orange-600 text-white' 
+                                               : 'bg-purple-600 text-white'
+                                           }`}
+                                         >
+                                           {block.type}
+                                         </Badge>
                                         {block.status === 'live' && (
                                           <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
                                         )}
@@ -770,11 +756,11 @@ export const EPGScheduler = () => {
                                         }`}>
                                           {block.duration}min
                                         </div>
-                                        <div className={`text-xs ${
-                                          block.status === 'completed' ? 'text-black/70' : 'text-white/80'
-                                        }`}>
-                                          {block.geoZone}
-                                        </div>
+                                         <div className={`text-xs ${
+                                           block.status === 'completed' ? 'text-black/70' : 'text-white/80'
+                                         }`}>
+                                           60 Mins
+                                         </div>
                                       </div>
                                     </div>
                                     
