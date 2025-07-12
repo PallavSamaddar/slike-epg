@@ -781,10 +781,10 @@ export const EPGScheduler = () => {
                                            <button
                                              onClick={() => toggleGenreEdit(block.id)}
                                              className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
-                                               block.status === 'completed' ? 'text-black/60' : 'text-white/60'
+                                               block.status === 'completed' ? 'text-black/60' : 'text-white'
                                              }`}
                                            >
-                                             <Edit className="h-2 w-2" />
+                                             <Edit className="h-3 w-3" />
                                            </button>
                                           {editingGenres === block.id && (
                                             <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
