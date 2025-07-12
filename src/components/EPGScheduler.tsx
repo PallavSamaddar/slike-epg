@@ -1146,6 +1146,13 @@ export const EPGScheduler = () => {
                             {time}
                           </div>
                           <div className="flex-1 min-h-[60px] relative">
+                            {/* Red playhead arrow for current time (02:00 - 02:30) */}
+                            {(time === '02:00' || time === '02:30') && (
+                              <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center">
+                                <div className="w-0 h-0 border-l-[8px] border-l-red-500 border-y-[6px] border-y-transparent"></div>
+                                <div className="w-1 h-8 bg-red-500 -ml-px"></div>
+                              </div>
+                            )}
                             {/* Drop zone for scheduling */}
                             <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
                               {/* Ad Break markers every 30 minutes */}
