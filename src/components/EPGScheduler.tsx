@@ -312,13 +312,16 @@ export const EPGScheduler = () => {
   };
 
   const addGenreToBlock = (blockId: string, genre: string) => {
-    setScheduleBlocks(prev => 
-      prev.map(block => 
+    console.log('Adding genre:', genre, 'to block:', blockId);
+    setScheduleBlocks(prev => {
+      const updated = prev.map(block => 
         block.id === blockId 
           ? { ...block, tags: [...block.tags, genre] }
           : block
-      )
-    );
+      );
+      console.log('Updated blocks:', updated.find(b => b.id === blockId)?.tags);
+      return updated;
+    });
   };
 
   const removeGenreFromBlock = (blockId: string, genreToRemove: string) => {
