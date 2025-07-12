@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -63,6 +63,9 @@ const DraggableVideo = ({ video, blockId }: { video: Video; blockId: string }) =
 export const EPGScheduler = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
+  const [editingGenres, setEditingGenres] = useState<string | null>(null);
+  
+  const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
     {
       id: '0',
@@ -284,6 +287,40 @@ export const EPGScheduler = () => {
         block.id === blockId 
           ? { ...block, isEditing: !block.isEditing }
           : { ...block, isEditing: false }
+      )
+    );
+  };
+
+  const toggleGenreEdit = (blockId: string) => {
+    setEditingGenres(editingGenres === blockId ? null : blockId);
+  };
+
+  const updateBlockTags = (blockId: string, newTags: string[]) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === blockId 
+          ? { ...block, tags: newTags }
+          : block
+      )
+    );
+  };
+
+  const addGenreToBlock = (blockId: string, genre: string) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === blockId 
+          ? { ...block, tags: [...block.tags, genre] }
+          : block
+      )
+    );
+  };
+
+  const removeGenreFromBlock = (blockId: string, genreToRemove: string) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === blockId 
+          ? { ...block, tags: block.tags.filter(tag => tag !== genreToRemove) }
+          : block
       )
     );
   };
@@ -683,6 +720,11 @@ export const EPGScheduler = () => {
                                   >
                                     <div className="flex items-center justify-between mb-2">
                                       <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <div className={`text-xs px-2 py-1 rounded ${
+                                          block.status === 'completed' ? 'bg-black/10 text-black' : 'bg-black/30 text-white'
+                                        }`}>
+                                          60min
+                                        </div>
                                         {block.isEditing ? (
                                           <Input
                                             value={block.title}
@@ -713,6 +755,58 @@ export const EPGScheduler = () => {
                                         >
                                           <Edit className="h-3 w-3" />
                                         </button>
+                                        <div className="flex gap-1 ml-2 relative">
+                                          {block.tags.slice(0, 2).map((tag, idx) => (
+                                            <div key={idx} className="relative group">
+                                              <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
+                                                block.status === 'completed' 
+                                                  ? 'bg-black/10 text-black' 
+                                                  : 'bg-black/30 text-white'
+                                              }`}>
+                                                {tag}
+                                                {editingGenres === block.id && (
+                                                  <button
+                                                    onClick={() => removeGenreFromBlock(block.id, tag)}
+                                                    className="ml-1 text-red-400 hover:text-red-300"
+                                                  >
+                                                    <X className="h-2 w-2" />
+                                                  </button>
+                                                )}
+                                              </span>
+                                            </div>
+                                          ))}
+                                          <button
+                                            onClick={() => toggleGenreEdit(block.id)}
+                                            className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
+                                              block.status === 'completed' ? 'text-black/60' : 'text-white/60'
+                                            }`}
+                                          >
+                                            <Edit className="h-2 w-2" />
+                                          </button>
+                                          {editingGenres === block.id && (
+                                            <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
+                                              <div className="flex flex-wrap gap-1 w-48">
+                                                {availableGenres
+                                                  .filter(genre => !block.tags.includes(genre))
+                                                  .map(genre => (
+                                                    <button
+                                                      key={genre}
+                                                      onClick={() => addGenreToBlock(block.id, genre)}
+                                                      className="text-xs px-2 py-1 rounded bg-primary text-white hover:bg-primary/80"
+                                                    >
+                                                      {genre}
+                                                    </button>
+                                                  ))}
+                                              </div>
+                                              <button
+                                                onClick={() => setEditingGenres(null)}
+                                                className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                                              >
+                                                Done
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
                                       </div>
                                       <div className="flex items-center gap-1">
                                          <Badge 
@@ -756,27 +850,8 @@ export const EPGScheduler = () => {
                                         }`}>
                                           {block.duration}min
                                         </div>
-                                         <div className={`text-xs ${
-                                           block.status === 'completed' ? 'text-black/70' : 'text-white/80'
-                                         }`}>
-                                           60 Mins
-                                         </div>
                                       </div>
                                     </div>
-                                    
-                                    {block.tags.length > 0 && (
-                                      <div className="flex gap-1 mt-2">
-                                         {block.tags.slice(0, 2).map((tag, idx) => (
-                                           <span key={idx} className={`text-xs px-1 py-0.5 rounded ${
-                                             block.status === 'completed' 
-                                               ? 'bg-black/10 text-black' 
-                                               : 'bg-black/30 text-white'
-                                           }`}>
-                                             {tag}
-                                           </span>
-                                         ))}
-                                      </div>
-                                    )}
                                   </div>
                                 ))}
                             </div>
