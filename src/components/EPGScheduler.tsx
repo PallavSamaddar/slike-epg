@@ -102,20 +102,8 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-card-dark border-border max-w-4xl">
         <DialogHeader>
-          <DialogTitle className="text-foreground flex items-center justify-between">
+          <DialogTitle className="text-foreground">
             {isEditMode ? 'Edit Video' : 'Preview Video'} - {video.name}
-            {isEditMode && onDelete && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => {
-                  onDelete();
-                  onClose();
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            )}
           </DialogTitle>
         </DialogHeader>
         
