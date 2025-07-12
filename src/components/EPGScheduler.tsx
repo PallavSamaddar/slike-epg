@@ -204,17 +204,12 @@ export const EPGScheduler = () => {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   });
 
-  const getBlockColor = (type: string, status: string) => {
-    if (status === 'live') return 'border-2' 
-      + (type === 'Event' 
-        ? ' bg-[#ACC572] text-white border-[#ACC572]' 
-        : ' bg-[#FFA55D] text-white border-[#FFA55D]');
-    if (status === 'completed') return 'bg-gray-300 border-gray-200 text-black';
-    if (status === 'scheduled') return 'border-2' 
-      + (type === 'Event' 
-        ? ' bg-[#ACC572] text-white border-[#ACC572]' 
-        : ' bg-[#FFA55D] text-white border-[#FFA55D]');
-    return 'bg-gray-300 border-gray-200 text-black';
+  const getBlockColor = (time: string, status: string) => {
+    // Only the 02:00 time slot gets green color, rest are orange
+    if (time === '02:00') {
+      return 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
+    }
+    return 'border-2 bg-[#FFA55D] text-white border-[#FFA55D]';
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -713,12 +708,12 @@ export const EPGScheduler = () => {
                               {scheduleBlocks
                                 .filter(block => block.time === time)
                                 .map(block => (
-                                  <div
-                                    key={block.id}
-                                    className={`
-                                      p-3 rounded border-2 cursor-pointer transition-all
-                                      ${getBlockColor(block.type, block.status)}
-                                    `}
+                                   <div
+                                     key={block.id}
+                                     className={`
+                                       p-3 rounded border-2 cursor-pointer transition-all
+                                       ${getBlockColor(block.time, block.status)}
+                                     `}
                                     style={{ 
                                       height: `${Math.max(120, block.duration / 30 * 30)}px` 
                                     }}
@@ -742,9 +737,13 @@ export const EPGScheduler = () => {
                                             autoFocus
                                           />
                                          ) : (
-                                           <span className="font-medium text-sm truncate text-white">
-                                             {block.title}
-                                           </span>
+                                            <span className={`font-medium text-sm truncate ${
+                                              (block.title === 'Midnight Movies' || block.title === 'Night Talk Show') 
+                                                ? 'text-black' 
+                                                : 'text-white'
+                                            }`}>
+                                              {block.title}
+                                            </span>
                                          )}
                                          <button
                                            onClick={() => toggleEditMode(block.id)}
