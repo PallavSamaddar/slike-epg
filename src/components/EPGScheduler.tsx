@@ -753,7 +753,7 @@ export const EPGScheduler = () => {
                                          <button
                                            onClick={() => toggleEditMode(block.id)}
                                            className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
-                                             block.status === 'completed' ? 'text-black/60' : 'text-white/60'
+                                             block.status === 'completed' ? 'text-black/60' : 'text-white'
                                            }`}
                                          >
                                            <Edit className="h-3 w-3" />
