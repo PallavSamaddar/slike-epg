@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface Video {
   id: string;
@@ -591,131 +592,161 @@ export const EPGScheduler = () => {
     );
   };
 
-  const AddBlockDialog = ({ type }: { type: 'VOD' | 'Event' }) => (
-    <Dialog>
-      <DialogTrigger asChild>
-        <Button 
-          variant={type === 'Event' ? 'live' : 'playlist'} 
-          size="sm"
-          className="w-full"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add {type} Block
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="bg-card-dark border-border">
-        <DialogHeader>
-          <DialogTitle className="text-foreground">
-            Add {type === 'Event' ? 'Live Event' : 'VOD Content'} Block
-          </DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+  // Get the last orange card's end time
+  const getLastOrangeCardEndTime = () => {
+    const orangeBlocks = scheduleBlocks.filter(block => 
+      block.time !== '00:00' && block.time !== '01:00' && block.time !== '02:00'
+    );
+    
+    if (orangeBlocks.length === 0) return '02:00'; // Default if no orange cards
+    
+    // Find the latest orange block
+    const latestBlock = orangeBlocks.reduce((latest, current) => {
+      const latestTime = parseInt(latest.time.split(':')[0]) * 60 + parseInt(latest.time.split(':')[1]);
+      const currentTime = parseInt(current.time.split(':')[0]) * 60 + parseInt(current.time.split(':')[1]);
+      return currentTime > latestTime ? current : latest;
+    });
+    
+    // Calculate end time by adding duration
+    const startMinutes = parseInt(latestBlock.time.split(':')[0]) * 60 + parseInt(latestBlock.time.split(':')[1]);
+    const endMinutes = startMinutes + latestBlock.duration;
+    const endHour = Math.floor(endMinutes / 60);
+    const endMinute = endMinutes % 60;
+    
+    return `${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}`;
+  };
+
+  const addBlankOrangeCard = () => {
+    const newStartTime = getLastOrangeCardEndTime();
+    const newId = (scheduleBlocks.length + 1).toString();
+    
+    const newBlock: ScheduleBlock = {
+      id: newId,
+      time: newStartTime,
+      duration: 60,
+      title: 'New Program',
+      type: 'VOD',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: [],
+      description: '',
+      videos: []
+    };
+    
+    setScheduleBlocks(prev => [...prev, newBlock]);
+  };
+
+  const AddBlockDialog = ({ type }: { type: 'VOD' | 'Event' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const defaultStartTime = type === 'VOD' ? getLastOrangeCardEndTime() : '02:00';
+
+    const handleAddToSchedule = () => {
+      if (type === 'VOD') {
+        addBlankOrangeCard();
+      }
+      setIsOpen(false);
+    };
+
+    const handleCancel = () => {
+      setIsOpen(false);
+    };
+
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            variant={type === 'Event' ? 'live' : 'playlist'} 
+            size="sm"
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add {type} Block
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-card-dark border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">
+              Add {type === 'Event' ? 'Live Event' : 'VOD Content'} Block
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="start-time">Start Time</Label>
+                <Input 
+                  id="start-time" 
+                  type="time" 
+                  defaultValue={defaultStartTime}
+                  className="bg-control-surface border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input 
+                  id="duration" 
+                  type="number" 
+                  placeholder="60"
+                  className="bg-control-surface border-border text-foreground"
+                />
+              </div>
+            </div>
+            
             <div>
-              <Label htmlFor="start-time">Start Time</Label>
+              <Label htmlFor="title">Program Title</Label>
               <Input 
-                id="start-time" 
-                type="time" 
+                id="title" 
+                placeholder="Enter program title"
                 className="bg-control-surface border-border text-foreground"
               />
             </div>
+
+            {type === 'Event' && (
+              <div>
+                <Label htmlFor="studio">Studio ID</Label>
+                <Select>
+                  <SelectTrigger className="bg-control-surface border-border text-foreground">
+                    <SelectValue placeholder="Select studio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="studio-1">Studio 1 (Main)</SelectItem>
+                    <SelectItem value="studio-2">Studio 2 (News)</SelectItem>
+                    <SelectItem value="studio-3">Studio 3 (Sports)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div>
-              <Label htmlFor="duration">Duration (minutes)</Label>
+              <Label htmlFor="tags">Tags</Label>
               <Input 
-                id="duration" 
-                type="number" 
-                placeholder="60"
+                id="tags" 
+                placeholder="Breaking, News, Special (comma separated)"
                 className="bg-control-surface border-border text-foreground"
               />
             </div>
-          </div>
-          
-          <div>
-            <Label htmlFor="title">Program Title</Label>
-            <Input 
-              id="title" 
-              placeholder="Enter program title"
-              className="bg-control-surface border-border text-foreground"
-            />
-          </div>
 
-          {type === 'Event' && (
             <div>
-              <Label htmlFor="studio">Studio ID</Label>
-              <Select>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue placeholder="Select studio" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="studio-1">Studio 1 (Main)</SelectItem>
-                  <SelectItem value="studio-2">Studio 2 (News)</SelectItem>
-                  <SelectItem value="studio-3">Studio 3 (Sports)</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Program description..."
+                className="bg-control-surface border-border text-foreground"
+              />
             </div>
-          )}
 
-          {type === 'VOD' && (
-            <div>
-              <Label htmlFor="playlist">Content Library</Label>
-              <Select>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue placeholder="Select content" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="movies-classic">Classic Movies</SelectItem>
-                  <SelectItem value="tv-shows">TV Shows Collection</SelectItem>
-                  <SelectItem value="documentaries">Documentaries</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="flex gap-2">
+              <Button variant="broadcast" className="flex-1" onClick={handleAddToSchedule}>
+                Add to Schedule
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={handleCancel}>
+                Cancel
+              </Button>
             </div>
-          )}
-
-          <div>
-            <Label htmlFor="geo-zone">Geographic Zone</Label>
-            <Select>
-              <SelectTrigger className="bg-control-surface border-border text-foreground">
-                <SelectValue placeholder="Select geo zone" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="global">Global</SelectItem>
-                <SelectItem value="us-eu">US/EU</SelectItem>
-                <SelectItem value="asia-pacific">Asia Pacific</SelectItem>
-                <SelectItem value="americas">Americas</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
-
-          <div>
-            <Label htmlFor="tags">Tags</Label>
-            <Input 
-              id="tags" 
-              placeholder="Breaking, News, Special (comma separated)"
-              className="bg-control-surface border-border text-foreground"
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              placeholder="Program description..."
-              className="bg-control-surface border-border text-foreground"
-            />
-          </div>
-
-          <div className="flex gap-2">
-            <Button variant="broadcast" className="flex-1">
-              Add to Schedule
-            </Button>
-            <Button variant="outline" className="flex-1">
-              Cancel
-            </Button>
-          </div>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
+        </DialogContent>
+      </Dialog>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
@@ -814,12 +845,164 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <AddBlockDialog type="VOD" />
-              <AddBlockDialog type="Event" />
-              <Button variant="outline" size="sm" className="w-full justify-start bg-slate-600 text-white border-slate-600 hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors">
-                <Plus className="h-4 w-4 mr-2" />
-                YouTube Link
-              </Button>
+              {/* Content Accordion */}
+              <Accordion type="single" defaultValue="slike-video" className="w-full">
+                <AccordionItem value="slike-video" className="border-border">
+                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
+                    Slike Video
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search by title or video ID..." 
+                        className="pl-8 bg-control-surface border-border text-foreground text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {[
+                        { id: 'sv1', name: 'Action Movie Trailer', duration: 3 },
+                        { id: 'sv2', name: 'Comedy Special', duration: 25 },
+                        { id: 'sv3', name: 'Documentary Clip', duration: 15 }
+                      ].map(video => (
+                        <div key={video.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
+                          <span className="flex-1 text-foreground">{video.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">{video.duration}m</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {/* Preview functionality */}}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="event-recording" className="border-border">
+                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
+                    Event Recording
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search by title or event ID..." 
+                        className="pl-8 bg-control-surface border-border text-foreground text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {[
+                        { id: 'er1', name: 'Sports Match Recording', duration: 90 },
+                        { id: 'er2', name: 'Concert Performance', duration: 45 },
+                        { id: 'er3', name: 'Conference Highlights', duration: 30 }
+                      ].map(recording => (
+                        <div key={recording.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
+                          <span className="flex-1 text-foreground">{recording.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">{recording.duration}m</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {/* Preview functionality */}}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="live-event" className="border-border">
+                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
+                    Live Event
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search by title or live event ID..." 
+                        className="pl-8 bg-control-surface border-border text-foreground text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {[
+                        { id: 'le1', name: 'Morning News Live', duration: 60 },
+                        { id: 'le2', name: 'Talk Show Live', duration: 45 },
+                        { id: 'le3', name: 'Breaking News', duration: 15 }
+                      ].map(liveEvent => (
+                        <div key={liveEvent.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
+                          <span className="flex-1 text-foreground">{liveEvent.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">{liveEvent.duration}m</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {/* Preview functionality */}}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="youtube-url" className="border-border">
+                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
+                    YouTube URL
+                  </AccordionTrigger>
+                  <AccordionContent className="space-y-3 pt-2">
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Enter YouTube URL..." 
+                        className="flex-1 bg-control-surface border-border text-foreground text-sm"
+                      />
+                      <Button variant="outline" size="sm">
+                        GO
+                      </Button>
+                    </div>
+                    <div className="space-y-2 max-h-32 overflow-y-auto">
+                      {[
+                        { id: 'yt1', name: 'Music Video - Artist Name', duration: 4 },
+                        { id: 'yt2', name: 'Tutorial Video', duration: 12 },
+                        { id: 'yt3', name: 'Comedy Sketch', duration: 8 }
+                      ].map(youtubeVideo => (
+                        <div key={youtubeVideo.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
+                          <span className="flex-1 text-foreground">{youtubeVideo.name}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted-foreground">{youtubeVideo.duration}m</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0"
+                              onClick={() => {/* Preview functionality */}}
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+              
+              {/* Add Block CTAs */}
+              <div className="pt-3 border-t border-border space-y-2">
+                <AddBlockDialog type="VOD" />
+                <AddBlockDialog type="Event" />
+              </div>
             </CardContent>
           </Card>
 
