@@ -676,11 +676,9 @@ export const EPGScheduler = () => {
                           <div className="flex-1 min-h-[60px] relative">
                             {/* Drop zone for scheduling */}
                             <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
-                              {/* Ad Break every 30 minutes */}
+                              {/* Ad Break markers every 30 minutes */}
                               {time.endsWith('30') && (
-                                <div className="bg-yellow-200 border border-yellow-100 text-yellow-800 rounded p-2 mb-2 text-xs font-medium">
-                                  Ad Break - 30s
-                                </div>
+                                <div className="absolute -left-2 top-2 w-2 h-2 bg-yellow-400 rounded-full"></div>
                               )}
                               {/* Scheduled blocks */}
                               {scheduleBlocks
