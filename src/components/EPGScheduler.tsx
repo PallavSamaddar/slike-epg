@@ -316,12 +316,13 @@ export const EPGScheduler = () => {
     setScheduleBlocks(prev => {
       const updated = prev.map(block => 
         block.id === blockId 
-          ? { ...block, tags: [...block.tags, genre] }
+          ? { ...block, tags: [genre] }
           : block
       );
       console.log('Updated blocks:', updated.find(b => b.id === blockId)?.tags);
       return updated;
     });
+    setEditingGenres(null);
   };
 
   const removeGenreFromBlock = (blockId: string, genreToRemove: string) => {
@@ -761,8 +762,8 @@ export const EPGScheduler = () => {
                                          >
                                            <Edit className="h-3 w-3" />
                                          </button>
-                                        <div className="flex gap-1 ml-2 relative">
-                                          {block.tags.slice(0, 2).map((tag, idx) => (
+                                         <div className="flex gap-1 ml-2 relative">
+                                           {block.tags.slice(0, 1).map((tag, idx) => (
                                             <div key={idx} className="relative group">
                                                <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
                                                  block.status === 'completed' 
