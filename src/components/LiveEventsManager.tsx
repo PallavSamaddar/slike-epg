@@ -410,33 +410,33 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     
                     {/* Destination Health Status */}
                     <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-foreground">Destinations</h4>
+                      <h4 className="text-sm font-medium text-white">Destinations</h4>
                       <div className="space-y-1">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-foreground">JioTV:</span>
+                          <span className="text-slate-300">JioTV:</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-foreground">1080P</span>
+                            <span className="text-white">1080P</span>
                             <Badge className="bg-green-600 text-white">Healthy</Badge>
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-foreground">YouTube:</span>
+                          <span className="text-slate-300">YouTube:</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-foreground">1080p</span>
+                            <span className="text-white">1080p</span>
                             <Badge className="bg-green-600 text-white">Healthy</Badge>
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-foreground">Amagi:</span>
+                          <span className="text-slate-300">Amagi:</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-foreground">1080P</span>
+                            <span className="text-white">1080P</span>
                             <Badge className="bg-red-600 text-white">Unhealthy</Badge>
                           </div>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-foreground">YuppTV:</span>
+                          <span className="text-slate-300">YuppTV:</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-foreground">1080P</span>
+                            <span className="text-white">1080P</span>
                             <Badge className="bg-gray-600 text-white">No Data</Badge>
                           </div>
                         </div>
@@ -472,69 +472,69 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   <div className="space-y-4">
                     <Card className="bg-slate-800 border-slate-700">
                       <CardHeader>
-                        <CardTitle className="text-lg text-foreground">Stream Information</CardTitle>
+                        <CardTitle className="text-lg text-white">Stream Information</CardTitle>
                       </CardHeader>
                        <CardContent className="space-y-3">
                          <div className="flex justify-between">
-                           <span className="text-foreground">Studio ID:</span>
-                           <span className="font-mono text-foreground">{previewSource.studioId}</span>
+                           <span className="text-slate-300">Studio ID:</span>
+                           <span className="font-mono text-white">{previewSource.studioId}</span>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-foreground">Status:</span>
+                           <span className="text-slate-300">Status:</span>
                            <Badge className={getStatusColor(previewSource.status)}>
                              {previewSource.status}
                            </Badge>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-foreground">Stream Health:</span>
-                           <span className="font-semibold text-foreground">{previewSource.streamHealth}%</span>
+                           <span className="text-slate-300">Stream Health:</span>
+                           <span className="font-semibold text-white">{previewSource.streamHealth}%</span>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-foreground">Resolution:</span>
-                           <span className="text-foreground">{previewSource.resolution}</span>
+                           <span className="text-slate-300">Resolution:</span>
+                           <span className="text-white">{previewSource.resolution}</span>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-foreground">Bitrate:</span>
-                           <span className="text-foreground">{previewSource.bitrate}</span>
+                           <span className="text-slate-300">Bitrate:</span>
+                           <span className="text-white">{previewSource.bitrate}</span>
                          </div>
                          <div className="flex justify-between">
-                           <span className="text-foreground">Last Heartbeat:</span>
-                           <span className="text-foreground">{previewSource.lastHeartbeat}</span>
+                           <span className="text-slate-300">Last Heartbeat:</span>
+                           <span className="text-white">{previewSource.lastHeartbeat}</span>
                          </div>
                       </CardContent>
                     </Card>
 
                     <Card className="bg-slate-800 border-slate-700">
                       <CardHeader>
-                        <CardTitle className="text-lg text-foreground">Program Information</CardTitle>
+                        <CardTitle className="text-lg text-white">Program Information</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-3">
                         {previewSource.currentProgram ? (
                           <>
                              <div className="flex justify-between">
-                               <span className="text-foreground">Current Program:</span>
-                               <span className="text-foreground font-medium">{previewSource.currentProgram}</span>
+                               <span className="text-slate-300">Current Program:</span>
+                               <span className="text-white font-medium">{previewSource.currentProgram}</span>
                              </div>
                              {previewSource.nextProgram && (
                                <>
                                  <div className="flex justify-between">
-                                   <span className="text-foreground">Next Program:</span>
-                                   <span className="text-foreground">{previewSource.nextProgram}</span>
+                                   <span className="text-slate-300">Next Program:</span>
+                                   <span className="text-white">{previewSource.nextProgram}</span>
                                  </div>
                                  <div className="flex justify-between">
-                                   <span className="text-foreground">Next Start Time:</span>
-                                   <span className="text-foreground">{previewSource.nextProgramTime}</span>
+                                   <span className="text-slate-300">Next Start Time:</span>
+                                   <span className="text-white">{previewSource.nextProgramTime}</span>
                                  </div>
                                </>
                              )}
                            </>
                          ) : (
-                           <div className="text-center text-muted-foreground">
+                           <div className="text-center text-slate-400">
                              <p>No program information available</p>
                            </div>
                          )}
                           <div className="flex justify-between items-center">
-                            <span className="text-foreground">Audio Levels:</span>
+                            <span className="text-slate-300">Audio Levels:</span>
                             <div className="flex items-center gap-2">
                               {previewSource.status === 'online' ? (
                                 <div className="flex items-center gap-1">
@@ -544,17 +544,17 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                   <span className="text-xs text-white">-12dB</span>
                                 </div>
                               ) : (
-                                <span className="text-foreground">Muted</span>
+                                <span className="text-white">Muted</span>
                               )}
                             </div>
                           </div>
                           <div className="flex justify-between">
-                            <span className="text-foreground">Next Program Type:</span>
-                            <span className="text-foreground">VOD & Live Event</span>
+                            <span className="text-slate-300">Next Program Type:</span>
+                            <span className="text-white">VOD & Live Event</span>
                           </div>
                          <div className="flex justify-between">
-                           <span className="text-foreground">Uptime:</span>
-                           <span className="text-foreground">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
+                           <span className="text-slate-300">Uptime:</span>
+                           <span className="text-white">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
                          </div>
                       </CardContent>
                     </Card>
