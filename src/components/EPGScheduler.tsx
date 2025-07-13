@@ -847,10 +847,13 @@ export const EPGScheduler = () => {
             <CardContent className="space-y-3">
               {/* Content Accordion */}
               <Accordion type="single" defaultValue="slike-video" className="w-full">
-                <AccordionItem value="slike-video" className="border-border">
-                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
-                    Slike Video
-                  </AccordionTrigger>
+                 <AccordionItem value="slike-video" className="border-border">
+                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
+                     <div className="flex items-center justify-between w-full">
+                       Slike Video
+                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                     </div>
+                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 pt-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -864,30 +867,43 @@ export const EPGScheduler = () => {
                         { id: 'sv1', name: 'Action Movie Trailer', duration: 3 },
                         { id: 'sv2', name: 'Comedy Special', duration: 25 },
                         { id: 'sv3', name: 'Documentary Clip', duration: 15 }
-                      ].map(video => (
-                        <div key={video.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
-                          <span className="flex-1 text-foreground">{video.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{video.duration}m</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {/* Preview functionality */}}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                       ].map(video => (
+                         <div 
+                           key={video.id} 
+                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                           draggable
+                           onDragStart={(e) => {
+                             e.dataTransfer.setData('application/json', JSON.stringify({
+                               type: 'content-video',
+                               video: video
+                             }));
+                           }}
+                         >
+                           <span className="flex-1 text-foreground">{video.name}</span>
+                           <div className="flex items-center gap-2">
+                             <span className="text-muted-foreground">{video.duration}m</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0"
+                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
+                             >
+                               <Eye className="h-3 w-3" />
+                             </Button>
+                           </div>
+                         </div>
+                       ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
                 
-                <AccordionItem value="event-recording" className="border-border">
-                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
-                    Event Recording
-                  </AccordionTrigger>
+                 <AccordionItem value="event-recording" className="border-border">
+                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
+                     <div className="flex items-center justify-between w-full">
+                       Event Recording
+                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                     </div>
+                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 pt-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -901,30 +917,43 @@ export const EPGScheduler = () => {
                         { id: 'er1', name: 'Sports Match Recording', duration: 90 },
                         { id: 'er2', name: 'Concert Performance', duration: 45 },
                         { id: 'er3', name: 'Conference Highlights', duration: 30 }
-                      ].map(recording => (
-                        <div key={recording.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
-                          <span className="flex-1 text-foreground">{recording.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{recording.duration}m</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {/* Preview functionality */}}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                       ].map(recording => (
+                         <div 
+                           key={recording.id} 
+                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                           draggable
+                           onDragStart={(e) => {
+                             e.dataTransfer.setData('application/json', JSON.stringify({
+                               type: 'content-video',
+                               video: recording
+                             }));
+                           }}
+                         >
+                           <span className="flex-1 text-foreground">{recording.name}</span>
+                           <div className="flex items-center gap-2">
+                             <span className="text-muted-foreground">{recording.duration}m</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0"
+                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
+                             >
+                               <Eye className="h-3 w-3" />
+                             </Button>
+                           </div>
+                         </div>
+                       ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
                 
-                <AccordionItem value="live-event" className="border-border">
-                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
-                    Live Event
-                  </AccordionTrigger>
+                 <AccordionItem value="live-event" className="border-border">
+                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
+                     <div className="flex items-center justify-between w-full">
+                       Live Event
+                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                     </div>
+                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 pt-2">
                     <div className="relative">
                       <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -938,30 +967,43 @@ export const EPGScheduler = () => {
                         { id: 'le1', name: 'Morning News Live', duration: 60 },
                         { id: 'le2', name: 'Talk Show Live', duration: 45 },
                         { id: 'le3', name: 'Breaking News', duration: 15 }
-                      ].map(liveEvent => (
-                        <div key={liveEvent.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
-                          <span className="flex-1 text-foreground">{liveEvent.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{liveEvent.duration}m</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {/* Preview functionality */}}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                       ].map(liveEvent => (
+                         <div 
+                           key={liveEvent.id} 
+                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                           draggable
+                           onDragStart={(e) => {
+                             e.dataTransfer.setData('application/json', JSON.stringify({
+                               type: 'content-video',
+                               video: liveEvent
+                             }));
+                           }}
+                         >
+                           <span className="flex-1 text-foreground">{liveEvent.name}</span>
+                           <div className="flex items-center gap-2">
+                             <span className="text-muted-foreground">{liveEvent.duration}m</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0"
+                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
+                             >
+                               <Eye className="h-3 w-3" />
+                             </Button>
+                           </div>
+                         </div>
+                       ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
                 
-                <AccordionItem value="youtube-url" className="border-border">
-                  <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80">
-                    YouTube URL
-                  </AccordionTrigger>
+                 <AccordionItem value="youtube-url" className="border-border">
+                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
+                     <div className="flex items-center justify-between w-full">
+                       YouTube URL
+                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                     </div>
+                   </AccordionTrigger>
                   <AccordionContent className="space-y-3 pt-2">
                     <div className="flex gap-2">
                       <Input 
@@ -977,22 +1019,32 @@ export const EPGScheduler = () => {
                         { id: 'yt1', name: 'Music Video - Artist Name', duration: 4 },
                         { id: 'yt2', name: 'Tutorial Video', duration: 12 },
                         { id: 'yt3', name: 'Comedy Sketch', duration: 8 }
-                      ].map(youtubeVideo => (
-                        <div key={youtubeVideo.id} className="flex items-center justify-between p-2 bg-black/10 rounded text-xs">
-                          <span className="flex-1 text-foreground">{youtubeVideo.name}</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-muted-foreground">{youtubeVideo.duration}m</span>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => {/* Preview functionality */}}
-                            >
-                              <Eye className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                       ].map(youtubeVideo => (
+                         <div 
+                           key={youtubeVideo.id} 
+                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                           draggable
+                           onDragStart={(e) => {
+                             e.dataTransfer.setData('application/json', JSON.stringify({
+                               type: 'content-video',
+                               video: youtubeVideo
+                             }));
+                           }}
+                         >
+                           <span className="flex-1 text-foreground">{youtubeVideo.name}</span>
+                           <div className="flex items-center gap-2">
+                             <span className="text-muted-foreground">{youtubeVideo.duration}m</span>
+                             <Button
+                               variant="ghost"
+                               size="sm"
+                               className="h-6 w-6 p-0"
+                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
+                             >
+                               <Eye className="h-3 w-3" />
+                             </Button>
+                           </div>
+                         </div>
+                       ))}
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -1153,8 +1205,36 @@ export const EPGScheduler = () => {
                                 <div className="w-1 h-8 bg-red-500 -ml-px"></div>
                               </div>
                             )}
-                            {/* Drop zone for scheduling */}
-                            <div className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors">
+                             {/* Drop zone for scheduling */}
+                             <div 
+                               className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
+                               onDragOver={(e) => e.preventDefault()}
+                               onDrop={(e) => {
+                                 e.preventDefault();
+                                 const data = e.dataTransfer.getData('application/json');
+                                 if (data) {
+                                   try {
+                                     const draggedData = JSON.parse(data);
+                                     if (draggedData.type === 'content-video') {
+                                       // Find the block for this time slot
+                                       const targetBlock = scheduleBlocks.find(block => block.time === time);
+                                       if (targetBlock) {
+                                         // Add the dragged video to the target block
+                                         setScheduleBlocks(prev => 
+                                           prev.map(block => 
+                                             block.id === targetBlock.id 
+                                               ? { ...block, videos: [...block.videos, draggedData.video] }
+                                               : block
+                                           )
+                                         );
+                                       }
+                                     }
+                                   } catch (error) {
+                                     console.error('Error parsing dragged data:', error);
+                                   }
+                                 }
+                               }}
+                             >
                               {/* Ad Break markers every 30 minutes */}
                               {time.endsWith('30') && (
                                 <div className="absolute -left-2 top-2 w-2 h-2 bg-[#F68537] rounded-full"></div>

@@ -408,6 +408,41 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       )}
                     </div>
                     
+                    {/* Destination Health Status */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-white">Destinations</h4>
+                      <div className="space-y-1">
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-300">JioTV:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white">1080P</span>
+                            <Badge className="bg-green-600 text-white">Healthy</Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-300">YouTube:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white">1080p</span>
+                            <Badge className="bg-green-600 text-white">Healthy</Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-300">Amagi:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white">1080P</span>
+                            <Badge className="bg-red-600 text-white">Unhealthy</Badge>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center text-xs">
+                          <span className="text-slate-300">YuppTV:</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-white">1080P</span>
+                            <Badge className="bg-gray-600 text-white">No Data</Badge>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
                     {/* Action Buttons */}
                     <div className="flex gap-3 justify-center">
                        <Button variant="outline" className="border-white text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue">
@@ -498,14 +533,25 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                              <p>No program information available</p>
                            </div>
                          )}
-                         <div className="flex justify-between">
-                           <span className="text-slate-300">Signal Strength:</span>
-                           <span className="text-white">{previewSource.status === 'online' ? 'Strong' : 'No Signal'}</span>
-                         </div>
-                         <div className="flex justify-between">
-                           <span className="text-slate-300">Audio Levels:</span>
-                           <span className="text-white">{previewSource.status === 'online' ? '-12dB' : 'Muted'}</span>
-                         </div>
+                          <div className="flex justify-between items-center">
+                            <span className="text-slate-300">Audio Levels:</span>
+                            <div className="flex items-center gap-2">
+                              {previewSource.status === 'online' ? (
+                                <div className="flex items-center gap-1">
+                                  <div className="w-16 h-2 bg-gray-600 rounded-full overflow-hidden">
+                                    <div className="h-full bg-green-500 rounded-full animate-pulse" style={{width: '70%'}}></div>
+                                  </div>
+                                  <span className="text-xs text-white">-12dB</span>
+                                </div>
+                              ) : (
+                                <span className="text-white">Muted</span>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-slate-300">Next Program Type:</span>
+                            <span className="text-white">VOD & Live Event</span>
+                          </div>
                          <div className="flex justify-between">
                            <span className="text-slate-300">Uptime:</span>
                            <span className="text-white">{previewSource.status === 'online' ? '24h 15m' : 'N/A'}</span>
