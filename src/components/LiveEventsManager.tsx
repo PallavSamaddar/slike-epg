@@ -413,19 +413,19 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       <h4 className="text-sm font-medium text-white">Destinations</h4>
                       <div className="space-y-1">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-white">JioTV: 1080P</span>
+                          <span className="text-black">JioTV: 1080P</span>
                           <Badge className="bg-green-600 text-white">Healthy</Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-white">YouTube: 1080p</span>
+                          <span className="text-black">YouTube: 1080p</span>
                           <Badge className="bg-green-600 text-white">Healthy</Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-white">Amagi: 1080P</span>
+                          <span className="text-black">Amagi: 1080P</span>
                           <Badge className="bg-red-600 text-white">Unhealthy</Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-white">YuppTV: 1080P</span>
+                          <span className="text-black">YuppTV: 1080P</span>
                           <Badge className="bg-gray-600 text-white">No Data</Badge>
                         </div>
                       </div>
