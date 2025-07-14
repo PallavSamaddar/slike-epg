@@ -413,32 +413,20 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       <h4 className="text-sm font-medium text-white">Destinations</h4>
                       <div className="space-y-1">
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-300">JioTV:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white">1080P</span>
-                            <Badge className="bg-green-600 text-white">Healthy</Badge>
-                          </div>
+                          <span className="text-white">JioTV: 1080P</span>
+                          <Badge className="bg-green-600 text-white">Healthy</Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-300">YouTube:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white">1080p</span>
-                            <Badge className="bg-green-600 text-white">Healthy</Badge>
-                          </div>
+                          <span className="text-white">YouTube: 1080p</span>
+                          <Badge className="bg-green-600 text-white">Healthy</Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-300">Amagi:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white">1080P</span>
-                            <Badge className="bg-red-600 text-white">Unhealthy</Badge>
-                          </div>
+                          <span className="text-white">Amagi: 1080P</span>
+                          <Badge className="bg-red-600 text-white">Unhealthy</Badge>
                         </div>
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-slate-300">YuppTV:</span>
-                          <div className="flex items-center gap-2">
-                            <span className="text-white">1080P</span>
-                            <Badge className="bg-gray-600 text-white">No Data</Badge>
-                          </div>
+                          <span className="text-white">YuppTV: 1080P</span>
+                          <Badge className="bg-gray-600 text-white">No Data</Badge>
                         </div>
                       </div>
                     </div>
