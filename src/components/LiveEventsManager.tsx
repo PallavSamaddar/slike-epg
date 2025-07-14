@@ -229,7 +229,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
 
       <div className="grid grid-cols-12 gap-6">
         {/* Live Sources Panel */}
-        <div className="col-span-8">
+        <div className="col-span-12">
           <Card className="bg-card-dark border-border mb-6">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -552,101 +552,6 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
             )}
           </DialogContent>
         </Dialog>
-
-        {/* Current Events Panel */}
-        <div className="col-span-4 space-y-6">
-          <Card className="bg-card-dark border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Radio className="h-5 w-5 text-pcr-live animate-pulse-live" />
-                Live Events
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {mockEvents.map((event) => (
-                  <div key={event.id} className="p-3 rounded-lg bg-control-surface border border-border">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-medium text-foreground text-sm">{event.title}</h3>
-                      <Badge className={getPriorityColor(event.priority)}>
-                        {event.priority}
-                      </Badge>
-                    </div>
-
-                    <div className="space-y-2 text-xs text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-3 w-3" />
-                        {event.startTime} - {event.endTime}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Tv className="h-3 w-3" />
-                        {mockSources.find(s => s.id === event.sourceId)?.name}
-                      </div>
-                      {event.viewerCount && (
-                        <div className="flex items-center gap-2">
-                          <span>👥</span>
-                          {event.viewerCount.toLocaleString()} viewers
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {event.tags.map((tag, idx) => (
-                        <span key={idx} className="text-xs px-2 py-1 bg-muted rounded text-muted-foreground">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex gap-2 mt-3">
-                      {event.status === 'live' && (
-                        <>
-                          <Button variant="control" size="sm" className="flex-1">
-                            Monitor
-                          </Button>
-                          <Button variant="ghost" size="sm" className="flex-1">
-                            End Early
-                          </Button>
-                        </>
-                      )}
-                      {event.status === 'upcoming' && (
-                        <Button variant="scheduled" size="sm" className="w-full">
-                          Start Now
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* System Alerts */}
-          <Card className="bg-card-dark border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-status-warning" />
-                System Alerts
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <Alert className="border-status-warning bg-status-warning/10">
-                  <AlertTriangle className="h-4 w-4" />
-                  <AlertDescription className="text-foreground text-sm">
-                    Studio 3 stream quality degraded to 75%
-                  </AlertDescription>
-                </Alert>
-                <Alert className="border-status-offline bg-status-offline/10">
-                  <XCircle className="h-4 w-4" />
-                  <AlertDescription className="text-foreground text-sm">
-                    Remote camera connection lost
-                  </AlertDescription>
-                </Alert>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
       </div>
     </div>
   );
