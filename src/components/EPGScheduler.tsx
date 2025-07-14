@@ -309,6 +309,7 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: {
 
 export const EPGScheduler = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedChannel, setSelectedChannel] = useState('Fast Channel 1');
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   
@@ -770,7 +771,19 @@ export const EPGScheduler = () => {
 
       {/* Fast Channel Section */}
       <div className="mb-6">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Fast Channel 1</h2>
+        <div className="flex items-center gap-2 mb-4">
+          <Select value={selectedChannel} onValueChange={setSelectedChannel}>
+            <SelectTrigger className="w-48 bg-card-dark border-border text-foreground">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-card-dark border-border">
+              <SelectItem value="Fast Channel 1" className="text-foreground hover:bg-accent">Fast Channel 1</SelectItem>
+              <SelectItem value="Fast Channel 2" className="text-foreground hover:bg-accent">Fast Channel 2</SelectItem>
+              <SelectItem value="Fast Channel 3" className="text-foreground hover:bg-accent">Fast Channel 3</SelectItem>
+              <SelectItem value="Fast Channel 4" className="text-foreground hover:bg-accent">Fast Channel 4</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <div className="grid grid-cols-10 gap-4">
           {/* On Air Section - 60% width */}
           <div className="col-span-6">
