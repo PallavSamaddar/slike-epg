@@ -1257,11 +1257,11 @@ export const EPGScheduler = () => {
                                 .filter(block => block.time === time)
                                 .map(block => (
                                    <div
-                                     key={block.id}
-                                     className={`
-                                       p-3 rounded border-2 cursor-pointer transition-all
-                                       ${getBlockColor(block.time, block.status)}
-                                     `}
+                                      key={block.id}
+                                      className={`
+                                        p-3 rounded border-2 cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10
+                                        ${getBlockColor(block.time, block.status)}
+                                      `}
                                     style={{ 
                                       height: `${Math.max(120, block.duration / 30 * 30)}px` 
                                     }}
