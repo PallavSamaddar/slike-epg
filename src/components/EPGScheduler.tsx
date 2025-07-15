@@ -661,7 +661,7 @@ export const EPGScheduler = () => {
             className="w-full"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Add {type} Block
+            {type} Block
           </Button>
         </DialogTrigger>
         <DialogContent className="bg-card-dark border-border">
@@ -1063,11 +1063,6 @@ export const EPGScheduler = () => {
                 </AccordionItem>
               </Accordion>
               
-              {/* Add Block CTAs */}
-              <div className="pt-3 border-t border-border space-y-2">
-                <AddBlockDialog type="VOD" />
-                <AddBlockDialog type="Event" />
-              </div>
             </CardContent>
           </Card>
 
@@ -1076,6 +1071,10 @@ export const EPGScheduler = () => {
               <CardTitle className="text-sm text-foreground">Schedule Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {/* Add Block CTAs moved from Add Content section */}
+              <AddBlockDialog type="VOD" />
+              <AddBlockDialog type="Event" />
+              
               <Dialog open={isAdConfigOpen} onOpenChange={setIsAdConfigOpen}>
                 <DialogTrigger asChild>
                   <Button variant="control" size="sm" className="w-full justify-start">
