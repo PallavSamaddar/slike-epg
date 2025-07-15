@@ -1068,7 +1068,7 @@ export const EPGScheduler = () => {
 
           <Card className="bg-card-dark border-border">
             <CardHeader>
-              <CardTitle className="text-sm text-foreground">Schedule Actions</CardTitle>
+              <CardTitle className="text-sm text-foreground">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               {/* Add Block CTAs moved from Add Content section */}
