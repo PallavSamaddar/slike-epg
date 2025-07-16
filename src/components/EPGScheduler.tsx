@@ -1233,11 +1233,10 @@ export const EPGScheduler = () => {
                     .map((time) => (
                       <div
                         key={`marker-${time}`}
-                        className="absolute left-0 z-30 flex items-center"
+                        className="absolute left-0 z-30"
                         style={{ top: `${(timeSlotPositions.get(time) || 0) + 30}px` }}
                       >
                         <div className="w-3 h-3 bg-yellow-500 rounded-full border-2 border-white shadow-sm"></div>
-                        <div className="ml-2 text-xs text-yellow-600 font-medium">Ad Break</div>
                       </div>
                     ))}
                   
