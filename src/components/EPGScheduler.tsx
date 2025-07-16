@@ -1227,6 +1227,20 @@ export const EPGScheduler = () => {
               </CardHeader>
               <CardContent>
                 <div className="relative" style={{ height: `${totalHeight}px` }}>
+                  {/* Yellow timeline markers for 30-minute intervals */}
+                  {timeSlots
+                    .filter(time => time.endsWith('30'))
+                    .map((time) => (
+                      <div
+                        key={`marker-${time}`}
+                        className="absolute left-0 z-30 flex items-center"
+                        style={{ top: `${(timeSlotPositions.get(time) || 0) + 30}px` }}
+                      >
+                        <div className="w-3 h-3 bg-yellow-500 rounded-full border-2 border-white shadow-sm"></div>
+                        <div className="ml-2 text-xs text-yellow-600 font-medium">Ad Break</div>
+                      </div>
+                    ))}
+                  
                   {/* Time Slots */}
                   <div className="relative">
                     {timeSlots.map((time, index) => (
@@ -1277,10 +1291,6 @@ export const EPGScheduler = () => {
                                  }
                                }}
                              >
-                              {/* Ad Break markers every 30 minutes */}
-                              {time.endsWith('30') && (
-                                <div className="absolute -left-2 top-2 w-2 h-2 bg-[#F68537] rounded-full"></div>
-                              )}
                               {/* Scheduled blocks */}
                               {scheduleBlocks
                                 .filter(block => block.time === time)
