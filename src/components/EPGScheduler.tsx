@@ -1256,16 +1256,16 @@ export const EPGScheduler = () => {
                                 .filter(block => block.time === time)
                                 .map(block => (
                                    <div
-                                      key={block.id}
-                                      className={`
-                                        p-3 rounded border-2 cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10
-                                        ${getBlockColor(block.time, block.status)}
-                                      `}
-                                    style={{ 
-                                      height: `${Math.max(120, block.duration / 30 * 30)}px` 
-                                    }}
-                                    data-block-id={block.id}
-                                  >
+                                       key={block.id}
+                                       className={`
+                                         p-3 rounded border-2 cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10
+                                         ${getBlockColor(block.time, block.status)}
+                                       `}
+                                     style={{ 
+                                       minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` 
+                                     }}
+                                     data-block-id={block.id}
+                                   >
                                      <div className="flex items-center justify-between mb-2">
                                        <div className="flex items-center gap-2 flex-1 min-w-0">
                                         {block.isEditing ? (
