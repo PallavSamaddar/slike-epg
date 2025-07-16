@@ -452,6 +452,32 @@ export const EPGScheduler = () => {
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   });
 
+  // Calculate cumulative Y positions for dynamic repositioning
+  const calculateTimeSlotPositions = () => {
+    const positions = new Map<string, number>();
+    let currentY = 0;
+    
+    timeSlots.forEach((time) => {
+      positions.set(time, currentY);
+      
+      // Base height for time slot row (includes padding and border)
+      const baseRowHeight = 60;
+      
+      // Additional height from schedule blocks
+      const blockForTime = scheduleBlocks.find(block => block.time === time);
+      const blockHeight = blockForTime 
+        ? Math.max(120, 80 + (blockForTime.videos.length * 32)) + 16 // +16 for padding
+        : baseRowHeight;
+      
+      currentY += Math.max(baseRowHeight, blockHeight) + 4; // 4px gap between rows
+    });
+    
+    return positions;
+  };
+
+  const timeSlotPositions = calculateTimeSlotPositions();
+  const totalHeight = Math.max(...Array.from(timeSlotPositions.values())) + 200; // Extra space for last row
+
   const getBlockColor = (time: string, status: string) => {
     // Midnight Movies (00:00) and Night Talk Show (01:00) get light gray
     if (time === '00:00' || time === '01:00') {
@@ -1200,11 +1226,15 @@ export const EPGScheduler = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="relative">
+                <div className="relative" style={{ height: `${totalHeight}px` }}>
                   {/* Time Slots */}
-                  <div className="grid grid-cols-1 gap-1">
+                  <div className="relative">
                     {timeSlots.map((time, index) => (
-                      <div key={time} className="relative">
+                      <div 
+                        key={time} 
+                        className="absolute w-full"
+                        style={{ top: `${timeSlotPositions.get(time) || 0}px` }}
+                      >
                         <div className="flex items-center gap-4 py-2 border-b border-border/30">
                           <div className="w-16 text-xs text-muted-foreground font-mono">
                             {time}
