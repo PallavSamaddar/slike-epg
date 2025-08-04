@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { AspectRatio } from "@/components/ui/aspect-ratio"
 import { EPGItem } from '../types';
 
 const AddBlockDialog = ({ type, onAdd }: { type: 'VOD' | 'Event', onAdd: (item: EPGItem) => void }) => {
@@ -72,34 +71,25 @@ const AddBlockDialog = ({ type, onAdd }: { type: 'VOD' | 'Event', onAdd: (item: 
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <Label htmlFor="duration">Duration (in mins)</Label>
-                            <Input id="duration" type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="bg-control-surface border-border" />
+                            <Label htmlFor="duration">Duration (minutes)</Label>
+                            <Input id="duration" type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="bg-control-surface border-border" />
                         </div>
                         <div>
-                            <Label htmlFor="geo-zone">Geo Zone</Label>
-                            <Input id="geo-zone" value={geoZone} onChange={(e) => setGeoZone(e.target.value)} className="bg-control-surface border-border" />
+                            <Label htmlFor="geoZone">Geo Zone</Label>
+                            <Select value={geoZone} onValueChange={setGeoZone}>
+                                <SelectTrigger className="bg-control-surface border-border">
+                                    <SelectValue placeholder="Select geo zone" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Global">Global</SelectItem>
+                                    <SelectItem value="US/EU">US/EU</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    </div>
-                    <div>
-                        <Label>Program Thumbnail</Label>
-                        <div className="mt-2">
-                            <AspectRatio ratio={16 / 9} className="bg-muted">
-                                {image ? (
-                                    <img src={image} alt="Program thumbnail" className="rounded-md object-cover w-full h-full" />
-                                ) : (
-                                    <div className="flex items-center justify-center h-full border-2 border-dashed border-border rounded-md">
-                                        <div className="text-center">
-                                            <p className="text-sm text-muted-foreground">Upload Thumbnail</p>
-                                        </div>
-                                    </div>
-                                )}
-                            </AspectRatio>
-                        </div>
-                        <Input type="file" ref={fileInputRef} onChange={handleImageChange} className="mt-2" />
                     </div>
                     <div>
                         <Label htmlFor="description">Description</Label>
-                        <Input id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="bg-control-surface border-border" />
+                        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="bg-control-surface border-border" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -248,7 +238,7 @@ export const EPGDashboard = () => {
       <div className="grid grid-cols-12 gap-6">
         {/* Main Content */}
         <div className="col-span-8 space-y-6">
-          <Card className="bg-card-dark border-border">
+        <Card className="bg-card-dark border-border">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle>Now Playing</CardTitle>
@@ -261,36 +251,33 @@ export const EPGDashboard = () => {
             </CardHeader>
             <CardContent>
               {nowPlaying ? (
-                <div className="flex gap-6">
-                  <div className="w-1/3">
-                    <AspectRatio ratio={16/9} className="bg-muted">
-                      <img src={nowPlaying.imageUrl} alt={nowPlaying.title} className="rounded-md object-cover w-full h-full" />
-                    </AspectRatio>
-                  </div>
-                  <div className="w-2/3">
-                    <h3 className="font-bold text-lg">{nowPlaying.title}</h3>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                <div className="flex items-center gap-4">
+                  <img src={nowPlaying.imageUrl} alt={nowPlaying.title} className="w-24 h-24 rounded-lg object-cover" />
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-bold text-foreground">{nowPlaying.title}</h2>
+                    <p className="text-muted-foreground">{nowPlaying.description}</p>
+                    <div className="flex items-center gap-2 pt-2">
                       <Badge className={nowPlaying.type === 'PCR' ? 'bg-pcr-live' : 'bg-mcr-playlist'}>{nowPlaying.type}</Badge>
                       <Badge className={getStatusColor(nowPlaying.status)}>{nowPlaying.status}</Badge>
                       <Badge variant="outline" className="border-border text-muted-foreground">{nowPlaying.geoZone}</Badge>
                       <Badge variant="secondary">{nowPlaying.genre}</Badge>
                     </div>
-                  </div>
-                </div>
+            </div>
+              </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
                   <WifiOff className="h-12 w-12" />
                   <p className="mt-4">No program is currently live.</p>
-                </div>
+            </div>
               )}
-            </CardContent>
-          </Card>
+          </CardContent>
+        </Card>
 
-            <Card className="bg-card-dark border-border">
-                <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                        <span>Today's Schedule</span>
-                        <div className="flex gap-2">
+          <Card className="bg-card-dark border-border">
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <span>Today's Schedule</span>
+                <div className="flex gap-2">
                             <AddBlockDialog type="VOD" onAdd={(newItem) => setMockEPGItems(prev => [...prev, newItem])} />
                             <AddBlockDialog type="Event" onAdd={(newItem) => setMockEPGItems(prev => [...prev, newItem])} />
                             <Button variant="control" size="sm" onClick={() => setIsRepeatModalOpen(true)}>
@@ -300,41 +287,39 @@ export const EPGDashboard = () => {
                             <Button variant="control" size="sm" onClick={() => setIsManageAdsModalOpen(true)}>
                                 <Plus className="h-4 w-4 mr-2" />
                                 Manage Ads
-                            </Button>
-                            <Button variant="broadcast" size="sm">
-                                Add Program
-                            </Button>
-                        </div>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {mockEPGItems.map((item) => (
+                  </Button>
+                  <Button variant="broadcast" size="sm">
+                    Add Program
+                  </Button>
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {mockEPGItems.map((item) => (
                             <div key={item.id} className="flex items-center p-3 rounded-lg bg-control-surface border border-border">
                                 <div className="w-24">
                                     <span className="font-mono text-sm text-muted-foreground">{formatTime(item.time, item.duration)}</span>
-                                </div>
+                        </div>
                                 <div className="flex-grow flex items-center gap-4">
-                                    <AspectRatio ratio={16/9} className="bg-muted">
-                                        <img src={item.imageUrl} alt={item.title} className="rounded-md object-cover w-full h-full" />
-                                    </AspectRatio>
-                                    <div>
-                                        <h3 className="font-semibold text-foreground">{item.title}</h3>
-                                        <div className="flex items-center gap-2 mt-1">
+                                    <img src={item.imageUrl} alt={item.title} className="w-12 h-12 rounded-sm object-cover" />
+                        <div>
+                          <h3 className="font-semibold text-foreground">{item.title}</h3>
+                          <div className="flex items-center gap-2 mt-1">
                                             <Badge className={item.type === 'PCR' ? 'bg-pcr-live' : 'bg-mcr-playlist'}>{item.type}</Badge>
                                             <span className="text-xs text-muted-foreground">{item.geoZone}</span>
                                             {item.genre && <Badge variant="secondary">{item.genre}</Badge>}
-                                        </div>
-                                    </div>
-                                </div>
+                          </div>
+                        </div>
+                      </div>
                                 <div className="w-32 text-right">
                                     <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </CardContent>
-            </Card>
+                      </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sidebar */}

@@ -510,25 +510,25 @@ export const EPGPreview = () => {
         );
     };
 
-    const formatTime = (time: string) => {
-        const [hours, minutes] = time.split(':');
+  const formatTime = (time: string) => {
+    const [hours, minutes] = time.split(':');
         return new Date(`1970-01-01T${hours}:${minutes}:00`).toLocaleTimeString([], {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: true
-        });
-    };
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
 
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'live': return 'bg-pcr-live text-white';
-            case 'scheduled': return 'bg-status-scheduled text-black';
-            case 'completed': return 'bg-muted text-muted-foreground';
-            default: return 'bg-muted text-muted-foreground';
-        }
-    };
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'live': return 'bg-pcr-live text-white';
+      case 'scheduled': return 'bg-status-scheduled text-black';
+      case 'completed': return 'bg-muted text-muted-foreground';
+      default: return 'bg-muted text-muted-foreground';
+    }
+  };
 
-    const getTypeColor = (type: string) => {
+  const getTypeColor = (type: string) => {
         return type === 'Event' ? 'bg-pcr-live text-white' : 'bg-mcr-playlist text-white';
     };
 
@@ -664,20 +664,20 @@ export const EPGPreview = () => {
                 </table>
             </div>
         );
-    };
+  };
 
-    return (
-        <div className="min-h-screen bg-background text-foreground p-6">
-            <div className="flex items-center justify-between mb-6">
-                <div>
+  return (
+    <div className="min-h-screen bg-background text-foreground p-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
                     <h1 className="text-2xl font-bold text-foreground">TOI Global EPG Preview</h1>
-                    <p className="text-muted-foreground">Preview your EPG and export in multiple formats</p>
-                </div>
+          <p className="text-muted-foreground">Preview your EPG and export in multiple formats</p>
+        </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="control">
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Refresh Data
-                    </Button>
+          <Button variant="control">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Data
+          </Button>
                     <AddBlockDialog type="VOD" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
                     <AddBlockDialog type="Event" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
                     <Button variant="control" size="sm" onClick={() => setIsRepeatModalOpen(true)}>
@@ -687,37 +687,37 @@ export const EPGPreview = () => {
                     <Button variant="control" size="sm" onClick={() => setIsManageAdsModalOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Manage Ads
-                    </Button>
-                </div>
-            </div>
+          </Button>
+        </div>
+      </div>
 
             <div className="epg-layout-row">
                 <div className="todays-programming-container">
-                    <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as any)}>
+          <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as any)}>
                         <TabsList className="grid w-full grid-cols-3 bg-control-surface sticky top-0 bg-background z-10">
                             <TabsTrigger value="viewer" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
-                                <Eye className="h-4 w-4 mr-2" />
+                <Eye className="h-4 w-4 mr-2" />
                                 Today’s EPG
-                            </TabsTrigger>
+              </TabsTrigger>
                             <TabsTrigger value="affiliate" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
-                                <FileText className="h-4 w-4 mr-2" />
+                <FileText className="h-4 w-4 mr-2" />
                                 Weekly EPG
-                            </TabsTrigger>
+              </TabsTrigger>
                             <TabsTrigger value="api" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
-                                <Code className="h-4 w-4 mr-2" />
+                <Code className="h-4 w-4 mr-2" />
                                 Monthly EPG
-                            </TabsTrigger>
-                        </TabsList>
+              </TabsTrigger>
+            </TabsList>
 
-                        <TabsContent value="viewer" className="mt-6">
-                            <Card className="bg-card-dark border-border">
-                                <CardContent>
-                                    <div className="bg-control-surface rounded-lg p-4">
-                                        <div className="text-center mb-4 pb-4 border-b border-border">
+            <TabsContent value="viewer" className="mt-6">
+              <Card className="bg-card-dark border-border">
+                <CardContent>
+                  <div className="bg-control-surface rounded-lg p-4">
+                    <div className="text-center mb-4 pb-4 border-b border-border">
                                             <h2 className="text-xl font-bold text-broadcast-blue">TOI Global</h2>
-                                            <p className="text-sm text-muted-foreground">Today's Programming</p>
-                                        </div>
-                                        <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">Today's Programming</p>
+                    </div>
+                    <div className="space-y-3">
                                             {mockEPGData.filter(i => i.status === 'completed').map((item) => (
                                                 <ProgramItem key={item.id} item={item} isDraggable={false} />
                                             ))}
@@ -739,14 +739,14 @@ export const EPGPreview = () => {
                                                     ))}
                                                 </SortableContext>
                                             </DndContext>
-                                        </div>
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                        <TabsContent value="affiliate" className="mt-6">
-                            <Card className="bg-card-dark border-border">
+            <TabsContent value="affiliate" className="mt-6">
+              <Card className="bg-card-dark border-border">
                                 <CardContent className="p-6">
                                     <WeeklyView
                                         programs={mockEPGData}
@@ -762,12 +762,12 @@ export const EPGPreview = () => {
                                         }}
                                         onProgramEdit={(program) => setEditingProgram(program)}
                                     />
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-                        <TabsContent value="api" className="mt-6">
-                            <Card className="bg-card-dark border-border">
+            <TabsContent value="api" className="mt-6">
+              <Card className="bg-card-dark border-border">
                                 <CardContent className="p-6">
                                     <MonthlyView programs={mockEPGData} onDateClick={(date) => {
                                         setPreviewMode('viewer');
@@ -775,68 +775,68 @@ export const EPGPreview = () => {
                                         // For now, we just switch the view
                                         console.log(`Switched to Today's EPG for date: ${date}`);
                                     }} />
-                                </CardContent>
-                            </Card>
-                        </TabsContent>
-                    </Tabs>
-                </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
 
                 <div className="distribution-card space-y-6">
-                    <Card className="bg-card-dark border-border">
-                        <CardHeader>
-                            <CardTitle>Export Settings</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div>
-                                <Label htmlFor="format">Output Format</Label>
-                                <Select value={selectedFormat} onValueChange={setSelectedFormat}>
-                                    <SelectTrigger className="bg-control-surface border-border text-foreground">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="xmltv">XMLTV</SelectItem>
-                                        <SelectItem value="json">JSON</SelectItem>
-                                        <SelectItem value="csv">CSV</SelectItem>
-                                        <SelectItem value="api">API Endpoint</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+          <Card className="bg-card-dark border-border">
+            <CardHeader>
+              <CardTitle>Export Settings</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="format">Output Format</Label>
+                <Select value={selectedFormat} onValueChange={setSelectedFormat}>
+                  <SelectTrigger className="bg-control-surface border-border text-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="xmltv">XMLTV</SelectItem>
+                    <SelectItem value="json">JSON</SelectItem>
+                    <SelectItem value="csv">CSV</SelectItem>
+                    <SelectItem value="api">API Endpoint</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                            <div>
+              <div>
                                 <Label htmlFor="distributor">Distributor</Label>
                                 <Select value={distributor} onValueChange={setDistributor}>
-                                    <SelectTrigger className="bg-control-surface border-border text-foreground">
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
+                  <SelectTrigger className="bg-control-surface border-border text-foreground">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
                                         <SelectItem value="Gracenote">Gracenote</SelectItem>
                                         <SelectItem value="Amagi">Amagi</SelectItem>
                                         <SelectItem value="Samsung">Samsung</SelectItem>
                                         <SelectItem value="Xiaomi">Xiaomi</SelectItem>
                                         <SelectItem value="LG">LG</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                            <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-2">
                                 <Switch id="metadata" checked={includeMetadata} onCheckedChange={setIncludeMetadata} />
-                                <Label htmlFor="metadata">Include Metadata</Label>
-                            </div>
+                <Label htmlFor="metadata">Include Metadata</Label>
+              </div>
 
-                            <div className="space-y-2">
-                                <Button variant="broadcast" className="w-full">
-                                    <Download className="h-4 w-4 mr-2" />
-                                    Export EPG Data
-                                </Button>
-                                <Button variant="control" className="w-full">
-                                    <Database className="h-4 w-4 mr-2" />
-                                    Generate API URL
-                                </Button>
-                            </div>
-                        </CardContent>
-                    </Card>
+              <div className="space-y-2">
+                <Button variant="broadcast" className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  Export EPG Data
+                </Button>
+                <Button variant="control" className="w-full">
+                  <Database className="h-4 w-4 mr-2" />
+                  Generate API URL
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
 
-                    <Card className="bg-card-dark border-border">
+          <Card className="bg-card-dark border-border">
                         <Tabs defaultValue="json" className="w-full">
                             <TabsList className="grid w-full grid-cols-3">
                                 <TabsTrigger value="json">JSON</TabsTrigger>
@@ -871,11 +871,11 @@ export const EPGPreview = () => {
                                         }}>
                                             <ClipboardCopy className="h-4 w-4" />
                                         </Button>
-                                    </CardHeader>
-                                    <CardContent>
+            </CardHeader>
+            <CardContent>
                                         <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 max-h-60 overflow-auto">
                                             {generatePreview('xml')}
-                                        </pre>
+                </pre>
                                     </CardContent>
                                 </Card>
                             </TabsContent>
@@ -889,32 +889,32 @@ export const EPGPreview = () => {
                                     </CardHeader>
                                     <CardContent>
                                         {generateXlsPreview()}
-                                    </CardContent>
-                                </Card>
+            </CardContent>
+          </Card>
                             </TabsContent>
                         </Tabs>
                     </Card>
-                    <Card className="bg-card-dark border-border">
-                        <CardHeader>
-                            <CardTitle>Distribution</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                            <Button variant="control" size="sm" className="w-full justify-start">
-                                <FileText className="h-4 w-4 mr-2" />
-                                Send to CDN
-                            </Button>
-                            <Button variant="control" size="sm" className="w-full justify-start">
-                                <Database className="h-4 w-4 mr-2" />
-                                Update OTT Platform
-                            </Button>
-                            <Button variant="control" size="sm" className="w-full justify-start">
-                                <Code className="h-4 w-4 mr-2" />
-                                Webhook Notify
-                            </Button>
-                        </CardContent>
-                    </Card>
-                </div>
-            </div>
+          <Card className="bg-card-dark border-border">
+            <CardHeader>
+              <CardTitle>Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <FileText className="h-4 w-4 mr-2" />
+                Send to CDN
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <Database className="h-4 w-4 mr-2" />
+                Update OTT Platform
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <Code className="h-4 w-4 mr-2" />
+                Webhook Notify
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
             {editingProgram && (
                 <Dialog open={!!editingProgram} onOpenChange={() => setEditingProgram(null)}>
                     <AddBlockDialog 
@@ -937,6 +937,6 @@ export const EPGPreview = () => {
                 onSave={handleRepeatSave}
             />
             <Toaster />
-        </div>
-    );
+    </div>
+  );
 };

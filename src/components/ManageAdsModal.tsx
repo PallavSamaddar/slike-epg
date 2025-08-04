@@ -159,4 +159,4 @@ export const ManageAdsModal = ({ isOpen, onClose, onSave }: ManageAdsModalProps)
       </DialogContent>
     </Dialog>
   );
-}; 
+};

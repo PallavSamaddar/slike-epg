@@ -14,11 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ManageAdsModal } from './ManageAdsModal';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { RepeatScheduleModal } from './RepeatScheduleModal';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { EPGItem } from '../types';
 
 interface Video {
   id: string;
@@ -26,37 +21,32 @@ interface Video {
   duration: number;
 }
 
-interface ScheduleBlock extends EPGItem {
-  videos: { id: string; name: string; duration: number }[];
-}
-
-interface AdSlot {
+interface ScheduleBlock {
   id: string;
   time: string;
-  campaign: string;
-  duration: string;
+  duration: number;
+  title: string;
+  type: 'VOD' | 'Event';
+  status: 'scheduled' | 'live' | 'completed';
+  geoZone: string;
+  tags: string[];
+  description?: string;
+  videos: Video[];
+  isEditing?: boolean;
 }
 
-const adCampaigns = [
-    { value: 'summer_blast', label: 'Summer Blast (0:30m)', adVideos: [{ id: 'ad1', name: 'Summer Ad 1', duration: 15 }, { id: 'ad2', name: 'Summer Ad 2', duration: 30 }] },
-    { value: 'monsoon_magic', label: 'Monsoon Magic (1:00m)', adVideos: [{ id: 'ad3', name: 'Monsoon Ad 1', duration: 15 }, { id: 'ad4', name: 'Monsoon Ad 2', duration: 30 }, { id: 'ad5', name: 'Monsoon Ad 3', duration: 45 }] },
-    { value: 'festive_offer', label: 'Festive Offer (1:15m)', adVideos: [{ id: 'ad6', name: 'Festive Ad 1', duration: 15 }, { id: 'ad7', name: 'Festive Ad 2', duration: 30 }, { id: 'ad8', name: 'Festive Ad 3', duration: 45 }] },
-];
-
 // Video Preview Dialog Component
-const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDelete, onSave }: {
+const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDelete }: {
   video: Video;
   isOpen: boolean;
   onClose: () => void;
   isEditMode?: boolean;
   onDelete?: () => void;
-  onSave?: (newIn: number, newOut: number) => void;
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [inMarker, setInMarker] = useState(0);
   const [outMarker, setOutMarker] = useState(video.duration * 60); // Convert minutes to seconds
-  const [error, setError] = useState('');
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const totalDuration = video.duration * 60; // Convert minutes to seconds
@@ -81,18 +71,6 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
 
   const handleMarkOut = () => {
     setOutMarker(currentTime);
-  };
-
-  const handleSave = () => {
-    if (inMarker >= outMarker) {
-      setError('In time must be less than Out time');
-      return;
-    }
-    setError('');
-    if (onSave) {
-      onSave(inMarker, outMarker);
-    }
-    onClose();
   };
 
   const handleSkipBack = () => {
@@ -217,15 +195,8 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
                 </Button>
               </div>
             )}
-            {error && <p className="text-red-500 text-sm text-center">{error}</p>}
           </div>
         </div>
-        {isEditMode && (
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" onClick={onClose}>CANCEL</Button>
-            <Button onClick={handleSave}>SAVE</Button>
-          </div>
-        )}
       </DialogContent>
     </Dialog>
   );
@@ -331,150 +302,9 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: {
         onClose={() => setShowEdit(false)}
         isEditMode={true}
         onDelete={handleDelete}
-        onSave={(newIn, newOut) => {
-          console.log(`Video ${video.id} in block ${blockId} saved with new in/out markers:`, newIn, newOut);
-          // Here you would typically update the state of the video object
-        }}
       />
     </>
   );
-};
-
-const AddBlockDialog = ({ type, onAdd }: { type: 'VOD' | 'Event', onAdd: (item: ScheduleBlock) => void }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [title, setTitle] = useState('');
-    const [duration, setDuration] = useState(60);
-    const [geoZone, setGeoZone] = useState('Global');
-    const [description, setDescription] = useState('');
-    const [status, setStatus] = useState<'live' | 'scheduled' | 'completed'>('scheduled');
-    const [genre, setGenre] = useState('');
-    const [image, setImage] = useState<string | null>('/toi_global_poster.png');
-    const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files && e.target.files[0]) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setImage(event.target?.result as string);
-            };
-            reader.readAsDataURL(e.target.files[0]);
-        }
-    };
-
-    const handleAdd = () => {
-        const newItem: ScheduleBlock = {
-            id: new Date().toISOString(),
-            time: '00:00',
-            title,
-            type: type,
-            duration,
-            geoZone,
-            description,
-            status,
-            genre,
-            isEditing: false,
-            imageUrl: image || '/toi_global_poster.png',
-            videos: []
-        };
-        onAdd(newItem);
-        setIsOpen(false);
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-            <DialogTrigger asChild>
-                <Button variant={type === 'Event' ? 'live' : 'playlist'} size="sm">
-                    <Plus className="h-4 w-4 mr-2" />
-                    {type === 'VOD' ? 'Recorded Program' : 'Live Program'}
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="bg-card-dark border-border">
-                <DialogHeader>
-                    <DialogTitle>Schedule {type === 'VOD' ? 'Recorded' : 'Live'} Program</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                    <div>
-                        <Label htmlFor="title">Title</Label>
-                        <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} className="bg-control-surface border-border" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="duration">Duration (minutes)</Label>
-                            <Input id="duration" type="number" value={duration} onChange={(e) => setDuration(Number(e.target.value))} className="bg-control-surface border-border" />
-                        </div>
-                        <div>
-                            <Label htmlFor="geoZone">Geo Zone</Label>
-                            <Select value={geoZone} onValueChange={setGeoZone}>
-                                <SelectTrigger className="bg-control-surface border-border">
-                                    <SelectValue placeholder="Select geo zone" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Global">Global</SelectItem>
-                                    <SelectItem value="US/EU">US/EU</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} className="bg-control-surface border-border" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="status">Status</Label>
-                            <Select value={status} onValueChange={(value) => setStatus(value as any)}>
-                                <SelectTrigger className="bg-control-surface border-border">
-                                    <SelectValue placeholder="Select status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="live">Live</SelectItem>
-                                    <SelectItem value="scheduled">Scheduled</SelectItem>
-                                    <SelectItem value="completed">Completed</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div>
-                            <Label htmlFor="genre">Genre</Label>
-                            <Select value={genre} onValueChange={setGenre}>
-                                <SelectTrigger className="bg-control-surface border-border">
-                                    <SelectValue placeholder="Select genre" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="news">News</SelectItem>
-                                    <SelectItem value="sports">Sports</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </div>
-                    <div>
-                        <Label>Program Image</Label>
-                        <div className="flex items-center gap-4 mt-2">
-                            <img src={image || '/toi_global_poster.png'} alt="Program" className="w-20 h-20 object-cover rounded" />
-                            <div className="flex flex-col gap-2">
-                                <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                    Upload Image
-                                </Button>
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleImageChange}
-                                    className="hidden"
-                                    accept="image/*"
-                                />
-                                <Button type="button" variant="ghost" size="sm" onClick={() => setImage('/toi_global_poster.png')}>
-                                    Reset to default
-                                </Button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div className="flex justify-end gap-2">
-                    <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                    <Button variant="broadcast" onClick={handleAdd}>Add to Schedule</Button>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
 };
 
 export const EPGScheduler = () => {
@@ -482,144 +312,133 @@ export const EPGScheduler = () => {
   const [selectedChannel, setSelectedChannel] = useState('Fast Channel 1');
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
-  const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
-  const [adSlots, setAdSlots] = useState<Record<string, AdSlot[]>>({});
-  const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
-
-  const initialSchedule: ScheduleBlock[] = [
-      {
-        id: '0',
-        time: '00:00',
-        duration: 60,
-        title: 'Midnight Movies',
-        type: 'VOD',
-        status: 'completed',
-        geoZone: 'Global',
-        genre: 'Movies',
-        description: 'Late night movie programming',
-        videos: [
-          { id: 'v1', name: 'Classic Horror Movie', duration: 90 },
-          { id: 'v2', name: 'Sci-Fi Thriller', duration: 105 }
-        ]
-      },
-      {
-        id: '1',
-        time: '01:00',
-        duration: 60,
-        title: 'Night Talk Show',
-        type: 'Event',
-        status: 'completed',
-        geoZone: 'US/EU',
-        genre: 'Talk',
-        description: 'Late night talk show',
-        videos: [
-          { id: 'v3', name: 'Celebrity Interview', duration: 25 },
-          { id: 'v4', name: 'Comedy Segment', duration: 15 }
-        ]
-      },
-      {
-        id: '2',
-        time: '02:00',
-        duration: 60,
-        title: 'Morning News Live',
-        type: 'Event',
-        status: 'live',
-        geoZone: 'Global',
-        genre: 'News',
-        description: 'Live morning news broadcast',
-        videos: [
-          { id: 'v5', name: 'Breaking News Report', duration: 20 },
-          { id: 'v6', name: 'Weather Update', duration: 10 },
-          { id: 'v7', name: 'Sports Highlights', duration: 15 }
-        ]
-      },
-      {
-        id: '3',
-        time: '03:00',
-        duration: 60,
-        title: 'Talk Show Today',
-        type: 'Event',
-        status: 'scheduled',
-        geoZone: 'Global',
-        genre: 'Talk',
-        description: 'Morning talk show',
-        videos: [
-          { id: 'v8', name: 'Guest Interview 1', duration: 20 },
-          { id: 'v9', name: 'Musical Performance', duration: 15 },
-          { id: 'v10', name: 'Guest Interview 2', duration: 20 }
-        ]
-      },
-      {
-        id: '4',
-        time: '04:00',
-        duration: 60,
-        title: 'Coffee Break Show',
-        type: 'VOD',
-        status: 'scheduled',
-        geoZone: 'US/EU',
-        genre: 'Lifestyle',
-        description: 'Light entertainment programming',
-        videos: [
-          { id: 'v11', name: 'Cooking Segment', duration: 25 },
-          { id: 'v12', name: 'Home Tips', duration: 20 }
-        ]
-      },
-      {
-        id: '5',
-        time: '05:00',
-        duration: 60,
-        title: 'Game Time',
-        type: 'VOD',
-        status: 'scheduled',
-        geoZone: 'Global',
-        genre: 'Games',
-        description: 'Interactive game show',
-        videos: [
-          { id: 'v13', name: 'Trivia Round', duration: 30 },
-          { id: 'v14', name: 'Prize Challenge', duration: 25 }
-        ]
-      },
-      {
-        id: '6',
-        time: '06:00',
-        duration: 60,
-        title: 'Morning Movies',
-        type: 'VOD',
-        status: 'scheduled',
-        geoZone: 'US/EU',
-        genre: 'Movies',
-        description: 'Classic movie collection',
-        videos: [
-          { id: 'v15', name: 'Family Adventure', duration: 95 },
-          { id: 'v16', name: 'Comedy Classic', duration: 85 }
-        ]
-      },
-      {
-        id: '7',
-        time: '07:00',
-        duration: 60,
-        title: 'Breakfast Special',
-        type: 'Event',
-        status: 'scheduled',
-        geoZone: 'Global',
-        genre: 'Special',
-        description: 'Special morning programming',
-        videos: [
-          { id: 'v17', name: 'Morning Yoga', duration: 20 },
-          { id: 'v18', name: 'Healthy Recipes', duration: 25 }
-        ]
-      }
-  ];
   
-  const [scheduleBlocks, setScheduleBlocks] = useState<Record<string, ScheduleBlock[]>>({
-      [new Date().toISOString().split('T')[0]]: initialSchedule
-  });
-
-  const currentSchedule = scheduleBlocks[selectedDate] || [];
-  const currentAdSlots = adSlots[selectedDate] || [];
-
   const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
-  
+  const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
+    {
+      id: '0',
+      time: '00:00',
+      duration: 60,
+      title: 'Midnight Movies',
+      type: 'VOD',
+      status: 'completed',
+      geoZone: 'Global',
+      tags: ['Movies', 'Late Night'],
+      description: 'Late night movie programming',
+      videos: [
+        { id: 'v1', name: 'Classic Horror Movie', duration: 90 },
+        { id: 'v2', name: 'Sci-Fi Thriller', duration: 105 }
+      ]
+    },
+    {
+      id: '1',
+      time: '01:00',
+      duration: 60,
+      title: 'Night Talk Show',
+      type: 'Event',
+      status: 'completed',
+      geoZone: 'US/EU',
+      tags: ['Talk', 'Late Night'],
+      description: 'Late night talk show',
+      videos: [
+        { id: 'v3', name: 'Celebrity Interview', duration: 25 },
+        { id: 'v4', name: 'Comedy Segment', duration: 15 }
+      ]
+    },
+    {
+      id: '2',
+      time: '02:00',
+      duration: 60,
+      title: 'Morning News Live',
+      type: 'Event',
+      status: 'live',
+      geoZone: 'Global',
+      tags: ['Live', 'News'],
+      description: 'Live morning news broadcast',
+      videos: [
+        { id: 'v5', name: 'Breaking News Report', duration: 20 },
+        { id: 'v6', name: 'Weather Update', duration: 10 },
+        { id: 'v7', name: 'Sports Highlights', duration: 15 }
+      ]
+    },
+    {
+      id: '3',
+      time: '03:00',
+      duration: 60,
+      title: 'Talk Show Today',
+      type: 'Event',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['Talk', 'Entertainment'],
+      description: 'Morning talk show',
+      videos: [
+        { id: 'v8', name: 'Guest Interview 1', duration: 20 },
+        { id: 'v9', name: 'Musical Performance', duration: 15 },
+        { id: 'v10', name: 'Guest Interview 2', duration: 20 }
+      ]
+    },
+    {
+      id: '4',
+      time: '04:00',
+      duration: 60,
+      title: 'Coffee Break Show',
+      type: 'VOD',
+      status: 'scheduled',
+      geoZone: 'US/EU',
+      tags: ['Lifestyle', 'Entertainment'],
+      description: 'Light entertainment programming',
+      videos: [
+        { id: 'v11', name: 'Cooking Segment', duration: 25 },
+        { id: 'v12', name: 'Home Tips', duration: 20 }
+      ]
+    },
+    {
+      id: '5',
+      time: '05:00',
+      duration: 60,
+      title: 'Game Time',
+      type: 'VOD',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['Games', 'Fun'],
+      description: 'Interactive game show',
+      videos: [
+        { id: 'v13', name: 'Trivia Round', duration: 30 },
+        { id: 'v14', name: 'Prize Challenge', duration: 25 }
+      ]
+    },
+    {
+      id: '6',
+      time: '06:00',
+      duration: 60,
+      title: 'Morning Movies',
+      type: 'VOD',
+      status: 'scheduled',
+      geoZone: 'US/EU',
+      tags: ['Movies', 'Classic'],
+      description: 'Classic movie collection',
+      videos: [
+        { id: 'v15', name: 'Family Adventure', duration: 95 },
+        { id: 'v16', name: 'Comedy Classic', duration: 85 }
+      ]
+    },
+    {
+      id: '7',
+      time: '07:00',
+      duration: 60,
+      title: 'Breakfast Special',
+      type: 'Event',
+      status: 'scheduled',
+      geoZone: 'Global',
+      tags: ['Special', 'Morning'],
+      description: 'Special morning programming',
+      videos: [
+        { id: 'v17', name: 'Morning Yoga', duration: 20 },
+        { id: 'v18', name: 'Healthy Recipes', duration: 25 }
+      ]
+    }
+  ]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -642,7 +461,7 @@ export const EPGScheduler = () => {
       positions.set(time, currentY);
       
       const isHour = time.endsWith(':00');
-      const blockForTime = currentSchedule.find(block => block.time === time);
+      const blockForTime = scheduleBlocks.find(block => block.time === time);
       const hasBlock = !!blockForTime;
 
       if (isHour || hasBlock) {
@@ -690,22 +509,19 @@ export const EPGScheduler = () => {
       
       if (sourceBlockId && targetBlockId && video) {
         setScheduleBlocks(prev => {
-          const newBlocks = { ...prev };
-          const sourceSchedule = [...(newBlocks[sourceBlockId] || [])];
-          const targetSchedule = [...(newBlocks[targetBlockId] || [])];
+          const newBlocks = [...prev];
           
-          const sourceBlock = sourceSchedule.find(b => b.id === sourceBlockId);
+          // Remove video from source block
+          const sourceBlock = newBlocks.find(b => b.id === sourceBlockId);
           if (sourceBlock) {
             sourceBlock.videos = sourceBlock.videos.filter(v => v.id !== video.id);
           }
           
-          const targetBlock = targetSchedule.find(b => b.id === targetBlockId);
+          // Add video to target block
+          const targetBlock = newBlocks.find(b => b.id === targetBlockId);
           if (targetBlock) {
             targetBlock.videos = [...targetBlock.videos, video];
           }
-
-          newBlocks[sourceBlockId] = sourceSchedule;
-          newBlocks[targetBlockId] = targetSchedule;
           
           return newBlocks;
         });
@@ -719,9 +535,8 @@ export const EPGScheduler = () => {
       
       if (blockId && activeVideoId !== overVideoId) {
         setScheduleBlocks(prev => {
-          const newBlocks = { ...prev };
-          const schedule = [...(newBlocks[selectedDate] || [])];
-          const block = schedule.find(b => b.id === blockId);
+          const newBlocks = [...prev];
+          const block = newBlocks.find(b => b.id === blockId);
           
           if (block) {
             const oldIndex = block.videos.findIndex(v => v.id === activeVideoId);
@@ -731,8 +546,7 @@ export const EPGScheduler = () => {
               block.videos = arrayMove(block.videos, oldIndex, newIndex);
             }
           }
-
-          newBlocks[selectedDate] = schedule;
+          
           return newBlocks;
         });
       }
@@ -740,25 +554,23 @@ export const EPGScheduler = () => {
   };
 
   const updateBlockTitle = (blockId: string, newTitle: string) => {
-    setScheduleBlocks(prev => ({
-      ...prev,
-      [selectedDate]: (prev[selectedDate] || []).map(block => 
+    setScheduleBlocks(prev => 
+      prev.map(block => 
         block.id === blockId 
           ? { ...block, title: newTitle, isEditing: false }
           : block
       )
-    }));
+    );
   };
 
   const toggleEditMode = (blockId: string) => {
-    setScheduleBlocks(prev => ({
-      ...prev,
-      [selectedDate]: (prev[selectedDate] || []).map(block => 
+    setScheduleBlocks(prev => 
+      prev.map(block => 
         block.id === blockId 
           ? { ...block, isEditing: !block.isEditing }
           : { ...block, isEditing: false }
       )
-    }));
+    );
   };
 
   const toggleGenreEdit = (blockId: string) => {
@@ -766,56 +578,52 @@ export const EPGScheduler = () => {
   };
 
   const updateBlockTags = (blockId: string, newTags: string[]) => {
-    setScheduleBlocks(prev => ({
-      ...prev,
-      [selectedDate]: (prev[selectedDate] || []).map(block => 
+    setScheduleBlocks(prev => 
+      prev.map(block => 
         block.id === blockId 
-          ? { ...block, genre: newTags.join(', ') }
+          ? { ...block, tags: newTags }
           : block
       )
-    }));
+    );
   };
 
   const addGenreToBlock = (blockId: string, genre: string) => {
     console.log('Adding genre:', genre, 'to block:', blockId);
     setScheduleBlocks(prev => {
-        const newBlocks = { ...prev };
-        const schedule = (newBlocks[selectedDate] || []).map(block => 
-            block.id === blockId 
-            ? { ...block, genre: genre }
-            : block
-        );
-        newBlocks[selectedDate] = schedule;
-        return newBlocks;
+      const updated = prev.map(block => 
+        block.id === blockId 
+          ? { ...block, tags: [genre] }
+          : block
+      );
+      console.log('Updated blocks:', updated.find(b => b.id === blockId)?.tags);
+      return updated;
     });
     setEditingGenres(null);
   };
 
   const removeGenreFromBlock = (blockId: string, genreToRemove: string) => {
-    setScheduleBlocks(prev => ({
-      ...prev,
-      [selectedDate]: (prev[selectedDate] || []).map(block => 
+    setScheduleBlocks(prev => 
+      prev.map(block => 
         block.id === blockId 
-          ? { ...block, genre: '' }
+          ? { ...block, tags: block.tags.filter(tag => tag !== genreToRemove) }
           : block
       )
-    }));
+    );
   };
 
   const deleteVideoFromBlock = (blockId: string, videoId: string) => {
-    setScheduleBlocks(prev => ({
-      ...prev,
-      [selectedDate]: (prev[selectedDate] || []).map(block => 
+    setScheduleBlocks(prev => 
+      prev.map(block => 
         block.id === blockId 
           ? { ...block, videos: block.videos.filter(video => video.id !== videoId) }
           : block
       )
-    }));
+    );
   };
 
   // Get the last orange card's end time
   const getLastOrangeCardEndTime = () => {
-    const orangeBlocks = currentSchedule.filter(block => 
+    const orangeBlocks = scheduleBlocks.filter(block => 
       block.time !== '00:00' && block.time !== '01:00' && block.time !== '02:00'
     );
     
@@ -839,7 +647,7 @@ export const EPGScheduler = () => {
 
   const addBlankOrangeCard = () => {
     const newStartTime = getLastOrangeCardEndTime();
-    const newId = (currentSchedule.length + 1).toString();
+    const newId = (scheduleBlocks.length + 1).toString();
     
     const newBlock: ScheduleBlock = {
       id: newId,
@@ -849,63 +657,124 @@ export const EPGScheduler = () => {
       type: 'VOD',
       status: 'scheduled',
       geoZone: 'Global',
-      genre: '',
+      tags: [],
       description: '',
       videos: []
     };
     
-    setScheduleBlocks(prev => ({ ...prev, [selectedDate]: [...(prev[selectedDate] || []), newBlock] }));
+    setScheduleBlocks(prev => [...prev, newBlock]);
   };
 
-  const handleAdSave = (adConfig: { campaign: string; duration: string; frequency: string }) => {
-    const { campaign, duration, frequency } = adConfig;
-    const frequencyHours = parseFloat(frequency.replace('hr', ''));
-    const frequencyMilliseconds = frequencyHours * 60 * 60 * 1000;
-    
-    const newAdSlots: AdSlot[] = [];
-    const campaignData = adCampaigns.find(c => c.value === campaign);
+  const AddBlockDialog = ({ type }: { type: 'VOD' | 'Event' }) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const defaultStartTime = type === 'VOD' ? getLastOrangeCardEndTime() : '02:00';
 
-    for (let i = 0; i < 24 * 60 * 60 * 1000; i += frequencyMilliseconds) {
-      const adTime = new Date(i).toISOString().substr(11, 5);
-      newAdSlots.push({
-        id: `ad-${adTime}`,
-        time: adTime,
-        campaign: campaignData?.label || 'Ad',
-        duration,
-      });
-    }
-    
-    setAdSlots(prev => ({ ...prev, [selectedDate]: newAdSlots }));
-    setIsManageAdsModalOpen(false);
-  };
-
-  const handleRepeatSave = (startDate: string, endDate: string, selectedDays: number[]) => {
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const scheduleToCopy = currentSchedule;
-    const adSlotsToCopy = currentAdSlots;
-
-    let currentDate = start;
-    const newSchedules = { ...scheduleBlocks };
-    const newAdSlots = { ...adSlots };
-
-    while (currentDate <= end) {
-      if (selectedDays.includes(currentDate.getDay())) {
-        const dateString = currentDate.toISOString().split('T')[0];
-        newSchedules[dateString] = scheduleToCopy;
-        newAdSlots[dateString] = adSlotsToCopy;
+    const handleAddToSchedule = () => {
+      if (type === 'VOD') {
+        addBlankOrangeCard();
       }
-      currentDate.setDate(currentDate.getDate() + 1);
-    }
-    setScheduleBlocks(newSchedules);
-    setAdSlots(newAdSlots);
-    setIsRepeatModalOpen(false);
-  };
+      setIsOpen(false);
+    };
 
-  const formatDuration = (totalMinutes: number) => {
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:00`;
+    const handleCancel = () => {
+      setIsOpen(false);
+    };
+
+    return (
+      <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <DialogTrigger asChild>
+          <Button 
+            variant={type === 'Event' ? 'live' : 'playlist'} 
+            size="sm"
+            className="w-full"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            {type} Block
+          </Button>
+        </DialogTrigger>
+        <DialogContent className="bg-card-dark border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">
+              Add {type === 'Event' ? 'Live Event' : 'VOD Content'} Block
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="start-time">Start Time</Label>
+                <Input 
+                  id="start-time" 
+                  type="time" 
+                  defaultValue={defaultStartTime}
+                  className="bg-control-surface border-border text-foreground"
+                />
+              </div>
+              <div>
+                <Label htmlFor="duration">Duration (minutes)</Label>
+                <Input 
+                  id="duration" 
+                  type="number" 
+                  placeholder="60"
+                  className="bg-control-surface border-border text-foreground"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="title">Program Title</Label>
+              <Input 
+                id="title" 
+                placeholder="Enter program title"
+                className="bg-control-surface border-border text-foreground"
+              />
+            </div>
+
+            {type === 'Event' && (
+              <div>
+                <Label htmlFor="studio">Studio ID</Label>
+                <Select>
+                  <SelectTrigger className="bg-control-surface border-border text-foreground">
+                    <SelectValue placeholder="Select studio" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="studio-1">Studio 1 (Main)</SelectItem>
+                    <SelectItem value="studio-2">Studio 2 (News)</SelectItem>
+                    <SelectItem value="studio-3">Studio 3 (Sports)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div>
+              <Label htmlFor="tags">Tags</Label>
+              <Input 
+                id="tags" 
+                placeholder="Breaking, News, Special (comma separated)"
+                className="bg-control-surface border-border text-foreground"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea 
+                id="description" 
+                placeholder="Program description..."
+                className="bg-control-surface border-border text-foreground"
+              />
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="broadcast" className="flex-1" onClick={handleAddToSchedule}>
+                Add to Schedule
+              </Button>
+              <Button variant="outline" className="flex-1" onClick={handleCancel}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
   };
 
   return (
@@ -1170,6 +1039,30 @@ export const EPGScheduler = () => {
               
             </CardContent>
           </Card>
+
+          <Card className="bg-card-dark border-border">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {/* Add Block CTAs moved from Add Content section */}
+              <AddBlockDialog type="VOD" />
+              <AddBlockDialog type="Event" />
+              
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy to Tomorrow
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <Calendar className="h-4 w-4 mr-2" />
+                Repeat Weekly
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <MapPin className="h-4 w-4 mr-2" />
+                Geo Override
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Main Schedule Grid */}
@@ -1177,32 +1070,21 @@ export const EPGScheduler = () => {
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <Card className="bg-card-dark border-border">
               <CardHeader>
-                <CardTitle className="flex items-center justify-between text-sm font-medium">
+                <CardTitle className="flex items-center justify-between">
                   <span>Program Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                  <div className="flex items-center gap-1">
-                    <AddBlockDialog type="VOD" onAdd={(item) => setScheduleBlocks(prev => ({
-                      ...prev,
-                      [selectedDate]: [...(prev[selectedDate] || []), item]
-                    }))} />
-                    <AddBlockDialog type="Event" onAdd={(item) => setScheduleBlocks(prev => ({
-                      ...prev,
-                      [selectedDate]: [...(prev[selectedDate] || []), item]
-                    }))} />
-                    <Button variant="control" size="sm" onClick={() => setIsRepeatModalOpen(true)}>
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy EPG
-                    </Button>
-                    <Button variant="control" size="sm" onClick={() => setIsManageAdsModalOpen(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Manage Ads
-                    </Button>
-                    <div className="flex items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <Input 
                         type="date" 
                         value={selectedDate}
                         onChange={(e) => setSelectedDate(e.target.value)}
-                        className="bg-control-surface border-border text-foreground w-32 text-xs"
+                        className="bg-control-surface border-border text-foreground w-40"
                       />
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      24-hour view
                     </div>
                   </div>
                 </CardTitle>
@@ -1213,7 +1095,7 @@ export const EPGScheduler = () => {
                   <div className="relative">
                     {timeSlots.map((time, index) => {
                       const isHour = time.endsWith(':00');
-                      const hasBlock = currentSchedule.some(block => block.time === time);
+                      const hasBlock = scheduleBlocks.some(block => block.time === time);
 
                       if (!isHour && !hasBlock) {
                         return null;
@@ -1237,25 +1119,6 @@ export const EPGScheduler = () => {
                                   <div className="w-1 h-8 bg-red-500 -ml-px"></div>
                                 </div>
                               )}
-                              <TooltipProvider>
-                                <div className="absolute top-1/2 -translate-y-1/2 flex items-center space-x-4" style={{ left: '-20px' }}>
-                                  {currentAdSlots.filter(ad => {
-                                      const adHour = parseInt(ad.time.split(':')[0]);
-                                      const timeHour = parseInt(time.split(':')[0]);
-                                      return adHour === timeHour;
-                                  }).map(ad => (
-                                    <Tooltip key={ad.id}>
-                                      <TooltipTrigger asChild>
-                                        <div className="w-3 h-3 bg-yellow-400 rounded-full cursor-pointer" style={{ left: `${(parseInt(ad.time.split(':')[1]) / 60) * 100}%`, position: 'absolute' }}></div>
-                                      </TooltipTrigger>
-                                      <TooltipContent className="bg-card-dark text-foreground border-border">
-                                        <p>{ad.campaign}</p>
-                                        <p>Duration: {ad.duration}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  ))}
-                                </div>
-                              </TooltipProvider>
                                {/* Drop zone for scheduling */}
                                <div 
                                  className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
@@ -1268,17 +1131,16 @@ export const EPGScheduler = () => {
                                        const draggedData = JSON.parse(data);
                                        if (draggedData.type === 'content-video') {
                                          // Find the block for this time slot
-                                         const targetBlock = currentSchedule.find(block => block.time === time);
+                                         const targetBlock = scheduleBlocks.find(block => block.time === time);
                                          if (targetBlock) {
                                            // Add the dragged video to the target block
-                                           setScheduleBlocks(prev => ({
-                                             ...prev,
-                                             [selectedDate]: (prev[selectedDate] || []).map(block => 
+                                           setScheduleBlocks(prev => 
+                                             prev.map(block => 
                                                block.id === targetBlock.id 
                                                  ? { ...block, videos: [...block.videos, draggedData.video] }
                                                  : block
                                              )
-                                           }));
+                                           );
                                          }
                                        }
                                      } catch (error) {
@@ -1288,12 +1150,9 @@ export const EPGScheduler = () => {
                                  }}
                                >
                                 {/* Scheduled blocks */}
-                                {currentSchedule
+                                {scheduleBlocks
                                   .filter(block => block.time === time && block.title !== 'Ad Break')
-                                  .map(block => {
-                                    const totalDuration = block.videos.reduce((acc, v) => acc + v.duration, 0);
-
-                                    return (
+                                  .map(block => (
                                      <div
                                          key={block.id}
                                          className={`
@@ -1310,10 +1169,9 @@ export const EPGScheduler = () => {
                                           {block.isEditing ? (
                                             <Input
                                               value={block.title}
-                                              onChange={(e) => setScheduleBlocks(prev => ({
-                                                ...prev,
-                                                [selectedDate]: (prev[selectedDate] || []).map(b => b.id === block.id ? { ...b, title: e.target.value } : b)
-                                              }))}
+                                              onChange={(e) => setScheduleBlocks(prev => 
+                                                prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b)
+                                              )}
                                               onBlur={() => updateBlockTitle(block.id, block.title)}
                                               onKeyDown={(e) => {
                                                 if (e.key === 'Enter') {
@@ -1341,17 +1199,17 @@ export const EPGScheduler = () => {
                                              <Edit className="h-3 w-3" />
                                            </button>
                                            <div className="flex gap-1 ml-2 relative">
-                                             {block.genre.split(', ').map((genre, idx) => (
+                                             {block.tags.slice(0, 1).map((tag, idx) => (
                                               <div key={idx} className="relative group">
                                                  <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
                                                    block.status === 'completed' 
                                                      ? 'bg-black/10 text-black' 
                                                      : 'bg-black/30 text-white'
                                                  }`}>
-                                                  {genre}
+                                                  {tag}
                                                   {editingGenres === block.id && (
                                                     <button
-                                                      onClick={() => removeGenreFromBlock(block.id, genre)}
+                                                      onClick={() => removeGenreFromBlock(block.id, tag)}
                                                       className="ml-1 text-red-400 hover:text-red-300"
                                                     >
                                                       <X className="h-2 w-2" />
@@ -1372,7 +1230,7 @@ export const EPGScheduler = () => {
                                               <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
                                                 <div className="flex flex-wrap gap-1 w-48">
                                                   {availableGenres
-                                                    .filter(genre => !block.genre.split(', ').includes(genre))
+                                                    .filter(genre => !block.tags.includes(genre))
                                                     .map(genre => (
                                                       <button
                                                         key={genre}
@@ -1393,12 +1251,7 @@ export const EPGScheduler = () => {
                                             )}
                                           </div>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                            <span className={`text-xs font-bold ${
-                                                block.time === '00:00' || block.time === '01:00' ? 'text-black' : 'text-white'
-                                            }`}>
-                                                Duration: {formatDuration(totalDuration)}
-                                            </span>
+                                        <div className="flex items-center gap-1">
                                             <Badge 
                                               className="text-xs bg-black/30 text-white"
                                             >
@@ -1436,8 +1289,7 @@ export const EPGScheduler = () => {
                                          </div>
                                       </div>
                                     </div>
-                                  )}
-                                )}
+                                  ))}
                               </div>
                             </div>
                           </div>
@@ -1451,16 +1303,6 @@ export const EPGScheduler = () => {
           </DndContext>
         </div>
       </div>
-      <ManageAdsModal 
-        isOpen={isManageAdsModalOpen}
-        onClose={() => setIsManageAdsModalOpen(false)}
-        onSave={handleAdSave}
-      />
-      <RepeatScheduleModal
-        isOpen={isRepeatModalOpen}
-        onClose={() => setIsRepeatModalOpen(false)}
-        onSave={handleRepeatSave}
-      />
     </div>
   );
 };
