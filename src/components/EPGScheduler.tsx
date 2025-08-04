@@ -460,16 +460,18 @@ export const EPGScheduler = () => {
     timeSlots.forEach((time) => {
       positions.set(time, currentY);
       
-      // Base height for time slot row (includes padding and border)
-      const baseRowHeight = 60;
-      
-      // Additional height from schedule blocks
+      const isHour = time.endsWith(':00');
       const blockForTime = scheduleBlocks.find(block => block.time === time);
-      const blockHeight = blockForTime 
-        ? Math.max(120, 80 + (blockForTime.videos.length * 32)) + 16 // +16 for padding
-        : baseRowHeight;
-      
-      currentY += Math.max(baseRowHeight, blockHeight) + 4; // 4px gap between rows
+      const hasBlock = !!blockForTime;
+
+      if (isHour || hasBlock) {
+        const baseRowHeight = 60;
+        const blockHeight = hasBlock 
+          ? Math.max(120, 80 + (blockForTime.videos.length * 32)) + 16 // +16 for padding
+          : baseRowHeight;
+        
+        currentY += Math.max(baseRowHeight, blockHeight);
+      }
     });
     
     return positions;
@@ -778,76 +780,44 @@ export const EPGScheduler = () => {
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">EPG Scheduler</h1>
-          <p className="text-muted-foreground">Drag & drop programming schedule</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button variant="control">
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Schedule
-          </Button>
-          <Button variant="outline">
-            <RotateCcw className="h-4 w-4 mr-2" />
-            Reset
-          </Button>
-        </div>
-      </div>
-
-      {/* Fast Channel Section */}
-      <div className="mb-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Select value={selectedChannel} onValueChange={setSelectedChannel}>
-            <SelectTrigger className="w-48 bg-card-dark border-border text-foreground">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent className="bg-card-dark border-border">
-              <SelectItem value="Fast Channel 1" className="text-foreground hover:bg-accent">Fast Channel 1</SelectItem>
-              <SelectItem value="Fast Channel 2" className="text-foreground hover:bg-accent">Fast Channel 2</SelectItem>
-              <SelectItem value="Fast Channel 3" className="text-foreground hover:bg-accent">Fast Channel 3</SelectItem>
-              <SelectItem value="Fast Channel 4" className="text-foreground hover:bg-accent">Fast Channel 4</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="grid grid-cols-10 gap-4">
-          {/* On Air Section - 60% width */}
-          <div className="col-span-6">
-            <Card className="bg-card-dark border-border">
-              <CardHeader>
-                <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                  On Air
-                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-lg font-medium">Morning News Live</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-foreground">
-                  Start Time: 02:00 | End Time: 03:00 | Playback Time: 25:30 | Remaining Time: 34:30
-                </div>
-              </CardContent>
-            </Card>
+          <h1 className="text-2xl font-bold text-foreground">TOI Global</h1>
+          <p className="text-muted-foreground">Event programming schedule</p>
+          <div className="flex items-start gap-8 mt-4">
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                <span>On Air: Morning News Live</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Start Time: 02:00 | End Time: 03:00 | Playback Time: 25:30 | Remaining Time: 34:30
+              </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                <span>Next In Queue: Talk Show Today</span>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Start Time: 03:00 | End Time: 04:00
+              </p>
+            </div>
           </div>
-
-          {/* Next In Queue Section - 40% width */}
-          <div className="col-span-4">
-            <Card className="bg-card-dark border-border">
-              <CardHeader>
-                <CardTitle className="text-lg text-foreground flex items-center gap-2">
-                  Next In Queue
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-lg font-medium">Talk Show Today</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-foreground">Start Time: 03:00</span>
-                    <span className="text-foreground">End Time: 04:00</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        </div>
+        <div className="relative aspect-video bg-black rounded overflow-hidden w-64">
+          <div className="absolute inset-0 bg-gradient-to-br from-broadcast-blue/30 to-pcr-live/30 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-pcr-live flex items-center justify-center animate-pulse-live">
+                <div className="w-6 h-6 bg-white rounded-full"></div>
+              </div>
+              <p className="text-xs text-white/80">Studio 1 - LIVE</p>
+            </div>
+          </div>
+          <div className="absolute top-2 left-2">
+            <Badge className="bg-pcr-live text-white text-xs animate-pulse-live">
+              ● LIVE
+            </Badge>
           </div>
         </div>
       </div>
@@ -855,29 +825,7 @@ export const EPGScheduler = () => {
       <div className="grid grid-cols-12 gap-6">
         {/* Left Panel - Controls */}
         <div className="col-span-3 space-y-4">
-          {/* Live Broadcast Preview */}
-          <Card className="bg-card-dark border-border">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">Live Broadcast</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="relative aspect-video bg-black rounded overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-br from-broadcast-blue/30 to-pcr-live/30 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-pcr-live flex items-center justify-center animate-pulse-live">
-                      <div className="w-6 h-6 bg-white rounded-full"></div>
-                    </div>
-                    <p className="text-xs text-white/80">Studio 1 - LIVE</p>
-                  </div>
-                </div>
-                <div className="absolute top-2 left-2">
-                  <Badge className="bg-pcr-live text-white text-xs animate-pulse-live">
-                    ● LIVE
-                  </Badge>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Live Broadcast Preview - This section will be removed */}
 
           <Card className="bg-card-dark border-border">
             <CardHeader>
@@ -1101,70 +1049,6 @@ export const EPGScheduler = () => {
               <AddBlockDialog type="VOD" />
               <AddBlockDialog type="Event" />
               
-              <Dialog open={isAdConfigOpen} onOpenChange={setIsAdConfigOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="control" size="sm" className="w-full justify-start">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure AD
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="bg-card-dark border-border">
-                  <DialogHeader>
-                    <DialogTitle className="text-foreground">Ad Configuration</DialogTitle>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="ad-interval">Ad Interval (Hours)</Label>
-                      <Select>
-                        <SelectTrigger className="bg-control-surface border-border text-foreground">
-                          <SelectValue placeholder="Select ad interval" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="00:15">00:15</SelectItem>
-                          <SelectItem value="00:30">00:30</SelectItem>
-                          <SelectItem value="00:45">00:45</SelectItem>
-                          <SelectItem value="01:00">01:00</SelectItem>
-                          <SelectItem value="01:15">01:15</SelectItem>
-                          <SelectItem value="01:30">01:30</SelectItem>
-                          <SelectItem value="01:45">01:45</SelectItem>
-                          <SelectItem value="02:00">02:00</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div>
-                      <Label htmlFor="ad-duration">Ad Duration (Mins)</Label>
-                      <Select>
-                        <SelectTrigger className="bg-control-surface border-border text-foreground">
-                          <SelectValue placeholder="Select ad duration" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="00:10">00:10</SelectItem>
-                          <SelectItem value="00:15">00:15</SelectItem>
-                          <SelectItem value="00:20">00:20</SelectItem>
-                          <SelectItem value="00:25">00:25</SelectItem>
-                          <SelectItem value="00:30">00:30</SelectItem>
-                          <SelectItem value="00:35">00:35</SelectItem>
-                          <SelectItem value="00:40">00:40</SelectItem>
-                          <SelectItem value="00:45">00:45</SelectItem>
-                          <SelectItem value="00:50">00:50</SelectItem>
-                          <SelectItem value="00:55">00:55</SelectItem>
-                          <SelectItem value="01:00">01:00</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="flex gap-2">
-                      <Button variant="broadcast" className="flex-1" onClick={() => setIsAdConfigOpen(false)}>
-                        Save Configuration
-                      </Button>
-                      <Button variant="outline" className="flex-1" onClick={() => setIsAdConfigOpen(false)}>
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                </DialogContent>
-              </Dialog>
               <Button variant="control" size="sm" className="w-full justify-start">
                 <Copy className="h-4 w-4 mr-2" />
                 Copy to Tomorrow
@@ -1179,30 +1063,10 @@ export const EPGScheduler = () => {
               </Button>
             </CardContent>
           </Card>
-
-          <Card className="bg-card-dark border-border">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">Legend</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-green-500 rounded animate-pulse"></div>
-                <span className="text-sm text-muted-foreground">Live Programs</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-gray-300 rounded"></div>
-                <span className="text-sm text-muted-foreground">Finished Programs</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 bg-orange-300 rounded"></div>
-                <span className="text-sm text-muted-foreground">Upcoming Programs</span>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Main Schedule Grid */}
-        <div className="col-span-9">
+        <div className="col-span-9 overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <Card className="bg-card-dark border-border">
               <CardHeader>
@@ -1225,217 +1089,213 @@ export const EPGScheduler = () => {
                   </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-[75vh] overflow-y-auto">
                 <div className="relative" style={{ height: `${totalHeight}px` }}>
-                  {/* Yellow timeline markers for 30-minute intervals */}
-                  {timeSlots
-                    .filter(time => time.endsWith('30'))
-                    .map((time) => (
-                      <div
-                        key={`marker-${time}`}
-                        className="absolute left-0 z-30"
-                        style={{ top: `${(timeSlotPositions.get(time) || 0) + 30}px` }}
-                      >
-                        <div className="w-3 h-3 bg-yellow-500 rounded-full border-2 border-white shadow-sm"></div>
-                      </div>
-                    ))}
-                  
                   {/* Time Slots */}
                   <div className="relative">
-                    {timeSlots.map((time, index) => (
-                      <div 
-                        key={time} 
-                        className="absolute w-full"
-                        style={{ top: `${timeSlotPositions.get(time) || 0}px` }}
-                      >
-                        <div className="flex items-center gap-4 py-2 border-b border-border/30">
-                          <div className="w-16 text-xs text-muted-foreground font-mono">
-                            {time}
-                          </div>
-                          <div className="flex-1 min-h-[60px] relative">
-                            {/* Red playhead arrow for current time (02:00) */}
-                            {time === '02:00' && (
-                              <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center">
-                                <div className="w-0 h-0 border-l-[8px] border-l-red-500 border-y-[6px] border-y-transparent"></div>
-                                <div className="w-1 h-8 bg-red-500 -ml-px"></div>
-                              </div>
-                            )}
-                             {/* Drop zone for scheduling */}
-                             <div 
-                               className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
-                               onDragOver={(e) => e.preventDefault()}
-                               onDrop={(e) => {
-                                 e.preventDefault();
-                                 const data = e.dataTransfer.getData('application/json');
-                                 if (data) {
-                                   try {
-                                     const draggedData = JSON.parse(data);
-                                     if (draggedData.type === 'content-video') {
-                                       // Find the block for this time slot
-                                       const targetBlock = scheduleBlocks.find(block => block.time === time);
-                                       if (targetBlock) {
-                                         // Add the dragged video to the target block
-                                         setScheduleBlocks(prev => 
-                                           prev.map(block => 
-                                             block.id === targetBlock.id 
-                                               ? { ...block, videos: [...block.videos, draggedData.video] }
-                                               : block
-                                           )
-                                         );
+                    {timeSlots.map((time, index) => {
+                      const isHour = time.endsWith(':00');
+                      const hasBlock = scheduleBlocks.some(block => block.time === time);
+
+                      if (!isHour && !hasBlock) {
+                        return null;
+                      }
+
+                      return (
+                        <div 
+                          key={time} 
+                          className="absolute w-full"
+                          style={{ top: `${timeSlotPositions.get(time) || 0}px` }}
+                        >
+                          <div className="flex items-center gap-4 py-2 border-b border-border/30">
+                            <div className="w-16 text-xs text-muted-foreground font-mono">
+                              {time}
+                            </div>
+                            <div className="flex-1 min-h-[60px] relative">
+                              {/* Red playhead arrow for current time (02:00) */}
+                              {time === '02:00' && (
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center">
+                                  <div className="w-0 h-0 border-l-[8px] border-l-red-500 border-y-[6px] border-y-transparent"></div>
+                                  <div className="w-1 h-8 bg-red-500 -ml-px"></div>
+                                </div>
+                              )}
+                               {/* Drop zone for scheduling */}
+                               <div 
+                                 className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
+                                 onDragOver={(e) => e.preventDefault()}
+                                 onDrop={(e) => {
+                                   e.preventDefault();
+                                   const data = e.dataTransfer.getData('application/json');
+                                   if (data) {
+                                     try {
+                                       const draggedData = JSON.parse(data);
+                                       if (draggedData.type === 'content-video') {
+                                         // Find the block for this time slot
+                                         const targetBlock = scheduleBlocks.find(block => block.time === time);
+                                         if (targetBlock) {
+                                           // Add the dragged video to the target block
+                                           setScheduleBlocks(prev => 
+                                             prev.map(block => 
+                                               block.id === targetBlock.id 
+                                                 ? { ...block, videos: [...block.videos, draggedData.video] }
+                                                 : block
+                                             )
+                                           );
+                                         }
                                        }
+                                     } catch (error) {
+                                       console.error('Error parsing dragged data:', error);
                                      }
-                                   } catch (error) {
-                                     console.error('Error parsing dragged data:', error);
                                    }
-                                 }
-                               }}
-                             >
-                              {/* Scheduled blocks */}
-                              {scheduleBlocks
-                                .filter(block => block.time === time)
-                                .map(block => (
-                                   <div
-                                       key={block.id}
-                                       className={`
-                                         p-3 rounded border-2 cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10
-                                         ${getBlockColor(block.time, block.status)}
-                                       `}
-                                     style={{ 
-                                       minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` 
-                                     }}
-                                     data-block-id={block.id}
-                                   >
-                                     <div className="flex items-center justify-between mb-2">
-                                       <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        {block.isEditing ? (
-                                          <Input
-                                            value={block.title}
-                                            onChange={(e) => setScheduleBlocks(prev => 
-                                              prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b)
-                                            )}
-                                            onBlur={() => updateBlockTitle(block.id, block.title)}
-                                            onKeyDown={(e) => {
-                                              if (e.key === 'Enter') {
-                                                updateBlockTitle(block.id, block.title);
-                                              }
-                                            }}
-                                            className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
-                                            autoFocus
-                                          />
-                                         ) : (
-                                            <span className={`font-medium text-sm truncate ${
-                                              (block.title === 'Midnight Movies' || block.title === 'Night Talk Show') 
-                                                ? 'text-black' 
-                                                : 'text-white'
-                                            }`}>
-                                              {block.title}
-                                            </span>
-                                         )}
-                                         <button
-                                           onClick={() => toggleEditMode(block.id)}
-                                           className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
-                                             block.status === 'completed' ? 'text-black/60' : 'text-white'
-                                           }`}
-                                         >
-                                           <Edit className="h-3 w-3" />
-                                         </button>
-                                         <div className="flex gap-1 ml-2 relative">
-                                           {block.tags.slice(0, 1).map((tag, idx) => (
-                                            <div key={idx} className="relative group">
-                                               <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
-                                                 block.status === 'completed' 
-                                                   ? 'bg-black/10 text-black' 
-                                                   : 'bg-black/30 text-white'
-                                               }`}>
-                                                {tag}
-                                                {editingGenres === block.id && (
-                                                  <button
-                                                    onClick={() => removeGenreFromBlock(block.id, tag)}
-                                                    className="ml-1 text-red-400 hover:text-red-300"
-                                                  >
-                                                    <X className="h-2 w-2" />
-                                                  </button>
-                                                )}
+                                 }}
+                               >
+                                {/* Scheduled blocks */}
+                                {scheduleBlocks
+                                  .filter(block => block.time === time && block.title !== 'Ad Break')
+                                  .map(block => (
+                                     <div
+                                         key={block.id}
+                                         className={`
+                                           p-3 rounded border-2 cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10
+                                           ${getBlockColor(block.time, block.status)}
+                                         `}
+                                       style={{ 
+                                         minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` 
+                                       }}
+                                       data-block-id={block.id}
+                                     >
+                                       <div className="flex items-center justify-between mb-2">
+                                         <div className="flex items-center gap-2 flex-1 min-w-0">
+                                          {block.isEditing ? (
+                                            <Input
+                                              value={block.title}
+                                              onChange={(e) => setScheduleBlocks(prev => 
+                                                prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b)
+                                              )}
+                                              onBlur={() => updateBlockTitle(block.id, block.title)}
+                                              onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                  updateBlockTitle(block.id, block.title);
+                                                }
+                                              }}
+                                              className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
+                                              autoFocus
+                                            />
+                                           ) : (
+                                              <span className={`font-medium text-sm truncate ${
+                                                (block.title === 'Midnight Movies' || block.title === 'Night Talk Show') 
+                                                  ? 'text-black' 
+                                                  : 'text-white'
+                                              }`}>
+                                                {block.title}
                                               </span>
-                                            </div>
-                                          ))}
+                                           )}
                                            <button
-                                             onClick={() => toggleGenreEdit(block.id)}
-                                             className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
+                                             onClick={() => toggleEditMode(block.id)}
+                                             className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
                                                block.status === 'completed' ? 'text-black/60' : 'text-white'
                                              }`}
                                            >
                                              <Edit className="h-3 w-3" />
                                            </button>
-                                          {editingGenres === block.id && (
-                                            <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
-                                              <div className="flex flex-wrap gap-1 w-48">
-                                                {availableGenres
-                                                  .filter(genre => !block.tags.includes(genre))
-                                                  .map(genre => (
+                                           <div className="flex gap-1 ml-2 relative">
+                                             {block.tags.slice(0, 1).map((tag, idx) => (
+                                              <div key={idx} className="relative group">
+                                                 <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
+                                                   block.status === 'completed' 
+                                                     ? 'bg-black/10 text-black' 
+                                                     : 'bg-black/30 text-white'
+                                                 }`}>
+                                                  {tag}
+                                                  {editingGenres === block.id && (
                                                     <button
-                                                      key={genre}
-                                                      onClick={() => addGenreToBlock(block.id, genre)}
-                                                      className="text-xs px-2 py-1 rounded bg-primary text-white hover:bg-primary/80"
+                                                      onClick={() => removeGenreFromBlock(block.id, tag)}
+                                                      className="ml-1 text-red-400 hover:text-red-300"
                                                     >
-                                                      {genre}
+                                                      <X className="h-2 w-2" />
                                                     </button>
-                                                  ))}
+                                                  )}
+                                                </span>
                                               </div>
-                                              <button
-                                                onClick={() => setEditingGenres(null)}
-                                                className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-                                              >
-                                                Done
-                                              </button>
-                                            </div>
+                                            ))}
+                                             <button
+                                               onClick={() => toggleGenreEdit(block.id)}
+                                               className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
+                                                 block.status === 'completed' ? 'text-black/60' : 'text-white'
+                                               }`}
+                                             >
+                                               <Edit className="h-3 w-3" />
+                                             </button>
+                                            {editingGenres === block.id && (
+                                              <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
+                                                <div className="flex flex-wrap gap-1 w-48">
+                                                  {availableGenres
+                                                    .filter(genre => !block.tags.includes(genre))
+                                                    .map(genre => (
+                                                      <button
+                                                        key={genre}
+                                                        onClick={() => addGenreToBlock(block.id, genre)}
+                                                        className="text-xs px-2 py-1 rounded bg-primary text-white hover:bg-primary/80"
+                                                      >
+                                                        {genre}
+                                                      </button>
+                                                    ))}
+                                                </div>
+                                                <button
+                                                  onClick={() => setEditingGenres(null)}
+                                                  className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                                                >
+                                                  Done
+                                                </button>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div className="flex items-center gap-1">
+                                            <Badge 
+                                              className="text-xs bg-black/30 text-white"
+                                            >
+                                              {block.type}
+                                            </Badge>
+                                          {block.status === 'live' && (
+                                            <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
                                           )}
                                         </div>
                                       </div>
-                                      <div className="flex items-center gap-1">
-                                          <Badge 
-                                            className="text-xs bg-black/30 text-white"
-                                          >
-                                            {block.type}
-                                          </Badge>
-                                        {block.status === 'live' && (
-                                          <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
-                                        )}
-                                      </div>
-                                    </div>
-                                    
-                                    <div className="flex gap-3">
-                                      {/* Videos List */}
-                                      <div className="flex-1">
-                                        <SortableContext 
-                                          items={block.videos.map(v => `${block.id}-${v.id}`)} 
-                                          strategy={verticalListSortingStrategy}
-                                        >
-                                          <div className="space-y-1">
-                                             {block.videos.map(video => (
-                                               <DraggableVideo 
-                                                 key={video.id} 
-                                                 video={video} 
-                                                 blockId={block.id} 
-                                                 blockTime={block.time}
-                                                 onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
-                                               />
-                                             ))}
-                                          </div>
-                                        </SortableContext>
-                                      </div>
                                       
-                                       {/* Block Info */}
-                                       <div className="flex-shrink-0 text-right">
-                                       </div>
+                                      <div className="flex gap-3">
+                                        {/* Videos List */}
+                                        <div className="flex-1">
+                                          <SortableContext 
+                                            items={block.videos.map(v => `${block.id}-${v.id}`)} 
+                                            strategy={verticalListSortingStrategy}
+                                          >
+                                            <div className="space-y-1">
+                                               {block.videos.map(video => (
+                                                 <DraggableVideo 
+                                                   key={video.id} 
+                                                   video={video} 
+                                                   blockId={block.id} 
+                                                   blockTime={block.time}
+                                                   onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
+                                                 />
+                                               ))}
+                                            </div>
+                                          </SortableContext>
+                                        </div>
+                                        
+                                         {/* Block Info */}
+                                         <div className="flex-shrink-0 text-right">
+                                         </div>
+                                      </div>
                                     </div>
-                                  </div>
-                                ))}
+                                  ))}
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </div>
               </CardContent>
