@@ -244,10 +244,60 @@ export const EPGPreview = () => {
         setEditingProgram(null);
     };
 
+    const [isSaving, setIsSaving] = useState(false);
+
+    const handleSaveEpg = () => {
+        if (activeTab !== 'master-epg') {
+            toast({
+                title: "Action Not Available",
+                description: "You can only save the master EPG from the Master EPG view.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setIsSaving(true);
+        setTimeout(() => {
+            const today = new Date();
+            const todayString = today.toISOString().split('T')[0];
+            
+            const masterPrograms = mockEPGData.filter(p => p.time.startsWith(todayString));
+            
+            const nonMasterDayPrograms = mockEPGData.filter(p => !p.time.startsWith(todayString));
+            
+            let futureDates = [];
+            for (let i = 1; i <= 15; i++) {
+                const futureDate = new Date();
+                futureDate.setDate(today.getDate() + i);
+                futureDates.push(futureDate.toISOString().split('T')[0]);
+            }
+            
+            const newFuturePrograms = futureDates.flatMap(date =>
+                masterPrograms.map(p => ({
+                    ...p,
+                    id: `${p.id}-mastercopy-${date}-${Math.random()}`,
+                    time: `${date}T${p.time.split('T')[1]}`,
+                    status: 'scheduled',
+                }))
+            );
+
+            const programsToKeep = nonMasterDayPrograms.filter(p => !futureDates.includes(p.time.split('T')[0]));
+            
+            setMockEPGData([...masterPrograms, ...programsToKeep, ...newFuturePrograms]);
+            setIsSaving(false);
+            toast({
+                title: 'Master EPG saved',
+                description: 'Master EPG saved and updated for the next 15 days.',
+            });
+        }, 500);
+    };
+
     const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: any, showStatus?: boolean }) => {
         return (
             <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
-                <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-16 h-16 object-cover rounded-sm flex-shrink-0" />
+                <div className="w-16 h-9 overflow-hidden rounded-sm flex-shrink-0">
+                    <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
+                </div>
                 <div className="flex-grow min-w-0">
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -298,7 +348,7 @@ export const EPGPreview = () => {
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setEditingProgram(item)} className="p-1 rounded hover:bg-black/20 text-black">
+                            <button onClick={() => setEditingProgram({ ...item, type: activeTab === 'master-epg' ? 'VOD' : item.type })} className="p-1 rounded hover:bg-black/20 text-black">
                                 <Settings className="h-4 w-4" />
                             </button>
                             {showStatus && (
@@ -328,7 +378,7 @@ export const EPGPreview = () => {
     const AddBlockDialog = ({ type, onAdd, existingPrograms, programToEdit, onCancel }: { type: 'VOD' | 'Event', onAdd: (item: EPGPreviewItem) => void, existingPrograms: EPGPreviewItem[], programToEdit: EPGPreviewItem | null, onCancel: () => void }) => {
         const [isOpen, setIsOpen] = useState(!!programToEdit);
         const [startTime, setStartTime] = useState(programToEdit?.time.split('T')[1] || '');
-        const [endTime, setEndTime] = useState(programToEdit ? minutesToTime(timeToMinutes(programToEdit.time.split('T')[1]) + programToEdit.duration) : '');
+        const [duration, setDuration] = useState(programToEdit?.duration || 120);
         const [title, setTitle] = useState(programToEdit?.title || '');
         const [genre, setGenre] = useState(programToEdit?.genre || '');
         const [description, setDescription] = useState(programToEdit?.description || '');
@@ -336,7 +386,6 @@ export const EPGPreview = () => {
         const [image, setImage] = useState<string | null>(programToEdit?.imageUrl || '/toi_global_poster.png');
         const fileInputRef = useRef<HTMLInputElement>(null);
         const [errors, setErrors] = useState<{ [key: string]: string }>({});
-        const [isEndTimeManuallySet, setIsEndTimeManuallySet] = useState(!!programToEdit);
 
         const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target.files && e.target.files[0]) {
@@ -362,48 +411,34 @@ export const EPGPreview = () => {
             }
         }, [programToEdit, existingPrograms]);
 
-        useEffect(() => {
-            if (startTime && !isEndTimeManuallySet) {
-                const startMinutes = timeToMinutes(startTime);
-                setEndTime(minutesToTime(startMinutes + 120));
-            }
-        }, [startTime, isEndTimeManuallySet]);
+
         
         const handleStartTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             const newStartTime = e.target.value;
             setStartTime(newStartTime);
             validateField('startTime', newStartTime);
         };
-    
-        const handleEndTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-            setIsEndTimeManuallySet(true);
-            const newEndTime = e.target.value;
-            setEndTime(newEndTime);
-            validateField('endTime', newEndTime);
-    
-            if (startTime && newEndTime) {
-                const startMinutes = timeToMinutes(startTime);
-                const endMinutes = timeToMinutes(newEndTime);
-                if (endMinutes <= startMinutes) {
-                    setStartTime(minutesToTime(endMinutes - 30));
-                }
-            }
-        };
 
         const validateField = (name: string, value: string) => {
             let error = '';
-            if (!value) {
+            if (!value && name !== 'duration') {
                 error = 'This field is required';
+            }
+            if (name === 'duration') {
+                const durationValue = parseInt(value);
+                if (durationValue < 30 || durationValue > 360) {
+                    error = 'Duration must be between 30 minutes and 6 hours.';
+                }
             }
             setErrors(prev => ({ ...prev, [name]: error }));
             return !error;
         };
     
         const validateSchedule = () => {
-            if (!startTime || !endTime) return true;
+            if (!startTime) return true;
     
             const startMinutes = timeToMinutes(startTime);
-            const endMinutes = timeToMinutes(endTime);
+            const endMinutes = startMinutes + duration;
     
             const conflict = existingPrograms.some(program => {
                 const programStart = timeToMinutes(program.time.split('T')[1]);
@@ -422,23 +457,23 @@ export const EPGPreview = () => {
     
         useEffect(() => {
             validateSchedule();
-        }, [startTime, endTime, existingPrograms]);
+        }, [startTime, duration, existingPrograms]);
     
         const handleAdd = () => {
             const isStartTimeValid = validateField('startTime', startTime);
-            const isEndTimeValid = validateField('endTime', endTime);
+            const isDurationValid = validateField('duration', duration.toString());
             const isTitleValid = validateField('title', title);
             const isGenreValid = validateField('genre', genre);
             const isStudioIdValid = type === 'Event' ? validateField('studioId', studioId) : true;
     
-            if (isStartTimeValid && isEndTimeValid && isTitleValid && isGenreValid && isStudioIdValid && validateSchedule()) {
+            if (isStartTimeValid && isDurationValid && isTitleValid && isGenreValid && isStudioIdValid && validateSchedule()) {
                 const newItem: EPGPreviewItem = {
                     ...programToEdit,
                     id: programToEdit ? programToEdit.id : `new-${Date.now()}`,
                     time: `${programToEdit ? programToEdit.time.split('T')[0] : new Date().toISOString().split('T')[0]}T${startTime}`,
                     title,
                     type: type,
-                    duration: timeToMinutes(endTime) - timeToMinutes(startTime),
+                    duration: duration,
                     geoZone: 'Global',
                     description,
                     status: 'scheduled',
@@ -455,12 +490,12 @@ export const EPGPreview = () => {
             }
         };
     
-        const isFormValid = !Object.values(errors).some(error => error) && startTime && endTime && title && genre && (type === 'VOD' || studioId);
+        const isFormValid = !Object.values(errors).some(error => error) && startTime && duration && title && genre && (type === 'VOD' || studioId);
 
         const DialogComponent = (
             <DialogContent className="bg-card-dark border-border">
                 <DialogHeader>
-                    <DialogTitle>{programToEdit ? 'Edit' : 'Schedule'} {type === 'VOD' ? 'Program' : 'Live'} Program</DialogTitle>
+                    <DialogTitle>{programToEdit ? 'Edit Program' : `Schedule ${type === 'VOD' ? 'Program' : 'Live Program'}`}</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -470,9 +505,10 @@ export const EPGPreview = () => {
                             {errors.startTime && <p className="text-red-500 text-xs mt-1">{errors.startTime}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="endTime">End Time</Label>
-                            <Input id="endTime" type="time" value={endTime} onChange={handleEndTimeChange} onBlur={(e) => validateField('endTime', e.target.value)} className="bg-control-surface border-border" />
-                            {errors.endTime && <p className="text-red-500 text-xs mt-1">{errors.endTime}</p>}
+                            <Label htmlFor="duration">Duration (minutes)</Label>
+                            <Input id="duration" type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="bg-control-surface border-border" />
+                            {errors.duration && <p className="text-red-500 text-xs mt-1">{errors.duration}</p>}
+                            <p className="text-xs text-muted-foreground mt-1">Duration: {Math.floor(duration / 60)}h {duration % 60}m</p>
                         </div>
                     </div>
                     {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
@@ -515,7 +551,9 @@ export const EPGPreview = () => {
                     <div>
                         <Label>Program Image</Label>
                         <div className="flex items-center gap-4 mt-2">
-                            <img src={image || '/toi_global_poster.png'} alt="Program" className="w-20 h-20 object-cover rounded" />
+                            <div className="w-32 h-18 overflow-hidden rounded-md">
+                                <img src={image || '/toi_global_poster.png'} alt="Program" className="w-full h-full object-cover" />
+                            </div>
                             <div className="flex flex-col gap-2">
                                 <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
                                     Upload Image
@@ -841,8 +879,12 @@ export const EPGPreview = () => {
                         <Plus className="h-4 w-4 mr-2" />
                         Manage Ads
                     </Button>
-                    <Button variant="control" size="sm" onClick={() => toast({ title: 'EPG Saved', description: 'Your EPG is saved for all dates, except custom changes.' })}>
-                        <Database className="h-4 w-4 mr-2" />
+                    <Button variant="control" size="sm" onClick={handleSaveEpg} disabled={isSaving}>
+                        {isSaving ? (
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                            <Database className="h-4 w-4 mr-2" />
+                        )}
                         Save EPG
                     </Button>
           <div className="flex items-center gap-2">
