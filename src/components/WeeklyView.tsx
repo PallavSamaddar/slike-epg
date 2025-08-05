@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC } from "react";
 import { DndContext, useDroppable, useDraggable } from '@dnd-kit/core';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Edit, GripVertical } from 'lucide-react';
@@ -67,18 +67,18 @@ const DraggableProgram: FC<{ program: any, onEditClick: (program: any) => void }
     );
 };
 
-const DroppableCell: FC<{ date: string, programs: any[], onEditClick: (program: any) => void, children?: React.ReactNode }> = ({ date, programs, onEditClick, children }) => {
+const DroppableCell: FC<{ date: string, programs: any[], onEditClick: (program: any) => void, onDateClick: (date: string) => void, children?: React.ReactNode }> = ({ date, programs, onEditClick, onDateClick, children }) => {
     const { setNodeRef } = useDroppable({ id: date });
 
     return (
-        <div ref={setNodeRef} className="h-full border p-1" onClick={() => console.log(`Switch to ${date}`)}>
+        <div ref={setNodeRef} className="h-full border p-1 cursor-pointer" onClick={() => onDateClick(date)}>
             {children}
             {programs.map(p => <DraggableProgram key={p.id} program={p} onEditClick={onEditClick} />)}
         </div>
     );
 };
 
-const WeeklyView: FC<{ programs: any[], onProgramCopy: (program: any, newDate: string) => void, onProgramEdit: (program: any) => void }> = ({ programs, onProgramCopy, onProgramEdit }) => {
+const WeeklyView: FC<{ programs: any[], onProgramCopy: (program: any, newDate: string) => void, onProgramEdit: (program: any) => void, onDateClick: (date: string) => void }> = ({ programs, onProgramCopy, onProgramEdit, onDateClick }) => {
     const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const times = Array.from({ length: 24 }, (_, i) => `${i.toString().padStart(2, '0')}:00`);
     const today = new Date();
@@ -123,7 +123,7 @@ const WeeklyView: FC<{ programs: any[], onProgramCopy: (program: any, newDate: s
                             date.setDate(today.getDate() - currentDay + index);
                             const dateString = date.toISOString().split('T')[0];
                             const dayPrograms = programs.filter(p => p.time.startsWith(dateString));
-                            return <DroppableCell key={dateString} date={dateString} programs={dayPrograms} onEditClick={onProgramEdit} />;
+                            return <DroppableCell key={dateString} date={dateString} programs={dayPrograms} onEditClick={onProgramEdit} onDateClick={onDateClick} />;
                         })}
                     </div>
                 </div>

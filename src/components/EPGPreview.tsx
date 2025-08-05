@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect, FC } from 'react';
-import { Download, FileText, Code, Database, Eye, Settings, RefreshCw, Plus, Calendar, Copy, Edit, X, GripVertical, ClipboardCopy, FileDown } from 'lucide-react';
+import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, X, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check } from 'lucide-react';
+import { Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +24,12 @@ import { Toaster } from "@/components/ui/toaster";
 import * as XLSX from 'xlsx';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 interface EPGPreviewItem {
   id: string;
@@ -68,11 +76,18 @@ const generateDummyProgramsForDate = (date: Date, idOffset: number): EPGPreviewI
     ];
 };
 
+type ViewMode = 'daily' | 'weekly' | 'monthly';
+
 export const EPGPreview = () => {
   const [selectedFormat, setSelectedFormat] = useState('xmltv');
   const [includeMetadata, setIncludeMetadata] = useState(true);
   const [distributor, setDistributor] = useState('Gracenote');
-  const [previewMode, setPreviewMode] = useState<'viewer' | 'affiliate' | 'api'>('viewer');
+  const [activeTab, setActiveTab] = useState('master-epg');
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+      return (localStorage.getItem('epgViewMode') as ViewMode) || 'daily';
+  });
+  const [selectedDate, setSelectedDate] = useState(new Date());
+
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
   const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
@@ -83,6 +98,35 @@ export const EPGPreview = () => {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
+
+  useEffect(() => {
+    localStorage.setItem('epgViewMode', viewMode);
+  }, [viewMode]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if ((e.target as HTMLElement).closest('input, textarea, select')) {
+            return;
+        }
+
+        switch (e.key.toLowerCase()) {
+            case 'd':
+                setViewMode('daily');
+                break;
+            case 'w':
+                setViewMode('weekly');
+                break;
+            case 'm':
+                setViewMode('monthly');
+                break;
+        }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
 
   const [mockEPGData, setMockEPGData] = useState<EPGPreviewItem[]>(() => {
     const today = new Date();
@@ -146,8 +190,8 @@ export const EPGPreview = () => {
                 
                 const liveItemIndex = items.findIndex(item => item.status === 'live');
 
-                // Prevent dropping items at or before the live program
-                if (liveItemIndex !== -1 && newIndex <= liveItemIndex) {
+                // Prevent dropping items at or before the live program only in schedule-view
+                if (activeTab === 'schedule-view' && liveItemIndex !== -1 && newIndex <= liveItemIndex) {
                     toast({
                         title: "Action Restricted",
                         description: "Cannot move items above the live program.",
@@ -200,7 +244,7 @@ export const EPGPreview = () => {
         setEditingProgram(null);
     };
 
-    const ProgramItem = ({ item, isDraggable, listeners }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: any }) => {
+    const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: any, showStatus?: boolean }) => {
         return (
             <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
                 <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-16 h-16 object-cover rounded-sm flex-shrink-0" />
@@ -257,10 +301,14 @@ export const EPGPreview = () => {
                             <button onClick={() => setEditingProgram(item)} className="p-1 rounded hover:bg-black/20 text-black">
                                 <Settings className="h-4 w-4" />
                             </button>
-                            <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
-                            <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
-                            {item.status === 'live' && (
-                                <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
+                            {showStatus && (
+                                <>
+                                    <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
+                                    <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
+                                    {item.status === 'live' && (
+                                        <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
+                                    )}
+                                </>
                             )}
                         </div>
                     </div>
@@ -412,7 +460,7 @@ export const EPGPreview = () => {
         const DialogComponent = (
             <DialogContent className="bg-card-dark border-border">
                 <DialogHeader>
-                    <DialogTitle>{programToEdit ? 'Edit' : 'Schedule'} {type === 'VOD' ? 'Recorded' : 'Live'} Program</DialogTitle>
+                    <DialogTitle>{programToEdit ? 'Edit' : 'Schedule'} {type === 'VOD' ? 'Program' : 'Live'} Program</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -502,7 +550,7 @@ export const EPGPreview = () => {
                 <DialogTrigger asChild>
                     <Button variant={type === 'Event' ? 'live' : 'playlist'} size="sm">
                         <Plus className="h-4 w-4 mr-2" />
-                        {type === 'VOD' ? 'Recorded Program' : 'Live Program'}
+                        {type === 'VOD' ? 'Program' : 'Live Program'}
                     </Button>
                 </DialogTrigger>
                 {DialogComponent}
@@ -666,20 +714,125 @@ export const EPGPreview = () => {
         );
   };
 
+
+    const handleDateChangeFromCalendar = (dateStr: string) => {
+        setSelectedDate(new Date(dateStr));
+        setViewMode('daily');
+    };
+
+    const renderCurrentView = () => {
+        const dailyPrograms = mockEPGData.filter(p => p.time.startsWith(selectedDate.toISOString().split('T')[0]));
+
+        if (activeTab === 'master-epg') {
+            return (
+                <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                    <CardContent>
+                        <div className="bg-control-surface rounded-lg p-4">
+                            <div className="text-center mb-4 pb-4 border-b border-border">
+                                <h2 className="text-xl font-bold text-foreground">Master EPG</h2>
+                            </div>
+                            <div className="space-y-3">
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext items={mockEPGData.filter(i => i.time.startsWith(new Date().toISOString().split('T')[0])).map(item => item.id)} strategy={verticalListSortingStrategy}>
+                                        {mockEPGData.filter(i => i.time.startsWith(new Date().toISOString().split('T')[0])).map((item) => (
+                                            <SortableItem key={item.id} id={item.id}>
+                                                {(listeners) => (
+                                                    <ProgramItem item={item} isDraggable={true} listeners={listeners} showStatus={false} />
+                                                )}
+                                            </SortableItem>
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        switch(viewMode) {
+            case 'daily':
+                return (
+                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                        <CardContent>
+                            <div className="bg-control-surface rounded-lg p-4">
+                                <div className="text-center mb-4 pb-4 border-b border-border">
+                                    <p className="text-sm text-muted-foreground">{selectedDate.toDateString()}</p>
+                                </div>
+                                <div className="space-y-3">
+                                    {dailyPrograms.filter(i => i.status === 'completed').map((item) => (
+                                        <ProgramItem key={item.id} item={item} isDraggable={false} />
+                                    ))}
+                                    {dailyPrograms.find(i => i.status === 'live') && (
+                                        <ProgramItem item={dailyPrograms.find(i => i.status === 'live')!} isDraggable={false} />
+                                    )}
+                                    <DndContext
+                                        sensors={sensors}
+                                        collisionDetection={closestCenter}
+                                        onDragEnd={handleDragEnd}
+                                    >
+                                        <SortableContext items={dailyPrograms.filter(i => i.status === 'scheduled').map(item => item.id)} strategy={verticalListSortingStrategy}>
+                                            {dailyPrograms.filter(i => i.status === 'scheduled').map((item) => (
+                                                <SortableItem key={item.id} id={item.id}>
+                                                    {(listeners) => (
+                                                        <ProgramItem item={item} isDraggable={true} listeners={listeners} />
+                                                    )}
+                                                </SortableItem>
+                                            ))}
+                                        </SortableContext>
+                                    </DndContext>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            case 'weekly':
+                return (
+                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                        <CardContent className="p-6">
+                            <WeeklyView
+                                programs={mockEPGData}
+                                onProgramCopy={(program, newDate) => {
+                                    const newTime = program.time.split('T')[1];
+                                    const newProgram = {
+                                        ...program,
+                                        id: `copy-${program.id}-${Date.now()}`,
+                                        time: `${newDate}T${newTime}`,
+                                    };
+                                    setMockEPGData(prev => [...prev, newProgram]);
+                                    toast({ title: `Program copied to ${newDate} successfully` });
+                                }}
+                                onProgramEdit={(program) => setEditingProgram(program)}
+                                onDateClick={handleDateChangeFromCalendar}
+                            />
+                        </CardContent>
+                    </Card>
+                );
+            case 'monthly':
+                return (
+                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                        <CardContent className="p-6">
+                            <MonthlyView programs={mockEPGData} onDateClick={handleDateChangeFromCalendar} />
+                        </CardContent>
+                    </Card>
+                );
+            default: return null;
+        }
+    }
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-                    <h1 className="text-2xl font-bold text-foreground">TOI Global EPG Preview</h1>
+            <h1 className="text-2xl font-bold text-foreground">TOI Global EPG Preview</h1>
           <p className="text-muted-foreground">Preview your EPG and export in multiple formats</p>
         </div>
                 <div className="flex items-center gap-2">
-          <Button variant="control">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh Data
-          </Button>
                     <AddBlockDialog type="VOD" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
-                    <AddBlockDialog type="Event" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
                     <Button variant="control" size="sm" onClick={() => setIsRepeatModalOpen(true)}>
                         <Copy className="h-4 w-4 mr-2" />
                         Copy EPG
@@ -687,100 +840,77 @@ export const EPGPreview = () => {
                     <Button variant="control" size="sm" onClick={() => setIsManageAdsModalOpen(true)}>
                         <Plus className="h-4 w-4 mr-2" />
                         Manage Ads
-          </Button>
+                    </Button>
+                    <Button variant="control" size="sm" onClick={() => toast({ title: 'EPG Saved', description: 'Your EPG is saved for all dates, except custom changes.' })}>
+                        <Database className="h-4 w-4 mr-2" />
+                        Save EPG
+                    </Button>
+          <div className="flex items-center gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                                 <Button variant="dropdown" size="sm">
+                  <span>{
+                    activeTab === 'master-epg' ? 'Master EPG' : 
+                    viewMode === 'daily' ? (
+                      selectedDate.toDateString() === new Date().toDateString() ? 'EPG of Today' : `EPG of ${selectedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
+                    ) :
+                    viewMode === 'weekly' ? 'EPG Weekly' :
+                    viewMode === 'monthly' ? 'EPG Monthly' :
+                    'Master EPG'
+                  }</span>
+                  <ChevronDown className="h-4 w-4 ml-2" />
+                </Button>
+              </DropdownMenuTrigger>
+
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onSelect={() => setActiveTab('master-epg')}>
+                  Master EPG
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => {
+                  setActiveTab('schedule-view');
+                  setViewMode('daily');
+                  setSelectedDate(new Date());
+                }}>
+                  EPG of Today
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => {
+                  setActiveTab('schedule-view');
+                  setViewMode('weekly');
+                }}>
+                  EPG Weekly
+                </DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => {
+                  setActiveTab('schedule-view');
+                  setViewMode('monthly');
+                }}>
+                  EPG Monthly
+                </DropdownMenuItem>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setActiveTab('schedule-view');
+                      setViewMode('daily');
+                    }
+                  }}
+                  className="rounded-md border"
+                  classNames={{
+                    day_selected: "bg-broadcast-blue text-white hover:bg-broadcast-blue hover:text-white",
+                    day_today: "bg-slate-600 text-white",
+                  }}
+                />
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
             <div className="epg-layout-row">
                 <div className="todays-programming-container">
-          <Tabs value={previewMode} onValueChange={(value) => setPreviewMode(value as any)}>
-                        <TabsList className="grid w-full grid-cols-3 bg-control-surface sticky top-0 bg-background z-10">
-                            <TabsTrigger value="viewer" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
-                <Eye className="h-4 w-4 mr-2" />
-                                Today’s EPG
-              </TabsTrigger>
-                            <TabsTrigger value="affiliate" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
-                <FileText className="h-4 w-4 mr-2" />
-                                Weekly EPG
-              </TabsTrigger>
-                            <TabsTrigger value="api" className="data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">
-                <Code className="h-4 w-4 mr-2" />
-                                Monthly EPG
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="viewer" className="mt-6">
-              <Card className="bg-card-dark border-border">
-                <CardContent>
-                  <div className="bg-control-surface rounded-lg p-4">
-                    <div className="text-center mb-4 pb-4 border-b border-border">
-                                            <h2 className="text-xl font-bold text-broadcast-blue">TOI Global</h2>
-                      <p className="text-sm text-muted-foreground">Today's Programming</p>
-                    </div>
-                    <div className="space-y-3">
-                                            {mockEPGData.filter(i => i.status === 'completed').map((item) => (
-                                                <ProgramItem key={item.id} item={item} isDraggable={false} />
-                                            ))}
-                                            {mockEPGData.find(i => i.status === 'live') && (
-                                                <ProgramItem item={mockEPGData.find(i => i.status === 'live')!} isDraggable={false} />
-                                            )}
-                                            <DndContext
-                                                sensors={sensors}
-                                                collisionDetection={closestCenter}
-                                                onDragEnd={handleDragEnd}
-                                            >
-                                                <SortableContext items={mockEPGData.filter(i => i.status === 'scheduled').map(item => item.id)} strategy={verticalListSortingStrategy}>
-                                                    {mockEPGData.filter(i => i.status === 'scheduled').map((item) => (
-                                                        <SortableItem key={item.id} id={item.id}>
-                                                            {(listeners) => (
-                                                                <ProgramItem item={item} isDraggable={true} listeners={listeners} />
-                                                            )}
-                                                        </SortableItem>
-                                                    ))}
-                                                </SortableContext>
-                                            </DndContext>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="affiliate" className="mt-6">
-              <Card className="bg-card-dark border-border">
-                                <CardContent className="p-6">
-                                    <WeeklyView
-                                        programs={mockEPGData}
-                                        onProgramCopy={(program, newDate) => {
-                                            const newTime = program.time.split('T')[1];
-                                            const newProgram = {
-                                                ...program,
-                                                id: `copy-${program.id}-${Date.now()}`,
-                                                time: `${newDate}T${newTime}`,
-                                            };
-                                            setMockEPGData(prev => [...prev, newProgram]);
-                                            toast({ title: `Program copied to ${newDate} successfully` });
-                                        }}
-                                        onProgramEdit={(program) => setEditingProgram(program)}
-                                    />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="api" className="mt-6">
-              <Card className="bg-card-dark border-border">
-                                <CardContent className="p-6">
-                                    <MonthlyView programs={mockEPGData} onDateClick={(date) => {
-                                        setPreviewMode('viewer');
-                                        // In a real app, you would have a more robust way to link dates between views
-                                        // For now, we just switch the view
-                                        console.log(`Switched to Today's EPG for date: ${date}`);
-                                    }} />
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </Tabs>
-        </div>
-
+                    {renderCurrentView()}
+                </div>
                 <div className="distribution-card space-y-6">
           <Card className="bg-card-dark border-border">
             <CardHeader>

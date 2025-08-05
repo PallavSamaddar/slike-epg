@@ -60,7 +60,7 @@ const MonthlyView: FC<{ programs: any[], onDateClick: (date: string) => void }> 
                     const dayPrograms = programs.filter(p => p.time.startsWith(dateString));
 
                     return (
-                        <div key={dateString} className="h-full border p-1 overflow-auto" onClick={() => onDateClick(dateString)}>
+                        <div key={dateString} className="h-full border p-1 overflow-auto cursor-pointer" onClick={() => onDateClick(dateString)}>
                             <div className="font-bold mb-1">{i + 1}</div>
                             {dayPrograms.map(p => <ProgramTag key={p.id} program={p} />)}
                         </div>

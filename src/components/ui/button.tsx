@@ -25,6 +25,7 @@ const buttonVariants = cva(
         offline: "bg-status-offline text-white hover:bg-status-offline/90",
         playlist: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
         control: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+        dropdown: "bg-broadcast-blue text-white hover:bg-slate-600",
       },
       size: {
         default: "h-10 px-4 py-2",
