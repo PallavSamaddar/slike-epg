@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { EPGNavigation } from '@/components/EPGNavigation';
-import { EPGDashboard } from '@/components/EPGDashboard';
 import { EPGScheduler } from '@/components/EPGScheduler';
 import { ContentLibrary } from '@/components/ContentLibrary';
 import { LiveEventsManager } from '@/components/LiveEventsManager';
@@ -17,8 +16,6 @@ const Index = () => {
         return <EPGScheduler />;
       case 'content':
         return <ContentLibrary />;
-      case 'live':
-        return <EPGDashboard />;
       case 'preview':
         return <EPGPreview />;
       default:

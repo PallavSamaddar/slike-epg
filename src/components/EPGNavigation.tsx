@@ -37,13 +37,6 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       description: 'Video assets and playlists'
     },
     {
-      id: 'live',
-      label: 'Fast Channels',
-      icon: Radio,
-      badge: liveCount,
-      description: 'EPG Control Center'
-    },
-    {
       id: 'preview',
       label: 'EPG Preview',
       icon: FileText,
