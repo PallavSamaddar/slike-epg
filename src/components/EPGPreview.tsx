@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, FC } from 'react';
-import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, X, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check } from 'lucide-react';
+import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, X, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye } from 'lucide-react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -89,9 +89,9 @@ export const EPGPreview = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
 
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
-  const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
-  const [editingGenres, setEditingGenres] = useState<string | null>(null);
-
+const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
+    const [editingGenres, setEditingGenres] = useState<string | null>(null);
+    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -295,8 +295,13 @@ export const EPGPreview = () => {
     const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: any, showStatus?: boolean }) => {
         return (
             <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
-                <div className="w-16 h-9 overflow-hidden rounded-sm flex-shrink-0">
-                    <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
+                <div className="flex-shrink-0 w-24 text-center">
+                    <div className="w-24 h-14 overflow-hidden rounded-sm">
+                        <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
+                    </div>
+                    <span className="text-xs font-mono text-broadcast-blue mt-1">
+                        {formatTime(item.time.split('T')[1])}
+                    </span>
                 </div>
                 <div className="flex-grow min-w-0">
                     <div className="flex items-center justify-between mb-2">
@@ -363,9 +368,6 @@ export const EPGPreview = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="text-sm font-mono text-broadcast-blue w-16">
-                            {formatTime(item.time.split('T')[1])}
-                        </div>
                         <div>
                             <p className="text-sm text-muted-foreground">{item.description}</p>
                         </div>
@@ -649,14 +651,19 @@ export const EPGPreview = () => {
         if (format === 'json') {
             return JSON.stringify(programs, null, 2);
         } else if (format === 'xml') {
-            let xml = '<?xml version="1.0" encoding="UTF-8"?>\n<programs>\n';
+            let xml = `<?xml version="1.0" encoding="UTF-8"?>
+<programs>
+`;
             programs.forEach(p => {
-                xml += '  <program>\n';
+                xml += `  <program>
+`;
                 Object.entries(p).forEach(([key, value]) => {
                     const tagName = key.replace(/[^a-zA-Z0-9]/g, '');
-                    xml += `    <${tagName}>${value}</${tagName}>\n`;
+                    xml += `    <${tagName}>${value}</${tagName}>
+`;
                 });
-                xml += '  </program>\n';
+                xml += `  </program>
+`;
             });
             xml += '</programs>';
             return xml;
@@ -1000,72 +1007,14 @@ export const EPGPreview = () => {
                   <Download className="h-4 w-4 mr-2" />
                   Export EPG Data
                 </Button>
-                <Button variant="control" className="w-full">
-                  <Database className="h-4 w-4 mr-2" />
-                  Generate API URL
+                <Button variant="control" className="w-full" onClick={() => setIsPreviewModalOpen(true)}>
+                  <Eye className="h-4 w-4 mr-2" />
+                  Preview EPG
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-card-dark border-border">
-                        <Tabs defaultValue="json" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="json">JSON</TabsTrigger>
-                                <TabsTrigger value="xml">XML</TabsTrigger>
-                                <TabsTrigger value="xls">XLS</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="json">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>JSON Preview</CardTitle>
-                                        <Button variant="ghost" size="icon" onClick={() => {
-                                            navigator.clipboard.writeText(generatePreview('json'));
-                                            toast({ title: "Copied to clipboard!" });
-                                        }}>
-                                            <ClipboardCopy className="h-4 w-4" />
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 max-h-60 overflow-auto">
-                                            {generatePreview('json')}
-                                        </pre>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="xml">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>XML Preview</CardTitle>
-                                        <Button variant="ghost" size="icon" onClick={() => {
-                                            navigator.clipboard.writeText(generatePreview('xml'));
-                                            toast({ title: "Copied to clipboard!" });
-                                        }}>
-                                            <ClipboardCopy className="h-4 w-4" />
-                                        </Button>
-            </CardHeader>
-            <CardContent>
-                                        <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 max-h-60 overflow-auto">
-                                            {generatePreview('xml')}
-                </pre>
-                                    </CardContent>
-                                </Card>
-                            </TabsContent>
-                            <TabsContent value="xls">
-                                <Card>
-                                    <CardHeader className="flex flex-row items-center justify-between">
-                                        <CardTitle>XLS Preview</CardTitle>
-                                        <Button variant="ghost" size="icon" onClick={handleQuickXlsDownload}>
-                                            <FileDown className="h-4 w-4" />
-                                        </Button>
-                                    </CardHeader>
-                                    <CardContent>
-                                        {generateXlsPreview()}
-            </CardContent>
-          </Card>
-                            </TabsContent>
-                        </Tabs>
-                    </Card>
           <Card className="bg-card-dark border-border">
             <CardHeader>
               <CardTitle>Distribution</CardTitle>
@@ -1087,6 +1036,37 @@ export const EPGPreview = () => {
           </Card>
         </div>
       </div>
+{isPreviewModalOpen && (
+    <Dialog open={isPreviewModalOpen} onOpenChange={setIsPreviewModalOpen}>
+        <DialogContent className="max-w-[80vw] max-h-[80vh] h-full flex flex-col">
+            <DialogHeader>
+                <DialogTitle>EPG Preview</DialogTitle>
+            </DialogHeader>
+            <div className="flex-grow overflow-hidden">
+                <Tabs defaultValue="json" className="h-full flex flex-col">
+                    <TabsList className="grid w-full grid-cols-3">
+                        <TabsTrigger value="json">JSON</TabsTrigger>
+                        <TabsTrigger value="xml">XML</TabsTrigger>
+                        <TabsTrigger value="xls">XLS</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="json" className="flex-grow overflow-auto">
+                        <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 h-full">
+                            {generatePreview('json')}
+                        </pre>
+                    </TabsContent>
+                    <TabsContent value="xml" className="flex-grow overflow-auto">
+                        <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 h-full">
+                            {generatePreview('xml')}
+                        </pre>
+                    </TabsContent>
+                    <TabsContent value="xls" className="flex-grow overflow-auto">
+                        {generateXlsPreview()}
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </DialogContent>
+    </Dialog>
+)}
             {editingProgram && (
                 <Dialog open={!!editingProgram} onOpenChange={() => setEditingProgram(null)}>
                     <AddBlockDialog 
