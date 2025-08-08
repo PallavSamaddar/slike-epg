@@ -1175,8 +1175,10 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             </div>
           </div>
 
-          {/* EPG Content */}
-          {renderCurrentView()}
+          {/* EPG Content - Fixed Height and Scrollable */}
+          <div className="h-[calc(100vh-100px)] overflow-y-auto">
+            {renderCurrentView()}
+          </div>
         </div>
         
         {/* RHS Sidebar - Takes 1 column, starts from top */}
