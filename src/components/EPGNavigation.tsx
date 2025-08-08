@@ -42,6 +42,13 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       icon: FileText,
       badge: null,
       description: 'Preview and export'
+    },
+    {
+      id: 'preview-old',
+      label: 'EPG Preview Old',
+      icon: FileText,
+      badge: null,
+      description: 'Preview and export (Old)'
     }
   ];
 

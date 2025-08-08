@@ -1,73 +1,74 @@
-# Welcome to your Lovable project
+# TOI Global EPG Preview
 
-## Project info
+A comprehensive Electronic Program Guide (EPG) preview and management system for TOI Global.
 
-**URL**: https://lovable.dev/projects/04ea3c11-f032-4775-9abe-b02da4210589
+## Features
 
-## How can I edit this code?
+### Static + Dynamic Tabs Interface
 
-There are several ways of editing your application.
+The EPG Preview page now features a modern tab-based interface that replaces the previous dropdown system:
 
-**Use Lovable**
+#### Static Tabs (Always Visible)
+- **Master EPG** - Default view showing the master EPG data
+- **Today's EPG** - Shows today's programming schedule
+- **Weekly EPG** - Weekly view with drag-and-drop functionality
+- **Monthly EPG** - Monthly calendar view
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/04ea3c11-f032-4775-9abe-b02da4210589) and start prompting.
+#### Dynamic Tabs
+- **Date-specific tabs** - Created when users click dates from the calendar
+- **Closeable** - Dynamic tabs have an X button to close them
+- **Chrome-like behavior** - Closing a tab returns to the last active tab
 
-Changes made via Lovable will be committed automatically to this repo.
+#### Tab Styling
+- **Active tab**: Blue background with white text
+- **Inactive tab**: White background with black text
+- **Left-aligned** tabs with horizontal scrolling for overflow
 
-**Use your preferred IDE**
+#### Master EPG Dropdown
+- Positioned at the right end of the tab row
+- Maintains all existing functionality
+- Includes calendar for adding dynamic tabs
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Key Features
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+- **Drag and Drop**: Reorder programs within and between time slots
+- **Real-time Preview**: Live preview of EPG data
+- **Multiple Export Formats**: XMLTV, JSON, CSV, API Endpoint
+- **Content Management**: Add, edit, and manage VOD and Event content
+- **Ad Management**: Integrated ad break management
+- **Schedule Replication**: Copy schedules to other dates
 
-Follow these steps:
+## Technical Implementation
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Tab Management
+- State management for static and dynamic tabs
+- Tab switching logic with proper view mode mapping
+- Dynamic tab creation from calendar interactions
+- Tab closing with fallback to previous tab
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### View Rendering
+- Conditional rendering based on active tab ID
+- Support for date-specific views
+- Maintained compatibility with existing components
 
-# Step 3: Install the necessary dependencies.
-npm i
+### Styling
+- Responsive tab design with overflow handling
+- Consistent with existing design system
+- Smooth transitions and hover effects
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+## Usage
+
+1. **Switch between static tabs** by clicking on them
+2. **Add dynamic tabs** by selecting dates from the Master EPG dropdown calendar
+3. **Close dynamic tabs** by clicking the X button
+4. **Export EPG data** using the export settings panel
+5. **Manage content** using the action buttons
+
+## Development
+
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/04ea3c11-f032-4775-9abe-b02da4210589) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+The application runs on `http://localhost:8080` by default.

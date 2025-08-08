@@ -4,6 +4,7 @@ import { EPGScheduler } from '@/components/EPGScheduler';
 import { ContentLibrary } from '@/components/ContentLibrary';
 import { LiveEventsManager } from '@/components/LiveEventsManager';
 import { EPGPreview } from '@/components/EPGPreview';
+import { EPGPreviewOld } from '@/components/EPGPreviewOld';
 
 const Index = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -18,6 +19,8 @@ const Index = () => {
         return <ContentLibrary />;
       case 'preview':
         return <EPGPreview />;
+      case 'preview-old':
+        return <EPGPreviewOld />;
       default:
         return <LiveEventsManager onNavigate={setActiveView} />;
     }
