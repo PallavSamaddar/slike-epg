@@ -66,13 +66,19 @@ const SortableItem = ({ id, children }: { id: string, children: (listeners: Reco
     );
 };
 
+// Function to get random poster image
+const getRandomPoster = () => {
+    const posters = ['/poster-1.jpg', '/poster-2.jpg', '/poster-3.jpg', '/poster-4.jpg', '/poster-5.jpg', '/poster-6.jpg'];
+    return posters[Math.floor(Math.random() * posters.length)];
+};
+
 const generateDummyProgramsForDate = (date: Date, idOffset: number): EPGPreviewItem[] => {
     const dateString = date.toISOString().split('T')[0];
     return [
-        { id: `d-${idOffset + 1}`, time: `${dateString}T09:00`, title: 'Morning Show', type: 'Event', duration: 120, geoZone: 'Global', description: 'A morning talk show.', status: 'scheduled', genre: 'Talk Show', imageUrl: '/toi_global_poster.png' },
-        { id: `d-${idOffset + 2}`, time: `${dateString}T11:00`, title: 'Cartoon Fun', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Animated series for kids.', status: 'scheduled', genre: 'Kids', imageUrl: '/toi_global_poster.png' },
-        { id: `d-${idOffset + 3}`, time: `${dateString}T15:00`, title: 'Indie Films', type: 'VOD', duration: 180, geoZone: 'US/EU', description: 'A selection of independent movies.', status: 'scheduled', genre: 'Movies', imageUrl: '/toi_global_poster.png' },
-        { id: `d-${idOffset + 4}`, time: `${dateString}T20:00`, title: 'Rock Anthems', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Classic rock music videos.', status: 'scheduled', genre: 'Music', imageUrl: '/toi_global_poster.png' },
+        { id: `d-${idOffset + 1}`, time: `${dateString}T09:00`, title: 'Morning Show', type: 'Event', duration: 120, geoZone: 'Global', description: 'A morning talk show.', status: 'scheduled', genre: 'Talk Show', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 2}`, time: `${dateString}T11:00`, title: 'Cartoon Fun', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Animated series for kids.', status: 'scheduled', genre: 'Kids', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 3}`, time: `${dateString}T15:00`, title: 'Indie Films', type: 'VOD', duration: 180, geoZone: 'US/EU', description: 'A selection of independent movies.', status: 'scheduled', genre: 'Movies', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 4}`, time: `${dateString}T20:00`, title: 'Rock Anthems', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Classic rock music videos.', status: 'scheduled', genre: 'Music', imageUrl: getRandomPoster() },
     ];
 };
 
@@ -101,6 +107,7 @@ export const EPGPreview = () => {
 const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     const [editingGenres, setEditingGenres] = useState<string | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+    const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -220,18 +227,18 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   const [mockEPGData, setMockEPGData] = useState<EPGPreviewItem[]>(() => {
     const today = new Date();
     const initialPrograms: EPGPreviewItem[] = [
-      { id: '1', time: `${today.toISOString().split('T')[0]}T08:00`, title: 'Morning News Live', type: 'Event', duration: 90, geoZone: 'Global', description: 'Live morning news broadcast with breaking news updates', status: 'completed', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '2', time: `${today.toISOString().split('T')[0]}T09:30`, title: 'Weather Update', type: 'Event', duration: 15, geoZone: 'Global', description: 'Local and national weather forecast', status: 'completed', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '3', time: `${today.toISOString().split('T')[0]}T09:45`, title: 'Classic Movies Marathon', type: 'VOD', duration: 135, geoZone: 'US/EU', description: 'Curated selection of classic Hollywood films', status: 'completed', genre: 'Movies', imageUrl: '/toi_global_poster.png' },
-      { id: '4', time: `${today.toISOString().split('T')[0]}T12:00`, title: 'Sports Center Live', type: 'Event', duration: 60, geoZone: 'Global', description: 'Live sports news and highlights', status: 'live', genre: 'Sports', imageUrl: '/toi_global_poster.png' },
-      { id: '5', time: `${today.toISOString().split('T')[0]}T13:00`, title: 'Afternoon Talk Show', type: 'Event', duration: 60, geoZone: 'Global', description: 'Talk show with celebrity guests.', status: 'scheduled', genre: 'Talk Show', imageUrl: '/toi_global_poster.png' },
-      { id: '6', time: `${today.toISOString().split('T')[0]}T14:00`, title: 'Daily Quiz', type: 'VOD', duration: 30, geoZone: 'Global', description: 'An interactive quiz show.', status: 'scheduled', genre: 'Games', imageUrl: '/toi_global_poster.png' },
-      { id: '7', time: `${today.toISOString().split('T')[0]}T14:30`, title: 'Cooking with Chefs', type: 'VOD', duration: 45, geoZone: 'Global', description: 'Learn new recipes from world-renowned chefs.', status: 'scheduled', genre: 'Cooking', imageUrl: '/toi_global_poster.png' },
-      { id: '8', time: `${today.toISOString().split('T')[0]}T15:15`, title: 'Financial News', type: 'Event', duration: 45, geoZone: 'Global', description: 'Latest updates from the world of finance.', status: 'scheduled', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '9', time: `${today.toISOString().split('T')[0]}T16:00`, title: 'Evening Movie', type: 'VOD', duration: 120, geoZone: 'US/EU', description: 'A blockbuster movie to end your day.', status: 'scheduled', genre: 'Movies', imageUrl: '/toi_global_poster.png' },
-      { id: '10', time: `${today.toISOString().split('T')[0]}T18:00`, title: 'Music Hour', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A selection of popular music videos.', status: 'scheduled', genre: 'Music', imageUrl: '/toi_global_poster.png' },
-      { id: '11', time: `${today.toISOString().split('T')[0]}T19:00`, title: 'World News Tonight', type: 'Event', duration: 60, geoZone: 'Global', description: 'Comprehensive coverage of world events.', status: 'scheduled', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '12', time: `${today.toISOString().split('T')[0]}T20:00`, title: 'Late Night Comedy', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A roundup of the best comedy sketches.', status: 'scheduled', genre: 'Comedy', imageUrl: '/toi_global_poster.png' }
+      { id: '1', time: `${today.toISOString().split('T')[0]}T08:00`, title: 'Morning News Live', type: 'Event', duration: 90, geoZone: 'Global', description: 'Live morning news broadcast with breaking news updates', status: 'completed', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '2', time: `${today.toISOString().split('T')[0]}T09:30`, title: 'Weather Update', type: 'Event', duration: 15, geoZone: 'Global', description: 'Local and national weather forecast', status: 'completed', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '3', time: `${today.toISOString().split('T')[0]}T09:45`, title: 'Classic Movies Marathon', type: 'VOD', duration: 135, geoZone: 'US/EU', description: 'Curated selection of classic Hollywood films', status: 'completed', genre: 'Movies', imageUrl: getRandomPoster() },
+      { id: '4', time: `${today.toISOString().split('T')[0]}T12:00`, title: 'Sports Center Live', type: 'Event', duration: 60, geoZone: 'Global', description: 'Live sports news and highlights', status: 'live', genre: 'Sports', imageUrl: getRandomPoster() },
+      { id: '5', time: `${today.toISOString().split('T')[0]}T13:00`, title: 'Afternoon Talk Show', type: 'Event', duration: 60, geoZone: 'Global', description: 'Talk show with celebrity guests.', status: 'scheduled', genre: 'Talk Show', imageUrl: getRandomPoster() },
+      { id: '6', time: `${today.toISOString().split('T')[0]}T14:00`, title: 'Daily Quiz', type: 'VOD', duration: 30, geoZone: 'Global', description: 'An interactive quiz show.', status: 'scheduled', genre: 'Games', imageUrl: getRandomPoster() },
+      { id: '7', time: `${today.toISOString().split('T')[0]}T14:30`, title: 'Cooking with Chefs', type: 'VOD', duration: 45, geoZone: 'Global', description: 'Learn new recipes from world-renowned chefs.', status: 'scheduled', genre: 'Cooking', imageUrl: getRandomPoster() },
+      { id: '8', time: `${today.toISOString().split('T')[0]}T15:15`, title: 'Financial News', type: 'Event', duration: 45, geoZone: 'Global', description: 'Latest updates from the world of finance.', status: 'scheduled', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '9', time: `${today.toISOString().split('T')[0]}T16:00`, title: 'Evening Movie', type: 'VOD', duration: 120, geoZone: 'US/EU', description: 'A blockbuster movie to end your day.', status: 'scheduled', genre: 'Movies', imageUrl: getRandomPoster() },
+      { id: '10', time: `${today.toISOString().split('T')[0]}T18:00`, title: 'Music Hour', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A selection of popular music videos.', status: 'scheduled', genre: 'Music', imageUrl: getRandomPoster() },
+      { id: '11', time: `${today.toISOString().split('T')[0]}T19:00`, title: 'World News Tonight', type: 'Event', duration: 60, geoZone: 'Global', description: 'Comprehensive coverage of world events.', status: 'scheduled', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '12', time: `${today.toISOString().split('T')[0]}T20:00`, title: 'Late Night Comedy', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A roundup of the best comedy sketches.', status: 'scheduled', genre: 'Comedy', imageUrl: getRandomPoster() }
     ];
 
     for (let i = 1; i <= 7; i++) {
@@ -1147,7 +1154,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
               {/* Master EPG Dropdown - Aligned with tabs */}
               <div className="flex items-center gap-2 ml-4">
-                <DropdownMenu>
+                <DropdownMenu open={isDateDropdownOpen} onOpenChange={setIsDateDropdownOpen}>
                   <DropdownMenuTrigger asChild>
                                     <Button variant="dropdown" size="sm">
                   <span>Select Date</span>
@@ -1161,6 +1168,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                   onSelect={(date) => {
                     if (date) {
                       addDynamicTab(date);
+                      setIsDateDropdownOpen(false);
                     }
                   }}
                   className="rounded-md border"
