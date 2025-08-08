@@ -30,13 +30,6 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       description: 'Program scheduling grid'
     },
     {
-      id: 'content',
-      label: 'Content Library',
-      icon: Video,
-      badge: null,
-      description: 'Video assets and playlists'
-    },
-    {
       id: 'preview',
       label: 'EPG Preview',
       icon: FileText,
@@ -44,11 +37,25 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       description: 'Preview and export'
     },
     {
+      id: 'scheduler-backup',
+      label: 'Event EPG Backup',
+      icon: Calendar,
+      badge: scheduledCount,
+      description: 'Program scheduling grid (Backup)'
+    },
+    {
       id: 'preview-old',
       label: 'EPG Preview Old',
       icon: FileText,
       badge: null,
       description: 'Preview and export (Old)'
+    },
+    {
+      id: 'content',
+      label: 'Content Library',
+      icon: Video,
+      badge: null,
+      description: 'Video assets and playlists'
     }
   ];
 

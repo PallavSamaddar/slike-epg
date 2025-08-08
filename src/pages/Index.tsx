@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { EPGNavigation } from '@/components/EPGNavigation';
 import { EPGScheduler } from '@/components/EPGScheduler';
+import { EPGSchedulerBackup } from '@/components/EPGSchedulerBackup';
 import { ContentLibrary } from '@/components/ContentLibrary';
 import { LiveEventsManager } from '@/components/LiveEventsManager';
 import { EPGPreview } from '@/components/EPGPreview';
@@ -14,7 +15,9 @@ const Index = () => {
       case 'dashboard':
         return <LiveEventsManager onNavigate={setActiveView} />;
       case 'scheduler':
-        return <EPGScheduler />;
+        return <EPGScheduler onNavigate={setActiveView} />;
+      case 'scheduler-backup':
+        return <EPGSchedulerBackup />;
       case 'content':
         return <ContentLibrary />;
       case 'preview':

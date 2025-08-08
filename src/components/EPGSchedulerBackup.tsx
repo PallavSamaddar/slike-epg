@@ -14,7 +14,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ManageAdsModal } from '@/components/ManageAdsModal';
 
 interface Video {
   id: string;
@@ -308,12 +307,11 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: {
   );
 };
 
-export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
+export const EPGSchedulerBackup = () => {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedChannel, setSelectedChannel] = useState('Fast Channel 1');
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
-  const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
   
   const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
@@ -667,19 +665,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     setScheduleBlocks(prev => [...prev, newBlock]);
   };
 
-  // Handler for Manage Ads modal
-  const handleManageAdsSave = (adConfig: Record<string, unknown>) => {
-    console.log('Ad configuration saved:', adConfig);
-    setIsManageAdsModalOpen(false);
-  };
-
-  // Handler for navigation to EPG Preview
-  const handleNavigateToEPGPreview = () => {
-    if (onNavigate) {
-      onNavigate('preview');
-    }
-  };
-
   const AddBlockDialog = ({ type }: { type: 'VOD' | 'Event' }) => {
     const [isOpen, setIsOpen] = useState(false);
     const defaultStartTime = type === 'VOD' ? getLastOrangeCardEndTime() : '02:00';
@@ -795,56 +780,49 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
-      <div className="grid grid-cols-10 gap-6 mb-6">
-        {/* Column 1 - Channel Info (70%) */}
-        <div className="col-span-7 flex items-start">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">TOI Global</h1>
-            <p className="text-muted-foreground">
-              <strong>Playback Time</strong>: 25:30 hrs | <strong>Remaining Time</strong>: 34:30 hrs | <strong>Videos</strong>: 450 | <strong>Live Events</strong>: 21 | <strong>Ads Campaigns</strong>: 2 | <strong>Live Rec</strong>: 16
-            </p>
-            <div className="flex items-start gap-8 mt-4">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>On Air: Morning News Live</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Start Time: 02:00 | End Time: 03:00
-                </p>
+      <div className="flex items-start justify-between mb-6">
+                 <div>
+           <h1 className="text-2xl font-bold text-foreground">TOI Global</h1>
+           <p className="text-muted-foreground">Playback Time: 25:30 | Remaining Time: 34:30</p>
+           <div className="flex items-start gap-8 mt-4">
+             <div>
+               <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                 <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                 <span>On Air: Morning News Live</span>
+               </div>
+               <p className="text-xs text-muted-foreground mt-1">
+                 Start Time: 02:00 | End Time: 03:00
+               </p>
+            </div>
+            <div>
+              <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                <span>Next In Queue: Talk Show Today</span>
               </div>
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                  <span>Next In Queue: Talk Show Today</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Start Time: 03:00 | End Time: 04:00
-                </p>
-              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Start Time: 03:00 | End Time: 04:00
+              </p>
             </div>
           </div>
         </div>
-
-        {/* Column 2 - Channel Image with Play Button (30%) */}
-        <div className="col-span-3 flex items-start justify-end">
-          <div className="relative aspect-video w-3/5 overflow-hidden rounded-lg group">
-            <img 
-              src="/toi_global_poster.png" 
-              alt="TOI Global Channel" 
-              className="w-full h-full object-cover"
-            />
-            {/* Play Button Overlay */}
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200">
-                <div className="w-0 h-0 border-l-[6px] border-l-black border-y-[4px] border-y-transparent ml-0.5"></div>
-              </button>
+        <div className="relative aspect-video bg-black rounded overflow-hidden w-64">
+          <div className="absolute inset-0 bg-gradient-to-br from-broadcast-blue/30 to-pcr-live/30 flex items-center justify-center">
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-2 rounded-full bg-pcr-live flex items-center justify-center animate-pulse-live">
+                <div className="w-6 h-6 bg-white rounded-full"></div>
+              </div>
+              <p className="text-xs text-white/80">Studio 1 - LIVE</p>
             </div>
+          </div>
+          <div className="absolute top-2 left-2">
+            <Badge className="bg-pcr-live text-white text-xs animate-pulse-live">
+              ● LIVE
+            </Badge>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-10 gap-8 items-start">
+      <div className="grid grid-cols-12 gap-8 items-start">
         {/* Main Schedule Grid */}
         <div className="col-span-8 overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -1084,7 +1062,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         </div>
 
         {/* Right Panel - Add Content and Actions */}
-        <div className="col-span-2 space-y-4">
+        <div className="col-span-4 space-y-4">
           <Card className="bg-card-dark border-border w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
@@ -1303,25 +1281,26 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
               <CardTitle className="text-sm text-foreground">Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsManageAdsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Manage Ads
+              {/* Add Block CTAs moved from Add Content section */}
+              <AddBlockDialog type="VOD" />
+              <AddBlockDialog type="Event" />
+              
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <Copy className="h-4 w-4 mr-2" />
+                Copy to Tomorrow
               </Button>
-              <Button variant="control" size="sm" className="w-full justify-start" onClick={handleNavigateToEPGPreview}>
+              <Button variant="control" size="sm" className="w-full justify-start">
                 <Calendar className="h-4 w-4 mr-2" />
-                Manage EPG
+                Repeat Weekly
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start">
+                <MapPin className="h-4 w-4 mr-2" />
+                Geo Override
               </Button>
             </CardContent>
           </Card>
         </div>
       </div>
-
-      {/* Manage Ads Modal */}
-      <ManageAdsModal
-        isOpen={isManageAdsModalOpen}
-        onClose={() => setIsManageAdsModalOpen(false)}
-        onSave={handleManageAdsSave}
-      />
     </div>
   );
 };
