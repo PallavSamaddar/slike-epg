@@ -400,12 +400,12 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: Record<string, unknown>, showStatus?: boolean }) => {
         return (
             <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
-                <div className="flex-shrink-0 w-24 text-center">
-                    <div className="w-24 h-14 overflow-hidden rounded-sm">
+                <div className="flex-shrink-0 w-40 text-center">
+                    <div className="w-40 h-24 overflow-hidden rounded-sm">
                         <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
                     </div>
                     <span className="text-xs font-mono text-broadcast-blue mt-1">
-                        {formatTime(item.time.split('T')[1])}
+                        {formatTimeRange(item.time.split('T')[1], item.duration)}
                     </span>
                 </div>
                 <div className="flex-grow min-w-0">
@@ -777,6 +777,14 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  const formatTimeRange = (startTime: string, duration: number) => {
+    const startFormatted = formatTime(startTime);
+    const endMinutes = timeToMinutes(startTime) + duration;
+    const endTime = minutesToTime(endMinutes);
+    const endFormatted = formatTime(endTime);
+    return `${startFormatted} - ${endFormatted}`;
   };
 
   const getStatusColor = (status: string) => {
