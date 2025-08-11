@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ManageAdsModalProps {
   isOpen: boolean;
@@ -33,6 +34,7 @@ export const ManageAdsModal = ({ isOpen, onClose, onSave }: ManageAdsModalProps)
   const [durationError, setDurationError] = useState('');
   const [frequencyError, setFrequencyError] = useState('');
   const [currentAdIndex, setCurrentAdIndex] = useState(0);
+  const [baseDurationSec, setBaseDurationSec] = useState<number | null>(null);
 
   const selectedCampaignData = adCampaigns.find(c => c.value === selectedCampaign);
   const adVideos = selectedCampaignData?.adVideos || [];
@@ -45,6 +47,44 @@ export const ManageAdsModal = ({ isOpen, onClose, onSave }: ManageAdsModalProps)
       return () => clearInterval(interval);
     }
   }, [selectedCampaign, adVideos.length]);
+
+  // Parse duration labels like "MM:SSm" or "M:SSm" to seconds
+  const parseLabelToSeconds = (label: string): number => {
+    // label examples: "0:30m", "01:00m", "1:15m"
+    const clean = label.replace(/m$/i, '');
+    const [mm, ss] = clean.split(':').map((n) => parseInt(n, 10));
+    const minutes = isNaN(mm) ? 0 : mm;
+    const seconds = isNaN(ss) ? 0 : ss;
+    return minutes * 60 + seconds;
+  };
+
+  // Extract base duration from campaign label (inside parentheses)
+  const extractBaseFromCampaign = (campaignValue?: string): number | null => {
+    const data = adCampaigns.find(c => c.value === campaignValue);
+    if (!data) return null;
+    const match = data.label.match(/\((\d{1,2}:\d{2})m\)/);
+    if (!match) return null;
+    return parseLabelToSeconds(match[1] + 'm');
+  };
+
+  // When campaign changes: recompute base, reset duration
+  useEffect(() => {
+    const baseSec = extractBaseFromCampaign(selectedCampaign);
+    setBaseDurationSec(baseSec);
+    setSelectedDuration(undefined);
+    setDurationError('');
+  }, [selectedCampaign]);
+
+  // Pre-compute which durations are valid (exact multiples of base)
+  const validDurations = useMemo(() => {
+    if (!baseDurationSec || baseDurationSec <= 0) return new Set<string>();
+    const set = new Set<string>();
+    for (const d of adDurations) {
+      const sec = parseLabelToSeconds(d);
+      if (sec % baseDurationSec === 0) set.add(d);
+    }
+    return set;
+  }, [baseDurationSec]);
 
   const handleSave = () => {
     let hasError = false;
@@ -59,7 +99,17 @@ export const ManageAdsModal = ({ isOpen, onClose, onSave }: ManageAdsModalProps)
       setDurationError('Please select ad duration');
       hasError = true;
     } else {
-      setDurationError('');
+      // Validate multiple of base
+      if (baseDurationSec && baseDurationSec > 0) {
+        if (!validDurations.has(selectedDuration)) {
+          setDurationError('Selected duration is not valid for the chosen campaign');
+          hasError = true;
+        } else {
+          setDurationError('');
+        }
+      } else {
+        setDurationError('');
+      }
     }
 
     if (!selectedFrequency) {
@@ -125,11 +175,25 @@ export const ManageAdsModal = ({ isOpen, onClose, onSave }: ManageAdsModalProps)
                 <SelectValue placeholder="-- Select Duration --" />
               </SelectTrigger>
               <SelectContent>
-                {adDurations.map(duration => (
-                  <SelectItem key={duration} value={duration}>
-                    {duration}
-                  </SelectItem>
-                ))}
+                <TooltipProvider>
+                  {adDurations.map(duration => {
+                    const isEnabled = baseDurationSec && baseDurationSec > 0 ? validDurations.has(duration) : true;
+                    return (
+                      <Tooltip key={duration} disableHoverableContent={!baseDurationSec || isEnabled}>
+                        <TooltipTrigger asChild>
+                          <SelectItem value={duration} disabled={!isEnabled} className={!isEnabled ? 'opacity-50' : ''}>
+                            {duration}
+                          </SelectItem>
+                        </TooltipTrigger>
+                        {!isEnabled && (
+                          <TooltipContent>
+                            This duration is not valid for the selected campaign
+                          </TooltipContent>
+                        )}
+                      </Tooltip>
+                    );
+                  })}
+                </TooltipProvider>
               </SelectContent>
             </Select>
             {durationError && <p className="text-red-500 text-xs mt-1">{durationError}</p>}

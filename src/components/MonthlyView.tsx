@@ -51,16 +51,21 @@ const MonthlyView: FC<{ programs: any[], onDateClick: (date: string) => void }> 
                 ))}
             </div>
             <div className="grid grid-cols-7" style={{ height: '70vh' }}>
-                {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                    <div key={`empty-${i}`} className="h-full border cursor-pointer" onClick={() => onDateClick(new Date(year, month, i + 1).toISOString().split('T')[0])} />
-                ))}
+                {Array.from({ length: firstDayOfMonth }).map((_, i) => {
+                    const d = new Date(year, month, i + 1);
+                    const localStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+                    return (
+                        <div key={`empty-${i}`} className="h-full border cursor-pointer" onClick={() => onDateClick(localStr)} />
+                    );
+                })}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                     const date = new Date(year, month, i + 1);
                     const dateString = date.toISOString().split('T')[0];
+                    const localString = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
                     const dayPrograms = programs.filter(p => p.time.startsWith(dateString));
 
                     return (
-                        <div key={dateString} className="h-full border p-1 overflow-auto cursor-pointer" onClick={() => onDateClick(dateString)}>
+                        <div key={dateString} className="h-full border p-1 overflow-auto cursor-pointer" onClick={() => onDateClick(localString)}>
                             <div className="font-bold mb-1">{i + 1}</div>
                             {dayPrograms.map(p => <ProgramTag key={p.id} program={p} />)}
                         </div>

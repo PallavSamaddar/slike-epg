@@ -492,8 +492,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     if (time === '02:00') {
       return 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
     }
-    // Others: white background with black text for better visibility
-    return 'border-2 bg-white text-black border-gray-300';
+    // Others: white background with black text and no border for cleaner look
+    return 'bg-white text-black';
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -854,6 +854,10 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                 <CardTitle className="flex items-center justify-between">
                   <span className="text-sm">Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="h-4 w-4" />
+                      24-hour view
+                    </div>
                     <div className="flex items-center gap-2">
                       <Input 
                         type="date" 
@@ -862,24 +866,18 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         className="bg-control-surface border-border text-foreground w-40"
                       />
                     </div>
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        24-hour view
-                      </div>
-                      <Button
-                        variant="control"
-                        size="sm"
-                        onClick={() => {
-                          toast({
-                            title: 'EPG saved',
-                            description: `Schedule for ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} saved successfully.`,
-                          });
-                        }}
-                      >
-                        Save
-                      </Button>
-                    </div>
+                    <Button
+                      variant="control"
+                      size="sm"
+                      onClick={() => {
+                        toast({
+                          title: 'EPG saved',
+                          description: `Schedule for ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} saved successfully.`,
+                        });
+                      }}
+                    >
+                      Save
+                    </Button>
                   </div>
                 </CardTitle>
               </CardHeader>
