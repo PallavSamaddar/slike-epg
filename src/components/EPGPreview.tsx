@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, FC } from 'react';
-import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, X, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye } from 'lucide-react';
+import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye } from 'lucide-react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -93,6 +94,7 @@ export const EPGPreview = () => {
       return (localStorage.getItem('epgViewMode') as ViewMode) || 'daily';
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectDateTabLabel, setSelectDateTabLabel] = useState('Select Date');
 
   // Tab management state
   const [tabs, setTabs] = useState([
@@ -100,14 +102,17 @@ export const EPGPreview = () => {
     { id: 'todays-epg', label: "Today's EPG", isStatic: true, isClosable: false },
     { id: 'weekly-epg', label: 'Weekly EPG', isStatic: true, isClosable: false },
     { id: 'monthly-epg', label: 'Monthly EPG', isStatic: true, isClosable: false },
+    { id: 'select-date', label: selectDateTabLabel, isStatic: true, isClosable: false },
   ]);
   const [activeTabId, setActiveTabId] = useState('master-epg');
 
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
 const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
-    const [editingGenres, setEditingGenres] = useState<string | null>(null);
-    const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
-    const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
+      const [editingGenres, setEditingGenres] = useState<string | null>(null);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+  const [isSelectDateCalendarOpen, setIsSelectDateCalendarOpen] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -119,9 +124,36 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     localStorage.setItem('epgViewMode', viewMode);
   }, [viewMode]);
 
+  // Update tabs when selectDateTabLabel changes
+  useEffect(() => {
+    setTabs(prev => prev.map(tab => 
+      tab.id === 'select-date' ? { ...tab, label: selectDateTabLabel } : tab
+    ));
+  }, [selectDateTabLabel]);
+
+  // Handle click outside calendar dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (isSelectDateCalendarOpen) {
+        const target = event.target as HTMLElement;
+        // Check if click is outside the calendar dropdown
+        if (!target.closest('.calendar-dropdown') && !target.closest('[data-tab-id="select-date"]')) {
+          setIsSelectDateCalendarOpen(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isSelectDateCalendarOpen]);
+
   // Handle tab switching
   const handleTabChange = (tabId: string) => {
     setActiveTabId(tabId);
+    // reset unsaved flag when switching views
+    setHasUnsavedChanges(false);
     
     // Map tab IDs to view modes and active tabs
     switch (tabId) {
@@ -141,8 +173,15 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         setActiveTab('schedule-view');
         setViewMode('monthly');
         break;
+      case 'select-date':
+        // Toggle the calendar dropdown when "Select Date" tab is clicked
+        setIsSelectDateCalendarOpen(!isSelectDateCalendarOpen);
+        // Set the view to schedule-view with daily mode for the selected date
+        setActiveTab('schedule-view');
+        setViewMode('daily');
+        break;
       default:
-        // Handle dynamic tabs (date-specific)
+        // Handle dynamic tabs (date-specific) - legacy support
         if (tabId.startsWith('date-')) {
           const dateStr = tabId.replace('date-', '');
           const date = new Date(dateStr);
@@ -154,50 +193,39 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     }
   };
 
-  // Add dynamic tab when date is selected from calendar
-  const addDynamicTab = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
-    const tabId = `date-${dateStr}`;
-    const tabLabel = date.toLocaleDateString('en-US', { 
-      weekday: 'short', 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
-    });
-    
-    // Remove any existing dynamic tabs first (single instance behavior)
-    setTabs(prev => {
-      const staticTabs = prev.filter(tab => tab.isStatic);
-      return staticTabs;
-    });
-    
-    // Add the new dynamic tab
-    setTabs(prev => [...prev, { 
-      id: tabId, 
-      label: tabLabel, 
-      isStatic: false, 
-      isClosable: true 
-    }]);
-    
-    // Switch to the new tab
-    handleTabChange(tabId);
+  // Centralized navigation: open a specific date in Select Date tab
+  const goToDateInSelectDateTab = (date: Date) => {
+    const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate(), 12, 0, 0, 0);
+    const dateLabel = normalized.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+    setSelectDateTabLabel(dateLabel);
+    setSelectedDate(normalized);
+    setActiveTab('schedule-view');
+    setActiveTabId('select-date');
+    setIsSelectDateCalendarOpen(false);
+    setHasUnsavedChanges(false);
   };
 
-  // Close dynamic tab
-  const closeTab = (tabId: string) => {
-    const tabIndex = tabs.findIndex(tab => tab.id === tabId);
-    if (tabIndex === -1) return;
-    
-    setTabs(prev => prev.filter(tab => tab.id !== tabId));
-    
-    // If closing the active tab, switch to the previous tab
-    if (activeTabId === tabId) {
-      const newActiveTab = tabs[tabIndex - 1] || tabs[tabIndex + 1] || tabs[0];
-      if (newActiveTab) {
-        handleTabChange(newActiveTab.id);
-      }
-    }
+  const handleDateChangeFromCalendar = (dateStr: string) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, (m || 1) - 1, d || 1);
+    goToDateInSelectDateTab(date);
   };
+
+  // Save button enablement and tooltip messages
+  const isSaveEpgEnabled = (): boolean => {
+    if (activeTabId === 'weekly-epg' || activeTabId === 'monthly-epg') return false;
+    if (activeTabId === 'select-date' && selectDateTabLabel === 'Select Date') return false;
+    return hasUnsavedChanges;
+  };
+
+  const getSaveEpgTooltipMessage = (): string => {
+    if (activeTabId === 'select-date' && selectDateTabLabel === 'Select Date') return 'Please select a date to save EPG';
+    if (!hasUnsavedChanges) return 'No changes to save';
+    return '';
+  };
+
+  // Add dynamic tab when date is selected from calendar
+
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -966,12 +994,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             </div>
         );
   };
-
-
-    const handleDateChangeFromCalendar = (dateStr: string) => {
-        const date = new Date(dateStr);
-        addDynamicTab(date);
-    };
+    // removed duplicate handleDateChangeFromCalendar
 
     const renderCurrentView = () => {
         const dailyPrograms = mockEPGData.filter(p => p.time.startsWith(selectedDate.toISOString().split('T')[0]));
@@ -1005,6 +1028,113 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             );
         }
 
+        if (activeTabId === 'select-date') {
+            // Check if a date has been selected
+            if (selectDateTabLabel === 'Select Date') {
+                // No date selected yet - show default message
+                return (
+                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                        <CardContent>
+                            <div className="bg-control-surface rounded-lg p-8">
+                                <div className="text-center space-y-4">
+                                    {/* Calendar Icon */}
+                                    <div className="flex justify-center mb-6">
+                                        <div className="w-16 h-16 bg-broadcast-blue/10 rounded-full flex items-center justify-center">
+                                            <CalendarIcon className="h-8 w-8 text-broadcast-blue" />
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-foreground">
+                                        Kindly select a date
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                        Click on the "Select Date" tab above to choose a date and view the EPG preview
+                                    </p>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            }
+            
+            // Date has been selected, check if there are programs for that date
+            if (dailyPrograms.length === 0) {
+                return (
+                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                        <CardContent>
+                            <div className="bg-control-surface rounded-lg p-8">
+                                <div className="text-center space-y-4">
+                                    {/* Custom Calendar Icon */}
+                                    <div className="flex justify-center mb-6">
+                                        <div className="relative w-16 h-20 bg-white rounded-lg shadow-lg border-2 border-gray-200 overflow-hidden">
+                                            {/* Calendar Header */}
+                                            <div className="bg-broadcast-blue text-white text-center py-1 px-2">
+                                                <div className="text-xs font-medium">
+                                                    {selectedDate.toLocaleDateString('en-US', { month: 'short' })}
+                                                </div>
+                                            </div>
+                                            {/* Calendar Body */}
+                                            <div className="flex items-center justify-center h-12 bg-white">
+                                                <div className="text-2xl font-bold text-gray-800">
+                                                    {selectedDate.getDate()}
+                                                </div>
+                                            </div>
+                                            {/* Calendar Footer */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100"></div>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-foreground">
+                                        No EPG has been created for this date
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                        Please open Master EPG and create the schedule.
+                                    </p>
+                                    <Button 
+                                        variant="broadcast" 
+                                        onClick={() => handleTabChange('master-epg')}
+                                        className="mt-4"
+                                    >
+                                        Open Master EPG
+                                    </Button>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            }
+
+            return (
+                <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                    <CardContent>
+                        <div className="bg-control-surface rounded-lg p-4">
+                            <div className="space-y-3">
+                                {dailyPrograms.filter(i => i.status === 'completed').map((item) => (
+                                    <ProgramItem key={item.id} item={item} isDraggable={false} />
+                                ))}
+                                {dailyPrograms.find(i => i.status === 'live') && (
+                                    <ProgramItem item={dailyPrograms.find(i => i.status === 'live')!} isDraggable={false} />
+                                )}
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext items={dailyPrograms.filter(i => i.status === 'scheduled').map(item => item.id)} strategy={verticalListSortingStrategy}>
+                                        {dailyPrograms.filter(i => i.status === 'scheduled').map((item) => (
+                                            <SortableItem key={item.id} id={item.id}>
+                                                {(listeners) => (
+                                                    <ProgramItem item={item} isDraggable={true} listeners={listeners} />
+                                                )}
+                                            </SortableItem>
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            );
+        }
+
         if (activeTabId === 'todays-epg' || activeTabId.startsWith('date-')) {
             // Check if there are no programs for the selected date
             if (dailyPrograms.length === 0) {
@@ -1024,7 +1154,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                                             </div>
                                             {/* Calendar Body */}
                                             <div className="flex items-center justify-center h-12 bg-white">
-                                                <div className="text-2xl font-bold text-gray-800">
+                                                <div className="text-2xl font-bold text-black">
                                                     {selectedDate.getDate()}
                                                 </div>
                                             </div>
@@ -1131,12 +1261,13 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         <div className="lg:col-span-3">
           {/* Tab Interface */}
           <div className="mb-2 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between">
               {/* Tabs */}
               <div className="flex items-center gap-1 overflow-x-auto">
                 {tabs.map((tab) => (
                   <div
                     key={tab.id}
+                    data-tab-id={tab.id}
                     className={`flex items-center gap-2 px-4 py-2 rounded-t-lg cursor-pointer transition-colors ${
                       activeTabId === tab.id
                         ? 'bg-broadcast-blue text-white'
@@ -1145,38 +1276,60 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     onClick={() => handleTabChange(tab.id)}
                   >
                     <span className="text-sm font-medium">{tab.label}</span>
-                    {tab.isClosable && (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          closeTab(tab.id);
-                        }}
-                        className="ml-2 p-1 rounded-full hover:bg-black/20 transition-colors"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
+                    {tab.id === 'select-date' && (
+                      <ChevronDown className="h-3 w-3 ml-1" />
                     )}
                   </div>
                 ))}
+                {/* Save EPG Button - Right Aligned with validations */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button variant="control" size="sm" onClick={handleSaveEpg} disabled={isSaving || !isSaveEpgEnabled()} className="ml-4">
+                          {isSaving ? (
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Database className="h-4 w-4 mr-2" />
+                          )}
+                          Save EPG
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {(!isSaveEpgEnabled() && getSaveEpgTooltipMessage()) && (
+                      <TooltipContent>
+                        <p>{getSaveEpgTooltipMessage()}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
               </div>
 
-              {/* Master EPG Dropdown - Aligned with tabs */}
-              <div className="flex items-center gap-2 ml-4">
-                <DropdownMenu open={isDateDropdownOpen} onOpenChange={setIsDateDropdownOpen}>
-                  <DropdownMenuTrigger asChild>
-                                    <Button variant="dropdown" size="sm">
-                  <span>Select Date</span>
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                </Button>
-                  </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="p-3">
+
+            </div>
+          </div>
+
+          {/* Calendar Dropdown for Select Date Tab */}
+          {activeTabId === 'select-date' && isSelectDateCalendarOpen && (
+            <div className="relative">
+              <div className="calendar-dropdown absolute top-2 left-1/2 transform -translate-x-1/2 z-50 bg-white rounded-lg border border-gray-200 shadow-lg p-3">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => {
                     if (date) {
-                      addDynamicTab(date);
-                      setIsDateDropdownOpen(false);
+                      // Update the "Select Date" tab label with the selected date
+                      const dateLabel = date.toLocaleDateString('en-US', { 
+                        weekday: 'short', 
+                        month: 'short', 
+                        day: 'numeric', 
+                        year: 'numeric' 
+                      });
+                      setSelectDateTabLabel(dateLabel);
+                      setSelectedDate(date);
+                      setActiveTabId('select-date');
+                      // Close the dropdown after date selection
+                      setIsSelectDateCalendarOpen(false);
                     }
                   }}
                   className="rounded-md border"
@@ -1185,11 +1338,9 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     day_today: "bg-slate-600 text-white",
                   }}
                 />
-              </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             </div>
-          </div>
+          )}
 
           {/* EPG Content - Fixed Height and Scrollable */}
           <div className="h-[calc(100vh-100px)] overflow-y-auto">
@@ -1200,20 +1351,12 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         {/* RHS Sidebar - Takes 1 column, starts from top */}
         <div className="space-y-6">
           {/* Quick Actions Card */}
-          <Card className="bg-card-dark border-border">
+              <Card className="bg-card-dark border-border">
             <CardHeader>
               <CardTitle className="text-sm text-foreground">Quick Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <AddBlockDialog type="VOD" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
-              <Button variant="control" size="sm" className="w-full justify-start" onClick={handleSaveEpg} disabled={isSaving}>
-                {isSaving ? (
-                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Database className="h-4 w-4 mr-2" />
-                )}
-                Save EPG
-              </Button>
               <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsRepeatModalOpen(true)}>
                 <Copy className="h-4 w-4 mr-2" />
                 Copy EPG

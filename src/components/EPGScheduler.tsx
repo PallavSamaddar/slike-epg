@@ -5,6 +5,8 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
+import { Toaster } from '@/components/ui/toaster';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -225,10 +227,8 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: {
 
   // Determine text color based on block time
   const getTextColor = () => {
-    if (blockTime === '00:00' || blockTime === '01:00') {
-      return 'text-gray-500'; // Gray cards use gray text
-    }
-    return 'text-white'; // Green and orange cards use white text
+    // Always black for readability on white/gray cards
+    return 'text-black';
   };
 
   const handleDelete = () => {
@@ -309,6 +309,7 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: {
 };
 
 export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedChannel, setSelectedChannel] = useState('Fast Channel 1');
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
@@ -483,16 +484,16 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   const totalHeight = Math.max(...Array.from(timeSlotPositions.values())) + 200; // Extra space for last row
 
   const getBlockColor = (time: string, status: string) => {
-    // Midnight Movies (00:00) and Night Talk Show (01:00) get light gray
+    // 00:00 and 01:00: light gray
     if (time === '00:00' || time === '01:00') {
       return 'border-2 bg-gray-300 text-black border-gray-300';
     }
-    // Only the 02:00 time slot gets green color
+    // 02:00: green with white text
     if (time === '02:00') {
       return 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
     }
-    // Rest are orange
-    return 'border-2 bg-[#FFA55D] text-white border-[#FFA55D]';
+    // Others: white background with black text for better visibility
+    return 'border-2 bg-white text-black border-gray-300';
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -851,10 +852,9 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             <Card className="bg-card-dark border-border w-full">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
-                  <span className="text-sm">Program Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                  <span className="text-sm">Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
                       <Input 
                         type="date" 
                         value={selectedDate}
@@ -862,9 +862,23 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         className="bg-control-surface border-border text-foreground w-40"
                       />
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      24-hour view
+                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4" />
+                        24-hour view
+                      </div>
+                      <Button
+                        variant="control"
+                        size="sm"
+                        onClick={() => {
+                          toast({
+                            title: 'EPG saved',
+                            description: `Schedule for ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} saved successfully.`,
+                          });
+                        }}
+                      >
+                        Save
+                      </Button>
                     </div>
                   </div>
                 </CardTitle>
@@ -962,35 +976,25 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                               autoFocus
                                             />
                                            ) : (
-                                              <span className={`font-medium text-sm truncate ${
-                                                (block.title === 'Midnight Movies' || block.title === 'Night Talk Show') 
-                                                  ? 'text-black' 
-                                                  : 'text-white'
-                                              }`}>
+                                              <span className={`font-medium text-sm truncate text-black`}>
                                                 {block.title}
                                               </span>
                                            )}
                                            <button
                                              onClick={() => toggleEditMode(block.id)}
-                                             className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${
-                                               block.status === 'completed' ? 'text-black/60' : 'text-white'
-                                             }`}
+                                             className={`flex-shrink-0 p-1 rounded hover:bg-black/20 text-black`}
                                            >
                                              <Edit className="h-3 w-3" />
                                            </button>
                                            <div className="flex gap-1 ml-2 relative">
                                              {block.tags.slice(0, 1).map((tag, idx) => (
                                               <div key={idx} className="relative group">
-                                                 <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${
-                                                   block.status === 'completed' 
-                                                     ? 'bg-black/10 text-black' 
-                                                     : 'bg-black/30 text-white'
-                                                 }`}>
+                                                 <span className={`text-xs px-1 py-0.5 rounded cursor-pointer bg-black/10 text-black`}>
                                                   {tag}
                                                   {editingGenres === block.id && (
                                                     <button
                                                       onClick={() => removeGenreFromBlock(block.id, tag)}
-                                                      className="ml-1 text-red-400 hover:text-red-300"
+                                                       className="ml-1 text-red-600 hover:text-red-500"
                                                     >
                                                       <X className="h-2 w-2" />
                                                     </button>
@@ -1000,9 +1004,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                             ))}
                                              <button
                                                onClick={() => toggleGenreEdit(block.id)}
-                                               className={`text-xs px-1 py-0.5 rounded hover:bg-black/40 ${
-                                                 block.status === 'completed' ? 'text-black/60' : 'text-white'
-                                               }`}
+                                               className={`text-xs px-1 py-0.5 rounded hover:bg-black/20 text-black`}
                                              >
                                                <Edit className="h-3 w-3" />
                                              </button>
@@ -1033,7 +1035,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                         </div>
                                         <div className="flex items-center gap-1">
                                             <Badge 
-                                              className="text-xs bg-black/30 text-white"
+                                              className="text-xs bg-black/10 text-black"
                                             >
                                               {block.type}
                                             </Badge>
@@ -1315,6 +1317,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           </Card>
         </div>
       </div>
+      <Toaster />
 
       {/* Manage Ads Modal */}
       <ManageAdsModal

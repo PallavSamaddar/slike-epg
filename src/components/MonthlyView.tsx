@@ -52,7 +52,7 @@ const MonthlyView: FC<{ programs: any[], onDateClick: (date: string) => void }> 
             </div>
             <div className="grid grid-cols-7" style={{ height: '70vh' }}>
                 {Array.from({ length: firstDayOfMonth }).map((_, i) => (
-                    <div key={`empty-${i}`} className="h-full border" />
+                    <div key={`empty-${i}`} className="h-full border cursor-pointer" onClick={() => onDateClick(new Date(year, month, i + 1).toISOString().split('T')[0])} />
                 ))}
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                     const date = new Date(year, month, i + 1);

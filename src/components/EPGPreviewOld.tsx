@@ -45,7 +45,7 @@ interface EPGPreviewItem {
   imageUrl?: string;
 }
 
-const SortableItem = ({ id, children }: { id: string, children: (listeners: any) => React.ReactNode }) => {
+const SortableItem = ({ id, children }: { id: string, children: (listeners: Record<string, unknown>) => React.ReactNode }) => {
     const {
         attributes,
         listeners,
@@ -66,13 +66,19 @@ const SortableItem = ({ id, children }: { id: string, children: (listeners: any)
     );
 };
 
+// Function to get random poster image
+const getRandomPoster = () => {
+    const posters = ['/poster-1.jpg', '/poster-2.jpg', '/poster-3.jpg', '/poster-4.jpg', '/poster-5.jpg', '/poster-6.jpg'];
+    return posters[Math.floor(Math.random() * posters.length)];
+};
+
 const generateDummyProgramsForDate = (date: Date, idOffset: number): EPGPreviewItem[] => {
     const dateString = date.toISOString().split('T')[0];
     return [
-        { id: `d-${idOffset + 1}`, time: `${dateString}T09:00`, title: 'Morning Show', type: 'Event', duration: 120, geoZone: 'Global', description: 'A morning talk show.', status: 'scheduled', genre: 'Talk Show', imageUrl: '/toi_global_poster.png' },
-        { id: `d-${idOffset + 2}`, time: `${dateString}T11:00`, title: 'Cartoon Fun', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Animated series for kids.', status: 'scheduled', genre: 'Kids', imageUrl: '/toi_global_poster.png' },
-        { id: `d-${idOffset + 3}`, time: `${dateString}T15:00`, title: 'Indie Films', type: 'VOD', duration: 180, geoZone: 'US/EU', description: 'A selection of independent movies.', status: 'scheduled', genre: 'Movies', imageUrl: '/toi_global_poster.png' },
-        { id: `d-${idOffset + 4}`, time: `${dateString}T20:00`, title: 'Rock Anthems', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Classic rock music videos.', status: 'scheduled', genre: 'Music', imageUrl: '/toi_global_poster.png' },
+        { id: `d-${idOffset + 1}`, time: `${dateString}T09:00`, title: 'Morning Show', type: 'Event', duration: 120, geoZone: 'Global', description: 'A morning talk show.', status: 'scheduled', genre: 'Talk Show', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 2}`, time: `${dateString}T11:00`, title: 'Cartoon Fun', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Animated series for kids.', status: 'scheduled', genre: 'Kids', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 3}`, time: `${dateString}T15:00`, title: 'Indie Films', type: 'VOD', duration: 180, geoZone: 'US/EU', description: 'A selection of independent movies.', status: 'scheduled', genre: 'Movies', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 4}`, time: `${dateString}T20:00`, title: 'Rock Anthems', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Classic rock music videos.', status: 'scheduled', genre: 'Music', imageUrl: getRandomPoster() },
     ];
 };
 
@@ -88,10 +94,20 @@ export const EPGPreviewOld = () => {
   });
   const [selectedDate, setSelectedDate] = useState(new Date());
 
+  // Tab management state
+  const [tabs, setTabs] = useState([
+    { id: 'master-epg', label: 'Master EPG', isStatic: true, isClosable: false },
+    { id: 'todays-epg', label: "Today's EPG", isStatic: true, isClosable: false },
+    { id: 'weekly-epg', label: 'Weekly EPG', isStatic: true, isClosable: false },
+    { id: 'monthly-epg', label: 'Monthly EPG', isStatic: true, isClosable: false },
+  ]);
+  const [activeTabId, setActiveTabId] = useState('master-epg');
+
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
 const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     const [editingGenres, setEditingGenres] = useState<string | null>(null);
     const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
+    const [isDateDropdownOpen, setIsDateDropdownOpen] = useState(false);
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -102,6 +118,86 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   useEffect(() => {
     localStorage.setItem('epgViewMode', viewMode);
   }, [viewMode]);
+
+  // Handle tab switching
+  const handleTabChange = (tabId: string) => {
+    setActiveTabId(tabId);
+    
+    // Map tab IDs to view modes and active tabs
+    switch (tabId) {
+      case 'master-epg':
+        setActiveTab('master-epg');
+        break;
+      case 'todays-epg':
+        setActiveTab('schedule-view');
+        setViewMode('daily');
+        setSelectedDate(new Date());
+        break;
+      case 'weekly-epg':
+        setActiveTab('schedule-view');
+        setViewMode('weekly');
+        break;
+      case 'monthly-epg':
+        setActiveTab('schedule-view');
+        setViewMode('monthly');
+        break;
+      default:
+        // Handle dynamic tabs (date-specific)
+        if (tabId.startsWith('date-')) {
+          const dateStr = tabId.replace('date-', '');
+          const date = new Date(dateStr);
+          setActiveTab('schedule-view');
+          setViewMode('daily');
+          setSelectedDate(date);
+        }
+        break;
+    }
+  };
+
+  // Add dynamic tab when date is selected from calendar
+  const addDynamicTab = (date: Date) => {
+    const dateStr = date.toISOString().split('T')[0];
+    const tabId = `date-${dateStr}`;
+    const tabLabel = date.toLocaleDateString('en-US', { 
+      weekday: 'short', 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    
+    // Remove any existing dynamic tabs first (single instance behavior)
+    setTabs(prev => {
+      const staticTabs = prev.filter(tab => tab.isStatic);
+      return staticTabs;
+    });
+    
+    // Add the new dynamic tab
+    setTabs(prev => [...prev, { 
+      id: tabId, 
+      label: tabLabel, 
+      isStatic: false, 
+      isClosable: true 
+    }]);
+    
+    // Switch to the new tab
+    handleTabChange(tabId);
+  };
+
+  // Close dynamic tab
+  const closeTab = (tabId: string) => {
+    const tabIndex = tabs.findIndex(tab => tab.id === tabId);
+    if (tabIndex === -1) return;
+    
+    setTabs(prev => prev.filter(tab => tab.id !== tabId));
+    
+    // If closing the active tab, switch to the previous tab
+    if (activeTabId === tabId) {
+      const newActiveTab = tabs[tabIndex - 1] || tabs[tabIndex + 1] || tabs[0];
+      if (newActiveTab) {
+        handleTabChange(newActiveTab.id);
+      }
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -131,18 +227,18 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   const [mockEPGData, setMockEPGData] = useState<EPGPreviewItem[]>(() => {
     const today = new Date();
     const initialPrograms: EPGPreviewItem[] = [
-      { id: '1', time: `${today.toISOString().split('T')[0]}T08:00`, title: 'Morning News Live', type: 'Event', duration: 90, geoZone: 'Global', description: 'Live morning news broadcast with breaking news updates', status: 'completed', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '2', time: `${today.toISOString().split('T')[0]}T09:30`, title: 'Weather Update', type: 'Event', duration: 15, geoZone: 'Global', description: 'Local and national weather forecast', status: 'completed', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '3', time: `${today.toISOString().split('T')[0]}T09:45`, title: 'Classic Movies Marathon', type: 'VOD', duration: 135, geoZone: 'US/EU', description: 'Curated selection of classic Hollywood films', status: 'completed', genre: 'Movies', imageUrl: '/toi_global_poster.png' },
-      { id: '4', time: `${today.toISOString().split('T')[0]}T12:00`, title: 'Sports Center Live', type: 'Event', duration: 60, geoZone: 'Global', description: 'Live sports news and highlights', status: 'live', genre: 'Sports', imageUrl: '/toi_global_poster.png' },
-      { id: '5', time: `${today.toISOString().split('T')[0]}T13:00`, title: 'Afternoon Talk Show', type: 'Event', duration: 60, geoZone: 'Global', description: 'Talk show with celebrity guests.', status: 'scheduled', genre: 'Talk Show', imageUrl: '/toi_global_poster.png' },
-      { id: '6', time: `${today.toISOString().split('T')[0]}T14:00`, title: 'Daily Quiz', type: 'VOD', duration: 30, geoZone: 'Global', description: 'An interactive quiz show.', status: 'scheduled', genre: 'Games', imageUrl: '/toi_global_poster.png' },
-      { id: '7', time: `${today.toISOString().split('T')[0]}T14:30`, title: 'Cooking with Chefs', type: 'VOD', duration: 45, geoZone: 'Global', description: 'Learn new recipes from world-renowned chefs.', status: 'scheduled', genre: 'Cooking', imageUrl: '/toi_global_poster.png' },
-      { id: '8', time: `${today.toISOString().split('T')[0]}T15:15`, title: 'Financial News', type: 'Event', duration: 45, geoZone: 'Global', description: 'Latest updates from the world of finance.', status: 'scheduled', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '9', time: `${today.toISOString().split('T')[0]}T16:00`, title: 'Evening Movie', type: 'VOD', duration: 120, geoZone: 'US/EU', description: 'A blockbuster movie to end your day.', status: 'scheduled', genre: 'Movies', imageUrl: '/toi_global_poster.png' },
-      { id: '10', time: `${today.toISOString().split('T')[0]}T18:00`, title: 'Music Hour', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A selection of popular music videos.', status: 'scheduled', genre: 'Music', imageUrl: '/toi_global_poster.png' },
-      { id: '11', time: `${today.toISOString().split('T')[0]}T19:00`, title: 'World News Tonight', type: 'Event', duration: 60, geoZone: 'Global', description: 'Comprehensive coverage of world events.', status: 'scheduled', genre: 'News', imageUrl: '/toi_global_poster.png' },
-      { id: '12', time: `${today.toISOString().split('T')[0]}T20:00`, title: 'Late Night Comedy', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A roundup of the best comedy sketches.', status: 'scheduled', genre: 'Comedy', imageUrl: '/toi_global_poster.png' }
+      { id: '1', time: `${today.toISOString().split('T')[0]}T08:00`, title: 'Morning News Live', type: 'Event', duration: 90, geoZone: 'Global', description: 'Live morning news broadcast with breaking news updates', status: 'completed', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '2', time: `${today.toISOString().split('T')[0]}T09:30`, title: 'Weather Update', type: 'Event', duration: 15, geoZone: 'Global', description: 'Local and national weather forecast', status: 'completed', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '3', time: `${today.toISOString().split('T')[0]}T09:45`, title: 'Classic Movies Marathon', type: 'VOD', duration: 135, geoZone: 'US/EU', description: 'Curated selection of classic Hollywood films', status: 'completed', genre: 'Movies', imageUrl: getRandomPoster() },
+      { id: '4', time: `${today.toISOString().split('T')[0]}T12:00`, title: 'Sports Center Live', type: 'Event', duration: 60, geoZone: 'Global', description: 'Live sports news and highlights', status: 'live', genre: 'Sports', imageUrl: getRandomPoster() },
+      { id: '5', time: `${today.toISOString().split('T')[0]}T13:00`, title: 'Afternoon Talk Show', type: 'Event', duration: 60, geoZone: 'Global', description: 'Talk show with celebrity guests.', status: 'scheduled', genre: 'Talk Show', imageUrl: getRandomPoster() },
+      { id: '6', time: `${today.toISOString().split('T')[0]}T14:00`, title: 'Daily Quiz', type: 'VOD', duration: 30, geoZone: 'Global', description: 'An interactive quiz show.', status: 'scheduled', genre: 'Games', imageUrl: getRandomPoster() },
+      { id: '7', time: `${today.toISOString().split('T')[0]}T14:30`, title: 'Cooking with Chefs', type: 'VOD', duration: 45, geoZone: 'Global', description: 'Learn new recipes from world-renowned chefs.', status: 'scheduled', genre: 'Cooking', imageUrl: getRandomPoster() },
+      { id: '8', time: `${today.toISOString().split('T')[0]}T15:15`, title: 'Financial News', type: 'Event', duration: 45, geoZone: 'Global', description: 'Latest updates from the world of finance.', status: 'scheduled', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '9', time: `${today.toISOString().split('T')[0]}T16:00`, title: 'Evening Movie', type: 'VOD', duration: 120, geoZone: 'US/EU', description: 'A blockbuster movie to end your day.', status: 'scheduled', genre: 'Movies', imageUrl: getRandomPoster() },
+      { id: '10', time: `${today.toISOString().split('T')[0]}T18:00`, title: 'Music Hour', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A selection of popular music videos.', status: 'scheduled', genre: 'Music', imageUrl: getRandomPoster() },
+      { id: '11', time: `${today.toISOString().split('T')[0]}T19:00`, title: 'World News Tonight', type: 'Event', duration: 60, geoZone: 'Global', description: 'Comprehensive coverage of world events.', status: 'scheduled', genre: 'News', imageUrl: getRandomPoster() },
+      { id: '12', time: `${today.toISOString().split('T')[0]}T20:00`, title: 'Late Night Comedy', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A roundup of the best comedy sketches.', status: 'scheduled', genre: 'Comedy', imageUrl: getRandomPoster() }
     ];
 
     for (let i = 1; i <= 7; i++) {
@@ -164,7 +260,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     return initialPrograms;
   });
   
-    const handleAdSave = (adConfig: any) => {
+    const handleAdSave = (adConfig: Record<string, unknown>) => {
         console.log('Ad config saved:', adConfig);
         setIsManageAdsModalOpen(false);
     };
@@ -218,6 +314,15 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         return `${h}:${m}`;
     };
 
+    const minutesToTimeAMPM = (minutes: number) => {
+        const hours = Math.floor(minutes / 60);
+        const mins = minutes % 60;
+        const ampm = hours >= 12 ? 'pm' : 'am';
+        const displayHours = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+        const displayMins = mins.toString().padStart(2, '0');
+        return `${displayHours}:${displayMins}${ampm}`;
+    };
+
     const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids', 'Weather', 'Talk Show', 'Quiz', 'Lifestyle', 'Finance', 'Music', 'World', 'Cooking'];
 
     const toggleEditMode = (id: string) => {
@@ -265,7 +370,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             
             const nonMasterDayPrograms = mockEPGData.filter(p => !p.time.startsWith(todayString));
             
-            let futureDates = [];
+            const futureDates = [];
             for (let i = 1; i <= 15; i++) {
                 const futureDate = new Date();
                 futureDate.setDate(today.getDate() + i);
@@ -292,15 +397,15 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         }, 500);
     };
 
-    const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: any, showStatus?: boolean }) => {
+    const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: Record<string, unknown>, showStatus?: boolean }) => {
         return (
             <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
-                <div className="flex-shrink-0 w-24 text-center">
-                    <div className="w-24 h-14 overflow-hidden rounded-sm">
+                <div className="flex-shrink-0 w-40 text-center">
+                    <div className="w-40 h-24 overflow-hidden rounded-sm">
                         <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
                     </div>
                     <span className="text-xs font-mono text-broadcast-blue mt-1">
-                        {formatTime(item.time.split('T')[1])}
+                        {formatTimeRange(item.time.split('T')[1], item.duration)}
                     </span>
                 </div>
                 <div className="flex-grow min-w-0">
@@ -353,7 +458,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setEditingProgram({ ...item, type: activeTab === 'master-epg' ? 'VOD' : item.type })} className="p-1 rounded hover:bg-black/20 text-black">
+                            <button onClick={() => setEditingProgram({ ...item, type: activeTabId === 'master-epg' ? 'VOD' : item.type })} className="p-1 rounded hover:bg-black/20 text-black">
                                 <Settings className="h-4 w-4" />
                             </button>
                             {showStatus && (
@@ -380,7 +485,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     const AddBlockDialog = ({ type, onAdd, existingPrograms, programToEdit, onCancel }: { type: 'VOD' | 'Event', onAdd: (item: EPGPreviewItem) => void, existingPrograms: EPGPreviewItem[], programToEdit: EPGPreviewItem | null, onCancel: () => void }) => {
         const [isOpen, setIsOpen] = useState(!!programToEdit);
         const [startTime, setStartTime] = useState(programToEdit?.time.split('T')[1] || '');
-        const [duration, setDuration] = useState(programToEdit?.duration || 120);
+        const [endTime, setEndTime] = useState('');
         const [title, setTitle] = useState(programToEdit?.title || '');
         const [genre, setGenre] = useState(programToEdit?.genre || '');
         const [description, setDescription] = useState(programToEdit?.description || '');
@@ -388,6 +493,53 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         const [image, setImage] = useState<string | null>(programToEdit?.imageUrl || '/toi_global_poster.png');
         const fileInputRef = useRef<HTMLInputElement>(null);
         const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+        // Calculate duration from start and end time
+        const calculateDuration = () => {
+            if (!startTime || !endTime) return 0;
+            const startMinutes = timeToMinutes(startTime);
+            const endMinutes = timeToMinutes(endTime);
+            return endMinutes - startMinutes;
+        };
+
+        const duration = calculateDuration();
+
+        // Generate end time options with 15-minute intervals
+        const generateEndTimeOptions = () => {
+            if (!startTime) return [];
+            
+            const options = [];
+            const startMinutes = timeToMinutes(startTime);
+            
+            // Generate options for next 8 hours (480 minutes) in 15-minute intervals
+            for (let i = 15; i <= 480; i += 15) {
+                const endMinutes = startMinutes + i;
+                const endTimeStr = minutesToTime(endMinutes);
+                const endTimeAMPM = minutesToTimeAMPM(endMinutes);
+                const durationMinutes = i;
+                
+                // Format duration for display
+                let durationText = '';
+                if (durationMinutes < 60) {
+                    durationText = `(${durationMinutes} mins)`;
+                } else if (durationMinutes === 60) {
+                    durationText = '(1 hr)';
+                } else {
+                    const hours = Math.floor(durationMinutes / 60);
+                    const mins = durationMinutes % 60;
+                    durationText = mins > 0 ? `(${hours} hr ${mins} mins)` : `(${hours} hrs)`;
+                }
+                
+                options.push({
+                    value: endTimeStr,
+                    label: `${endTimeAMPM} ${durationText}`
+                });
+            }
+            
+            return options;
+        };
+
+        const endTimeOptions = generateEndTimeOptions();
 
         const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
             if (e.target.files && e.target.files[0]) {
@@ -401,15 +553,22 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
         useEffect(() => {
             if (!programToEdit) {
+                let newStartTime = '00:00';
                 if (existingPrograms.length > 0) {
                     const lastProgramEndMinutes = existingPrograms.reduce((maxEndTime, program) => {
                         const programEnd = timeToMinutes(program.time.split('T')[1]) + program.duration;
                         return Math.max(maxEndTime, programEnd);
                     }, 0);
-                    setStartTime(minutesToTime(lastProgramEndMinutes));
-                } else {
-                    setStartTime('00:00');
+                    newStartTime = minutesToTime(lastProgramEndMinutes);
                 }
+                setStartTime(newStartTime);
+                // Set initial end time to 1 hour after start time
+                const initialStartMinutes = timeToMinutes(newStartTime);
+                setEndTime(minutesToTime(initialStartMinutes + 60));
+            } else {
+                // For editing, set end time based on program duration
+                const startMinutes = timeToMinutes(programToEdit.time.split('T')[1]);
+                setEndTime(minutesToTime(startMinutes + programToEdit.duration));
             }
         }, [programToEdit, existingPrograms]);
 
@@ -423,13 +582,16 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
         const validateField = (name: string, value: string) => {
             let error = '';
-            if (!value && name !== 'duration') {
+            if (!value && name !== 'endTime') {
                 error = 'This field is required';
             }
-            if (name === 'duration') {
-                const durationValue = parseInt(value);
-                if (durationValue < 30 || durationValue > 360) {
-                    error = 'Duration must be between 30 minutes and 6 hours.';
+            if (name === 'endTime') {
+                if (!value) {
+                    error = 'End time is required';
+                } else if (duration < 15) {
+                    error = 'Minimum duration is 15 minutes';
+                } else if (duration > 480) {
+                    error = 'Maximum duration is 8 hours';
                 }
             }
             setErrors(prev => ({ ...prev, [name]: error }));
@@ -463,12 +625,12 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     
         const handleAdd = () => {
             const isStartTimeValid = validateField('startTime', startTime);
-            const isDurationValid = validateField('duration', duration.toString());
+            const isEndTimeValid = validateField('endTime', endTime);
             const isTitleValid = validateField('title', title);
             const isGenreValid = validateField('genre', genre);
             const isStudioIdValid = type === 'Event' ? validateField('studioId', studioId) : true;
     
-            if (isStartTimeValid && isDurationValid && isTitleValid && isGenreValid && isStudioIdValid && validateSchedule()) {
+            if (isStartTimeValid && isEndTimeValid && isTitleValid && isGenreValid && isStudioIdValid && validateSchedule()) {
                 const newItem: EPGPreviewItem = {
                     ...programToEdit,
                     id: programToEdit ? programToEdit.id : `new-${Date.now()}`,
@@ -492,7 +654,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             }
         };
     
-        const isFormValid = !Object.values(errors).some(error => error) && startTime && duration && title && genre && (type === 'VOD' || studioId);
+        const isFormValid = !Object.values(errors).some(error => error) && startTime && endTime && title && genre && (type === 'VOD' || studioId);
 
         const DialogComponent = (
             <DialogContent className="bg-card-dark border-border">
@@ -507,10 +669,20 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                             {errors.startTime && <p className="text-red-500 text-xs mt-1">{errors.startTime}</p>}
                         </div>
                         <div>
-                            <Label htmlFor="duration">Duration (minutes)</Label>
-                            <Input id="duration" type="number" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="bg-control-surface border-border" />
-                            {errors.duration && <p className="text-red-500 text-xs mt-1">{errors.duration}</p>}
-                            <p className="text-xs text-muted-foreground mt-1">Duration: {Math.floor(duration / 60)}h {duration % 60}m</p>
+                            <Label htmlFor="endTime">End Time</Label>
+                            <Select value={endTime} onValueChange={(value) => { setEndTime(value); validateField('endTime', value); }}>
+                                <SelectTrigger className="bg-control-surface border-border">
+                                    <SelectValue placeholder="Select end time" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {endTimeOptions.map((option) => (
+                                        <SelectItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.endTime && <p className="text-red-500 text-xs mt-1">{errors.endTime}</p>}
                         </div>
                     </div>
                     {errors.time && <p className="text-red-500 text-xs mt-1">{errors.time}</p>}
@@ -588,7 +760,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         return (
             <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                    <Button variant={type === 'Event' ? 'live' : 'playlist'} size="sm">
+                    <Button variant={type === 'Event' ? 'live' : 'playlist'} size="sm" className="w-full justify-start">
                         <Plus className="h-4 w-4 mr-2" />
                         {type === 'VOD' ? 'Program' : 'Live Program'}
                     </Button>
@@ -605,6 +777,14 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
       minute: '2-digit',
       hour12: true
     });
+  };
+
+  const formatTimeRange = (startTime: string, duration: number) => {
+    const startFormatted = formatTime(startTime);
+    const endMinutes = timeToMinutes(startTime) + duration;
+    const endTime = minutesToTime(endMinutes);
+    const endFormatted = formatTime(endTime);
+    return `${startFormatted} - ${endFormatted}`;
   };
 
   const getStatusColor = (status: string) => {
@@ -789,21 +969,19 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
 
     const handleDateChangeFromCalendar = (dateStr: string) => {
-        setSelectedDate(new Date(dateStr));
-        setViewMode('daily');
+        const date = new Date(dateStr);
+        addDynamicTab(date);
     };
 
     const renderCurrentView = () => {
         const dailyPrograms = mockEPGData.filter(p => p.time.startsWith(selectedDate.toISOString().split('T')[0]));
 
-        if (activeTab === 'master-epg') {
+        // Determine the view based on activeTabId
+        if (activeTabId === 'master-epg') {
             return (
                 <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
                     <CardContent>
                         <div className="bg-control-surface rounded-lg p-4">
-                            <div className="text-center mb-4 pb-4 border-b border-border">
-                                <h2 className="text-xl font-bold text-foreground">Master EPG</h2>
-                            </div>
                             <div className="space-y-3">
                                 <DndContext
                                     sensors={sensors}
@@ -827,149 +1005,178 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             );
         }
 
-        switch(viewMode) {
-            case 'daily':
+        if (activeTabId === 'todays-epg' || activeTabId.startsWith('date-')) {
+            // Check if there are no programs for the selected date
+            if (dailyPrograms.length === 0) {
                 return (
                     <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
                         <CardContent>
-                            <div className="bg-control-surface rounded-lg p-4">
-                                <div className="text-center mb-4 pb-4 border-b border-border">
-                                    <p className="text-sm text-muted-foreground">{selectedDate.toDateString()}</p>
-                                </div>
-                                <div className="space-y-3">
-                                    {dailyPrograms.filter(i => i.status === 'completed').map((item) => (
-                                        <ProgramItem key={item.id} item={item} isDraggable={false} />
-                                    ))}
-                                    {dailyPrograms.find(i => i.status === 'live') && (
-                                        <ProgramItem item={dailyPrograms.find(i => i.status === 'live')!} isDraggable={false} />
-                                    )}
-                                    <DndContext
-                                        sensors={sensors}
-                                        collisionDetection={closestCenter}
-                                        onDragEnd={handleDragEnd}
+                            <div className="bg-control-surface rounded-lg p-8">
+                                <div className="text-center space-y-4">
+                                    {/* Custom Calendar Icon */}
+                                    <div className="flex justify-center mb-6">
+                                        <div className="relative w-16 h-20 bg-white rounded-lg shadow-lg border-2 border-gray-200 overflow-hidden">
+                                            {/* Calendar Header */}
+                                            <div className="bg-broadcast-blue text-white text-center py-1 px-2">
+                                                <div className="text-xs font-medium">
+                                                    {selectedDate.toLocaleDateString('en-US', { month: 'short' })}
+                                                </div>
+                                            </div>
+                                            {/* Calendar Body */}
+                                            <div className="flex items-center justify-center h-12 bg-white">
+                                                <div className="text-2xl font-bold text-gray-800">
+                                                    {selectedDate.getDate()}
+                                                </div>
+                                            </div>
+                                            {/* Calendar Footer */}
+                                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gray-100"></div>
+                                        </div>
+                                    </div>
+                                    <h3 className="text-lg font-medium text-foreground">
+                                        No EPG has been created for this date
+                                    </h3>
+                                    <p className="text-muted-foreground">
+                                        Please open Master EPG and create the schedule.
+                                    </p>
+                                    <Button 
+                                        variant="broadcast" 
+                                        onClick={() => handleTabChange('master-epg')}
+                                        className="mt-4"
                                     >
-                                        <SortableContext items={dailyPrograms.filter(i => i.status === 'scheduled').map(item => item.id)} strategy={verticalListSortingStrategy}>
-                                            {dailyPrograms.filter(i => i.status === 'scheduled').map((item) => (
-                                                <SortableItem key={item.id} id={item.id}>
-                                                    {(listeners) => (
-                                                        <ProgramItem item={item} isDraggable={true} listeners={listeners} />
-                                                    )}
-                                                </SortableItem>
-                                            ))}
-                                        </SortableContext>
-                                    </DndContext>
+                                        Open Master EPG
+                                    </Button>
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
                 );
-            case 'weekly':
-                return (
-                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
-                        <CardContent className="p-6">
-                            <WeeklyView
-                                programs={mockEPGData}
-                                onProgramCopy={(program, newDate) => {
-                                    const newTime = program.time.split('T')[1];
-                                    const newProgram = {
-                                        ...program,
-                                        id: `copy-${program.id}-${Date.now()}`,
-                                        time: `${newDate}T${newTime}`,
-                                    };
-                                    setMockEPGData(prev => [...prev, newProgram]);
-                                    toast({ title: `Program copied to ${newDate} successfully` });
-                                }}
-                                onProgramEdit={(program) => setEditingProgram(program)}
-                                onDateClick={handleDateChangeFromCalendar}
-                            />
-                        </CardContent>
-                    </Card>
-                );
-            case 'monthly':
-                return (
-                    <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
-                        <CardContent className="p-6">
-                            <MonthlyView programs={mockEPGData} onDateClick={handleDateChangeFromCalendar} />
-                        </CardContent>
-                    </Card>
-                );
-            default: return null;
+            }
+
+            return (
+                <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                    <CardContent>
+                        <div className="bg-control-surface rounded-lg p-4">
+                            <div className="space-y-3">
+                                {dailyPrograms.filter(i => i.status === 'completed').map((item) => (
+                                    <ProgramItem key={item.id} item={item} isDraggable={false} />
+                                ))}
+                                {dailyPrograms.find(i => i.status === 'live') && (
+                                    <ProgramItem item={dailyPrograms.find(i => i.status === 'live')!} isDraggable={false} />
+                                )}
+                                <DndContext
+                                    sensors={sensors}
+                                    collisionDetection={closestCenter}
+                                    onDragEnd={handleDragEnd}
+                                >
+                                    <SortableContext items={dailyPrograms.filter(i => i.status === 'scheduled').map(item => item.id)} strategy={verticalListSortingStrategy}>
+                                        {dailyPrograms.filter(i => i.status === 'scheduled').map((item) => (
+                                            <SortableItem key={item.id} id={item.id}>
+                                                {(listeners) => (
+                                                    <ProgramItem item={item} isDraggable={true} listeners={listeners} />
+                                                )}
+                                            </SortableItem>
+                                        ))}
+                                    </SortableContext>
+                                </DndContext>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            );
         }
+
+        if (activeTabId === 'weekly-epg') {
+            return (
+                <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                    <CardContent className="p-6">
+                        <WeeklyView
+                            programs={mockEPGData}
+                            onProgramCopy={(program, newDate) => {
+                                const newTime = program.time.split('T')[1];
+                                const newProgram = {
+                                    ...program,
+                                    id: `copy-${program.id}-${Date.now()}`,
+                                    time: `${newDate}T${newTime}`,
+                                };
+                                setMockEPGData(prev => [...prev, newProgram]);
+                                toast({ title: `Program copied to ${newDate} successfully` });
+                            }}
+                            onProgramEdit={(program) => setEditingProgram(program)}
+                            onDateClick={handleDateChangeFromCalendar}
+                        />
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        if (activeTabId === 'monthly-epg') {
+            return (
+                <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
+                    <CardContent className="p-6">
+                        <MonthlyView programs={mockEPGData} onDateClick={handleDateChangeFromCalendar} />
+                    </CardContent>
+                </Card>
+            );
+        }
+
+        return null;
     }
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-            <h1 className="text-2xl font-bold text-foreground">EPG backup</h1>
-          <p className="text-muted-foreground">Preview your EPG and export in multiple formats</p>
-        </div>
-                <div className="flex items-center gap-2">
-                    <AddBlockDialog type="VOD" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
-                    <Button variant="control" size="sm" onClick={() => setIsRepeatModalOpen(true)}>
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy EPG
-                    </Button>
-                    <Button variant="control" size="sm" onClick={() => setIsManageAdsModalOpen(true)}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        Manage Ads
-                    </Button>
-                    <Button variant="control" size="sm" onClick={handleSaveEpg} disabled={isSaving}>
-                        {isSaving ? (
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                            <Database className="h-4 w-4 mr-2" />
-                        )}
-                        Save EPG
-                    </Button>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                                 <Button variant="dropdown" size="sm">
-                  <span>{
-                    activeTab === 'master-epg' ? 'Master EPG' : 
-                    viewMode === 'daily' ? (
-                      selectedDate.toDateString() === new Date().toDateString() ? 'EPG of Today' : `EPG of ${selectedDate.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}`
-                    ) :
-                    viewMode === 'weekly' ? 'EPG Weekly' :
-                    viewMode === 'monthly' ? 'EPG Monthly' :
-                    'Master EPG'
-                  }</span>
+
+      {/* Main Layout - Tab Interface and RHS Sidebar */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        {/* Left Side - Tab Interface and EPG Content */}
+        <div className="lg:col-span-3">
+          {/* Tab Interface */}
+          <div className="mb-2 border-b border-gray-200">
+            <div className="flex items-center justify-between">
+              {/* Tabs */}
+              <div className="flex items-center gap-1 overflow-x-auto">
+                {tabs.map((tab) => (
+                  <div
+                    key={tab.id}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-t-lg cursor-pointer transition-colors ${
+                      activeTabId === tab.id
+                        ? 'bg-broadcast-blue text-white'
+                        : 'bg-white text-black hover:bg-gray-100'
+                    }`}
+                    onClick={() => handleTabChange(tab.id)}
+                  >
+                    <span className="text-sm font-medium">{tab.label}</span>
+                    {tab.isClosable && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          closeTab(tab.id);
+                        }}
+                        className="ml-2 p-1 rounded-full hover:bg-black/20 transition-colors"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Master EPG Dropdown - Aligned with tabs */}
+              <div className="flex items-center gap-2 ml-4">
+                <DropdownMenu open={isDateDropdownOpen} onOpenChange={setIsDateDropdownOpen}>
+                  <DropdownMenuTrigger asChild>
+                                    <Button variant="dropdown" size="sm">
+                  <span>Select Date</span>
                   <ChevronDown className="h-4 w-4 ml-2" />
                 </Button>
-              </DropdownMenuTrigger>
-
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onSelect={() => setActiveTab('master-epg')}>
-                  Master EPG
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => {
-                  setActiveTab('schedule-view');
-                  setViewMode('daily');
-                  setSelectedDate(new Date());
-                }}>
-                  EPG of Today
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => {
-                  setActiveTab('schedule-view');
-                  setViewMode('weekly');
-                }}>
-                  EPG Weekly
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => {
-                  setActiveTab('schedule-view');
-                  setViewMode('monthly');
-                }}>
-                  EPG Monthly
-                </DropdownMenuItem>
+                  </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="p-3">
                 <Calendar
                   mode="single"
                   selected={selectedDate}
                   onSelect={(date) => {
                     if (date) {
-                      setSelectedDate(date);
-                      setActiveTab('schedule-view');
-                      setViewMode('daily');
+                      addDynamicTab(date);
+                      setIsDateDropdownOpen(false);
                     }
                   }}
                   className="rounded-md border"
@@ -979,19 +1186,49 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                   }}
                 />
               </DropdownMenuContent>
-            </DropdownMenu>
+                </DropdownMenu>
+              </div>
+            </div>
+          </div>
+
+          {/* EPG Content - Fixed Height and Scrollable */}
+          <div className="h-[calc(100vh-100px)] overflow-y-auto">
+            {renderCurrentView()}
           </div>
         </div>
-      </div>
-
-            <div className="epg-layout-row">
-                <div className="todays-programming-container">
-                    {renderCurrentView()}
-                </div>
-                <div className="distribution-card space-y-6">
+        
+        {/* RHS Sidebar - Takes 1 column, starts from top */}
+        <div className="space-y-6">
+          {/* Quick Actions Card */}
           <Card className="bg-card-dark border-border">
             <CardHeader>
-              <CardTitle>Export Settings</CardTitle>
+              <CardTitle className="text-sm text-foreground">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <AddBlockDialog type="VOD" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
+              <Button variant="control" size="sm" className="w-full justify-start" onClick={handleSaveEpg} disabled={isSaving}>
+                {isSaving ? (
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Database className="h-4 w-4 mr-2" />
+                )}
+                Save EPG
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsRepeatModalOpen(true)}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy EPG
+              </Button>
+              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsManageAdsModalOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                Manage Ads
+              </Button>
+            </CardContent>
+          </Card>
+
+          {/* Export Settings Card */}
+          <Card className="bg-card-dark border-border">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">Export Settings</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
@@ -1045,7 +1282,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
           <Card className="bg-card-dark border-border">
             <CardHeader>
-              <CardTitle>Distribution</CardTitle>
+              <CardTitle className="text-sm text-foreground">Distribution</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
               <Button variant="control" size="sm" className="w-full justify-start">

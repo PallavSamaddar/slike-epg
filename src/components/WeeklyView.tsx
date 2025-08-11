@@ -1,7 +1,7 @@
 import { FC } from "react";
 import { DndContext, useDroppable, useDraggable } from '@dnd-kit/core';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Edit, GripVertical } from 'lucide-react';
+import { GripVertical } from 'lucide-react';
 
 const genreColors: { [key: string]: string } = {
     News: 'bg-blue-500',
@@ -17,7 +17,7 @@ const genreColors: { [key: string]: string } = {
     Default: 'bg-gray-500',
 };
 
-const DraggableProgram: FC<{ program: any, onEditClick: (program: any) => void }> = ({ program, onEditClick }) => {
+const DraggableProgram: FC<{ program: any, onEditClick: (program: any) => void }> = ({ program }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({
         id: program.id,
         data: { program },
@@ -34,7 +34,7 @@ const DraggableProgram: FC<{ program: any, onEditClick: (program: any) => void }
                     <div
                         ref={setNodeRef}
                         style={style}
-                        className={`group relative p-1 m-1 rounded text-white text-xs ${genreColors[program.genre] || genreColors.Default} flex items-center gap-1`}
+                        className={`group relative p-1 m-1 rounded text-white text-xs ${genreColors[program.genre] || genreColors.Default} flex items-center gap-1 cursor-pointer`}
                     >
                         <span {...listeners} {...attributes} className="cursor-grab touch-none p-1">
                             <GripVertical className="h-4 w-4" />
@@ -42,16 +42,7 @@ const DraggableProgram: FC<{ program: any, onEditClick: (program: any) => void }
                         <span>
                             {program.time.split('T')[1]} {program.title}
                         </span>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                onEditClick(program);
-                            }}
-                            className="absolute top-0.5 right-0.5 p-0.5 bg-black bg-opacity-50 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-blue-500"
-                        >
-                            <Edit className="h-3 w-3" />
-                        </button>
+                        {/* Hover edit removed */}
                     </div>
                 </TooltipTrigger>
                 <TooltipContent>
