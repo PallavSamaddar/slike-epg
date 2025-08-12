@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { EPGNavigation } from '@/components/EPGNavigation';
 import { EPGScheduler } from '@/components/EPGScheduler';
-import { EPGSchedulerBackup } from '@/components/EPGSchedulerBackup';
-import { ContentLibrary } from '@/components/ContentLibrary';
+// removed obsolete imports
 import { LiveEventsManager } from '@/components/LiveEventsManager';
 import { EPGPreview } from '@/components/EPGPreview';
-import { EPGPreviewOld } from '@/components/EPGPreviewOld';
+// removed obsolete import
 
 const Index = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -16,14 +15,9 @@ const Index = () => {
         return <LiveEventsManager onNavigate={setActiveView} />;
       case 'scheduler':
         return <EPGScheduler onNavigate={setActiveView} />;
-      case 'scheduler-backup':
-        return <EPGSchedulerBackup />;
-      case 'content':
-        return <ContentLibrary />;
       case 'preview':
         return <EPGPreview />;
-      case 'preview-old':
-        return <EPGPreviewOld />;
+      // removed obsolete routes
       default:
         return <LiveEventsManager onNavigate={setActiveView} />;
     }
