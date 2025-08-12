@@ -450,6 +450,32 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     }
   ]);
 
+  // Load saved day schedule from Preview, if present
+  useEffect(() => {
+    try {
+      const key = `epg:preview:day:${selectedDate}`;
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const items: { id: string; time: string; title: string; type: 'VOD' | 'Event'; duration: number; status: string; genre: string; }[] = JSON.parse(raw);
+        // Map preview items to schedule blocks for the times that exist
+        setScheduleBlocks(prev => {
+          const byTime = new Map(prev.map(b => [b.time, b]));
+          items.forEach(item => {
+            const time = item.time.split('T')[1].slice(0,5);
+            const block = byTime.get(time);
+            if (block) {
+              block.title = item.title;
+              block.type = item.type;
+              block.status = item.status as any;
+              block.tags = [item.genre];
+            }
+          });
+          return [...byTime.values()];
+        });
+      }
+    } catch {}
+  }, [selectedDate]);
+
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {

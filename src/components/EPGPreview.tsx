@@ -299,6 +299,16 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     
     return initialPrograms;
   });
+
+  // Persist a single day's programs for TOI Global to consume
+  const persistDaySchedule = (date: Date) => {
+    const key = `epg:preview:day:${date.toISOString().split('T')[0]}`;
+    const dayStr = date.toISOString().split('T')[0];
+    const dayItems = mockEPGData.filter(p => p.time.startsWith(dayStr));
+    try {
+      localStorage.setItem(key, JSON.stringify(dayItems));
+    } catch {}
+  };
   
     const handleAdSave = (adConfig: Record<string, unknown>) => {
         console.log('Ad config saved:', adConfig);
@@ -426,6 +436,8 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                 const programsToKeep = nonMasterDayPrograms.filter(p => !futureDates.includes(p.time.split('T')[0]));
                 
                 setMockEPGData([...masterPrograms, ...programsToKeep, ...newFuturePrograms]);
+                // Persist today's schedule for TOI Global
+                persistDaySchedule(today);
                 setIsSaving(false);
                 setHasUnsavedChanges(false);
                 toast({
@@ -442,7 +454,8 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             const formatted = dateToSave.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
             setIsSaving(true);
             setTimeout(() => {
-                // Data is already updated in mockEPGData via edits/reorders; simulate persist
+                // Persist only this selected date
+                persistDaySchedule(dateToSave);
                 setIsSaving(false);
                 setHasUnsavedChanges(false);
                 toast({
