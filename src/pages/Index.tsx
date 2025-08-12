@@ -1,10 +1,8 @@
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { EPGNavigation } from '@/components/EPGNavigation';
-import { EPGScheduler } from '@/components/EPGScheduler';
-// removed obsolete imports
-import { LiveEventsManager } from '@/components/LiveEventsManager';
-import { EPGPreview } from '@/components/EPGPreview';
-// removed obsolete import
+const EPGScheduler = lazy(() => import('@/components/EPGScheduler').then(m => ({ default: m.EPGScheduler })));
+const LiveEventsManager = lazy(() => import('@/components/LiveEventsManager').then(m => ({ default: m.LiveEventsManager })));
+const EPGPreview = lazy(() => import('@/components/EPGPreview').then(m => ({ default: m.EPGPreview })));
 
 const Index = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -27,7 +25,9 @@ const Index = () => {
     <div className="min-h-screen bg-background flex">
       <EPGNavigation activeView={activeView} onViewChange={setActiveView} />
       <div className="flex-1 overflow-auto">
-        {renderActiveView()}
+        <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading…</div>}>
+          {renderActiveView()}
+        </Suspense>
       </div>
     </div>
   );

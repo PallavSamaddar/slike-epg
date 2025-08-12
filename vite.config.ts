@@ -19,4 +19,21 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    sourcemap: mode === 'development',
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          vendor: [
+            'react', 'react-dom',
+            '@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities',
+          ],
+          ui: [
+            'lucide-react'
+          ]
+        }
+      }
+    }
+  }
 }));

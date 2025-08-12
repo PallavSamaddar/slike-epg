@@ -489,6 +489,9 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   });
 
+  // Memoize heavy arrays
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   // Single-day grid removed; positions calc no longer needed
 
   const getBlockColor = (time: string, status: string) => {
