@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback, memo } from 'react';
 import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -205,7 +205,7 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
   );
 };
 
-const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo, dndId }: { 
+const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId }: { 
   video: Video; 
   blockId: string; 
   blockTime: string;
@@ -232,9 +232,9 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo, dndId }: {
     return 'text-black';
   };
 
-  const handleDelete = () => {
+  const handleDelete = useCallback(() => {
     onDeleteVideo(video.id);
-  };
+  }, [onDeleteVideo, video.id]);
 
   return (
     <>
@@ -307,7 +307,7 @@ const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo, dndId }: {
       />
     </>
   );
-};
+});
 
 export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
   const { toast } = useToast();
@@ -539,6 +539,17 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       setIsSidebarFloating(closest > 0);
     }
   };
+
+  // Debounce scroll handler to avoid excessive state updates
+  const scrollTimeout = useRef<number | null>(null);
+  const onScrollDebounced = useCallback(() => {
+    if (scrollTimeout.current) {
+      window.clearTimeout(scrollTimeout.current);
+    }
+    scrollTimeout.current = window.setTimeout(() => {
+      handleContinuousScroll();
+    }, 50);
+  }, [handleContinuousScroll]);
 
   // Smooth scroll to a specific day key and highlight first slot briefly
   const scrollToDate = (isoDate: string) => {
@@ -920,7 +931,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           <Card className="bg-card-dark border-border mt-6 w-[95%] mx-auto">
             <CardContent className="p-0">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={handleContinuousScroll}>
+                <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={onScrollDebounced}>
                   {days15.map((day, idx) => (
                     <div key={day.key} ref={el => (dayRefs.current[idx] = el)} className="border-t border-border/30">
                       <div className="flex items-center justify-between px-4 py-2">

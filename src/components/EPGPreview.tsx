@@ -300,6 +300,12 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     return initialPrograms;
   });
 
+  // Memoized slices to reduce filtering work per render
+  const todayKey = useMemo(() => new Date().toISOString().split('T')[0], []);
+  const todayPrograms = useMemo(() => mockEPGData.filter(i => i.time.startsWith(todayKey)), [mockEPGData, todayKey]);
+  const selectedKey = useMemo(() => selectedDate.toISOString().split('T')[0], [selectedDate]);
+  const selectedDayPrograms = useMemo(() => mockEPGData.filter(i => i.time.startsWith(selectedKey)), [mockEPGData, selectedKey]);
+
   // Persist a single day's programs for TOI Global to consume
   const persistDaySchedule = (date: Date) => {
     const key = `epg:preview:day:${date.toISOString().split('T')[0]}`;
@@ -479,7 +485,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
                 <div className="flex-shrink-0 w-40 text-center">
                     <div className="w-40 h-24 overflow-hidden rounded-sm">
-                        <img src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
+                        <img loading="lazy" src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
                     </div>
                     <span className="text-xs font-mono text-broadcast-blue mt-1">
                         {formatTimeRange(item.time.split('T')[1], item.duration)}
@@ -560,7 +566,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                 </div>
             </div>
         );
-    }
+    } 
 
     const AddBlockDialog = ({ type, onAdd, existingPrograms, programToEdit, onCancel }: { type: 'VOD' | 'Event', onAdd: (item: EPGPreviewItem) => void, existingPrograms: EPGPreviewItem[], programToEdit: EPGPreviewItem | null, onCancel: () => void }) => {
         const [isOpen, setIsOpen] = useState(!!programToEdit);
@@ -1049,7 +1055,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     // removed duplicate handleDateChangeFromCalendar
 
     const renderCurrentView = () => {
-        const dailyPrograms = mockEPGData.filter(p => p.time.startsWith(selectedDate.toISOString().split('T')[0]));
+        const dailyPrograms = selectedDayPrograms;
 
         // Determine the view based on activeTabId
         if (activeTabId === 'master-epg') {
@@ -1063,8 +1069,8 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                                     collisionDetection={closestCenter}
                                     onDragEnd={handleDragEnd}
                                 >
-                                    <SortableContext items={mockEPGData.filter(i => i.time.startsWith(new Date().toISOString().split('T')[0])).map(item => item.id)} strategy={verticalListSortingStrategy}>
-                                        {mockEPGData.filter(i => i.time.startsWith(new Date().toISOString().split('T')[0])).map((item) => (
+                                     <SortableContext items={todayPrograms.map(item => item.id)} strategy={verticalListSortingStrategy}>
+                                         {todayPrograms.map((item) => (
                                             <SortableItem key={item.id} id={item.id}>
                                                 {(listeners) => (
                                                     <ProgramItem item={item} isDraggable={true} listeners={listeners} showStatus={false} />
