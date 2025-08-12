@@ -320,6 +320,10 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
   const [isSidebarFloating, setIsSidebarFloating] = useState(false);
   const [startDay, setStartDay] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
+  // Progressive loading states
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+  const [isChunkLoading, setIsChunkLoading] = useState<boolean>(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
@@ -519,7 +523,37 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     }
     return days;
   };
-  const days15 = getDaysArray(startDay, 15);
+  // Visible days (start with 3, progressively load up to 15)
+  const [visibleDays, setVisibleDays] = useState<{ date: Date; key: string; label: string }[]>(() => getDaysArray(startDay, 3));
+
+  // Simulate initial fetch
+  useEffect(() => {
+    setIsInitialLoading(true);
+    const t = window.setTimeout(() => setIsInitialLoading(false), 300);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  const getNextDays = useCallback((current: { date: Date; key: string; label: string }[]) => {
+    const maxDays = 15;
+    if (current.length >= maxDays) return [] as { date: Date; key: string; label: string }[];
+    const last = current[current.length - 1];
+    const base = new Date(last.date);
+    base.setDate(base.getDate() + 1);
+    // Load 2 days at a time, but cap at 15
+    const remaining = maxDays - current.length;
+    const count = Math.min(2, remaining);
+    return getDaysArray(base, count);
+  }, []);
+
+  const loadMoreDays = useCallback((newDays: { date: Date; key: string; label: string }[]) => {
+    if (newDays.length === 0) return;
+    setIsChunkLoading(true);
+    // Simulate incremental fetch
+    window.setTimeout(() => {
+      setVisibleDays(prev => [...prev, ...newDays]);
+      setIsChunkLoading(false);
+    }, 250);
+  }, []);
 
   // Scroll container handler: update selectedDate/head as you scroll
   const handleContinuousScroll = () => {
@@ -534,7 +568,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     });
     if (closest !== currentDayIndex) {
       setCurrentDayIndex(closest);
-      const dayKey = days15[closest].key;
+      const dayKey = visibleDays[closest]?.key;
       setSelectedDate(dayKey);
       setIsSidebarFloating(closest > 0);
     }
@@ -551,9 +585,26 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     }, 50);
   }, [handleContinuousScroll]);
 
+  // Intersection observer to append next days as user scrolls near end
+  useEffect(() => {
+    if (!continuousContainerRef.current || !loadMoreRef.current) return;
+    const rootEl = continuousContainerRef.current;
+    const observer = new IntersectionObserver((entries) => {
+      const entry = entries[0];
+      if (entry.isIntersecting && !isChunkLoading && !isInitialLoading) {
+        const next = getNextDays(visibleDays);
+        if (next.length > 0) {
+          loadMoreDays(next);
+        }
+      }
+    }, { root: rootEl, rootMargin: '200px' });
+    observer.observe(loadMoreRef.current);
+    return () => observer.disconnect();
+  }, [visibleDays, isChunkLoading, isInitialLoading, getNextDays, loadMoreDays]);
+
   // Smooth scroll to a specific day key and highlight first slot briefly
   const scrollToDate = (isoDate: string) => {
-    const idx = days15.findIndex(d => d.key === isoDate);
+    const idx = visibleDays.findIndex(d => d.key === isoDate);
     if (idx >= 0) {
       setCurrentDayIndex(idx);
       setTimeout(() => {
@@ -927,12 +978,19 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
       <div className="grid grid-cols-10 gap-8 items-start">
         <div className="col-span-8 overflow-x-auto">
-          {/* Continuous 15-day stacked view (with full editing and drag-drop like today's section) */}
-          <Card className="bg-card-dark border-border mt-6 w-[95%] mx-auto">
+          {/* Continuous 15-day stacked view (progressive load) */}
+          <Card className="bg-card-dark border-border mt-6 w-[95%] mx-auto relative">
             <CardContent className="p-0">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                {/* Fullscreen loader on first load */}
+                {isInitialLoading && (
+                  <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/90">
+                    <div className="w-12 h-12 border-4 border-gray-300 border-t-broadcast-blue rounded-full animate-spin"></div>
+                    <p className="mt-3 text-sm text-muted-foreground">Loading Event EPG…</p>
+                  </div>
+                )}
                 <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={onScrollDebounced}>
-                  {days15.map((day, idx) => (
+                  {visibleDays.map((day, idx) => (
                     <div key={day.key} ref={el => (dayRefs.current[idx] = el)} className="border-t border-border/30">
                       <div className="flex items-center justify-between px-4 py-2">
                         <span className="text-sm font-medium">Schedule - {day.label}</span>
@@ -1114,6 +1172,16 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                       </div>
                     </div>
                   ))}
+                  {/* Skeleton while fetching next chunk */}
+                  {isChunkLoading && (
+                    <div className="p-4">
+                      {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-20 rounded-md mb-2 animate-pulse bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 bg-[length:200%_100%]"></div>
+                      ))}
+                    </div>
+                  )}
+                  {/* Sentinel for intersection observer */}
+                  <div ref={loadMoreRef} style={{ height: 1 }} />
                 </div>
               </DndContext>
             </CardContent>
