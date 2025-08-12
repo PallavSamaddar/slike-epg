@@ -152,8 +152,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   // Handle tab switching
   const handleTabChange = (tabId: string) => {
     setActiveTabId(tabId);
-    // reset unsaved flag when switching views
-    setHasUnsavedChanges(false);
+    // do not reset unsaved flag on view switches; keep changes until saved
     
     // Map tab IDs to view modes and active tabs
     switch (tabId) {
@@ -254,20 +253,33 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
   const [mockEPGData, setMockEPGData] = useState<EPGPreviewItem[]>(() => {
     const today = new Date();
-    const initialPrograms: EPGPreviewItem[] = [
-      { id: '1', time: `${today.toISOString().split('T')[0]}T08:00`, title: 'Morning News Live', type: 'Event', duration: 90, geoZone: 'Global', description: 'Live morning news broadcast with breaking news updates', status: 'completed', genre: 'News', imageUrl: getRandomPoster() },
-      { id: '2', time: `${today.toISOString().split('T')[0]}T09:30`, title: 'Weather Update', type: 'Event', duration: 15, geoZone: 'Global', description: 'Local and national weather forecast', status: 'completed', genre: 'News', imageUrl: getRandomPoster() },
-      { id: '3', time: `${today.toISOString().split('T')[0]}T09:45`, title: 'Classic Movies Marathon', type: 'VOD', duration: 135, geoZone: 'US/EU', description: 'Curated selection of classic Hollywood films', status: 'completed', genre: 'Movies', imageUrl: getRandomPoster() },
-      { id: '4', time: `${today.toISOString().split('T')[0]}T12:00`, title: 'Sports Center Live', type: 'Event', duration: 60, geoZone: 'Global', description: 'Live sports news and highlights', status: 'live', genre: 'Sports', imageUrl: getRandomPoster() },
-      { id: '5', time: `${today.toISOString().split('T')[0]}T13:00`, title: 'Afternoon Talk Show', type: 'Event', duration: 60, geoZone: 'Global', description: 'Talk show with celebrity guests.', status: 'scheduled', genre: 'Talk Show', imageUrl: getRandomPoster() },
-      { id: '6', time: `${today.toISOString().split('T')[0]}T14:00`, title: 'Daily Quiz', type: 'VOD', duration: 30, geoZone: 'Global', description: 'An interactive quiz show.', status: 'scheduled', genre: 'Games', imageUrl: getRandomPoster() },
-      { id: '7', time: `${today.toISOString().split('T')[0]}T14:30`, title: 'Cooking with Chefs', type: 'VOD', duration: 45, geoZone: 'Global', description: 'Learn new recipes from world-renowned chefs.', status: 'scheduled', genre: 'Cooking', imageUrl: getRandomPoster() },
-      { id: '8', time: `${today.toISOString().split('T')[0]}T15:15`, title: 'Financial News', type: 'Event', duration: 45, geoZone: 'Global', description: 'Latest updates from the world of finance.', status: 'scheduled', genre: 'News', imageUrl: getRandomPoster() },
-      { id: '9', time: `${today.toISOString().split('T')[0]}T16:00`, title: 'Evening Movie', type: 'VOD', duration: 120, geoZone: 'US/EU', description: 'A blockbuster movie to end your day.', status: 'scheduled', genre: 'Movies', imageUrl: getRandomPoster() },
-      { id: '10', time: `${today.toISOString().split('T')[0]}T18:00`, title: 'Music Hour', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A selection of popular music videos.', status: 'scheduled', genre: 'Music', imageUrl: getRandomPoster() },
-      { id: '11', time: `${today.toISOString().split('T')[0]}T19:00`, title: 'World News Tonight', type: 'Event', duration: 60, geoZone: 'Global', description: 'Comprehensive coverage of world events.', status: 'scheduled', genre: 'News', imageUrl: getRandomPoster() },
-      { id: '12', time: `${today.toISOString().split('T')[0]}T20:00`, title: 'Late Night Comedy', type: 'VOD', duration: 60, geoZone: 'Global', description: 'A roundup of the best comedy sketches.', status: 'scheduled', genre: 'Comedy', imageUrl: getRandomPoster() }
+    const todayStr = today.toISOString().split('T')[0];
+    const initialPrograms: EPGPreviewItem[] = [];
+    const genres = ['News','Movies','Sports','Music','Comedy','Documentary','Talk Show','Games','Cooking'];
+    const titles = [
+      'Midnight Kickoff','Early Hour Highlights','Dawn Documentaries','Sunrise Show','Morning Mix',
+      'Daily Briefing','Brunch Beats','Noon News','Afternoon Feature','Tea Time Talk',
+      'Drive Time Hits','Evening Update','Prime Stories','Family Hour','Twilight Tunes',
+      'Dusk Drama','Evening Magazine','Pre-Prime Recap','Prime Preview','Late Rush','Late Feature'
     ];
+    // Build hourly programs from 00:00 to 20:00
+    for (let hour = 0; hour <= 20; hour++) {
+      const hh = String(hour).padStart(2, '0');
+      const title = titles[hour % titles.length] || `Program ${hh}:00`;
+      const genre = genres[hour % genres.length];
+      initialPrograms.push({
+        id: `m-${hour}`,
+        time: `${todayStr}T${hh}:00`,
+        title,
+        type: hour % 2 === 0 ? 'VOD' : 'Event',
+        duration: 60,
+        geoZone: 'Global',
+        description: `${title} - ${genre} segment`,
+        status: 'scheduled',
+        genre,
+        imageUrl: getRandomPoster(),
+      });
+    }
 
     for (let i = 1; i <= 7; i++) {
         const nextDate = new Date();
@@ -326,6 +338,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
                 return arrayMove(items, oldIndex, newIndex);
             });
+            setHasUnsavedChanges(true);
         }
     };
     
@@ -355,6 +368,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
     const toggleEditMode = (id: string) => {
         setMockEPGData(prev => prev.map(item => item.id === id ? { ...item, isEditing: !item.isEditing } : { ...item, isEditing: false }));
+        // editing toggle does not mark changes yet
     };
 
     const toggleGenreEdit = (id: string) => {
@@ -364,6 +378,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     const updateGenre = (id: string, newGenre: string) => {
         setMockEPGData(prev => prev.map(item => item.id === id ? { ...item, genre: newGenre } : item));
         setEditingGenres(null);
+        setHasUnsavedChanges(true);
     };
 
     const handleSaveProgram = (item: EPGPreviewItem) => {
@@ -375,54 +390,75 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             toast({ title: `${item.type} Block added successfully` });
         }
         setEditingProgram(null);
+        setHasUnsavedChanges(true);
     };
 
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSaveEpg = () => {
-        if (activeTab !== 'master-epg') {
-            toast({
-                title: "Action Not Available",
-                description: "You can only save the master EPG from the Master EPG view.",
-                variant: "destructive"
-            });
+        // Save Master EPG for next 15 days
+        if (activeTabId === 'master-epg') {
+            setIsSaving(true);
+            setTimeout(() => {
+                const today = new Date();
+                const todayString = today.toISOString().split('T')[0];
+                
+                const masterPrograms = mockEPGData.filter(p => p.time.startsWith(todayString));
+                
+                const nonMasterDayPrograms = mockEPGData.filter(p => !p.time.startsWith(todayString));
+                
+                const futureDates: string[] = [];
+                for (let i = 1; i <= 15; i++) {
+                    const futureDate = new Date();
+                    futureDate.setDate(today.getDate() + i);
+                    futureDates.push(futureDate.toISOString().split('T')[0]);
+                }
+                
+                const newFuturePrograms = futureDates.flatMap(date =>
+                    masterPrograms.map(p => ({
+                        ...p,
+                        id: `${p.id}-mastercopy-${date}-${Math.random()}`,
+                        time: `${date}T${p.time.split('T')[1]}`,
+                        status: 'scheduled',
+                    }))
+                );
+
+                const programsToKeep = nonMasterDayPrograms.filter(p => !futureDates.includes(p.time.split('T')[0]));
+                
+                setMockEPGData([...masterPrograms, ...programsToKeep, ...newFuturePrograms]);
+                setIsSaving(false);
+                setHasUnsavedChanges(false);
+                toast({
+                    title: 'Master EPG saved',
+                    description: 'Master EPG saved and updated for the next 15 days.',
+                });
+            }, 500);
             return;
         }
 
-        setIsSaving(true);
-        setTimeout(() => {
-            const today = new Date();
-            const todayString = today.toISOString().split('T')[0];
-            
-            const masterPrograms = mockEPGData.filter(p => p.time.startsWith(todayString));
-            
-            const nonMasterDayPrograms = mockEPGData.filter(p => !p.time.startsWith(todayString));
-            
-            const futureDates = [];
-            for (let i = 1; i <= 15; i++) {
-                const futureDate = new Date();
-                futureDate.setDate(today.getDate() + i);
-                futureDates.push(futureDate.toISOString().split('T')[0]);
-            }
-            
-            const newFuturePrograms = futureDates.flatMap(date =>
-                masterPrograms.map(p => ({
-                    ...p,
-                    id: `${p.id}-mastercopy-${date}-${Math.random()}`,
-                    time: `${date}T${p.time.split('T')[1]}`,
-                    status: 'scheduled',
-                }))
-            );
+        // Save single-day EPG for Today's or Selected Date views
+        if (activeTabId === 'todays-epg' || activeTabId === 'select-date' || activeTabId.startsWith('date-')) {
+            const dateToSave = selectedDate;
+            const formatted = dateToSave.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+            setIsSaving(true);
+            setTimeout(() => {
+                // Data is already updated in mockEPGData via edits/reorders; simulate persist
+                setIsSaving(false);
+                setHasUnsavedChanges(false);
+                toast({
+                    title: 'EPG saved',
+                    description: `Schedule for ${formatted} saved successfully.`,
+                });
+            }, 400);
+            return;
+        }
 
-            const programsToKeep = nonMasterDayPrograms.filter(p => !futureDates.includes(p.time.split('T')[0]));
-            
-            setMockEPGData([...masterPrograms, ...programsToKeep, ...newFuturePrograms]);
-            setIsSaving(false);
-            toast({
-                title: 'Master EPG saved',
-                description: 'Master EPG saved and updated for the next 15 days.',
-            });
-        }, 500);
+        // Weekly/Monthly remains disabled via button state; guard for safety
+        toast({
+            title: 'Save not available',
+            description: 'Switch to Master, Today, or Select Date to save.',
+            variant: 'destructive',
+        });
     };
 
     const ProgramItem = ({ item, isDraggable, listeners, showStatus = true }: { item: EPGPreviewItem, isDraggable: boolean, listeners?: Record<string, unknown>, showStatus?: boolean }) => {
@@ -443,7 +479,10 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                             {item.isEditing ? (
                                 <Input
                                     value={item.title}
-                                    onChange={(e) => setMockEPGData(prev => prev.map(i => i.id === item.id ? { ...i, title: e.target.value } : i))}
+                                    onChange={(e) => {
+                                      setMockEPGData(prev => prev.map(i => i.id === item.id ? { ...i, title: e.target.value } : i));
+                                      setHasUnsavedChanges(true);
+                                    }}
                                     onBlur={() => toggleEditMode(item.id)}
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter') {
@@ -458,7 +497,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                                     {item.title}
                                 </span>
                             )}
-                            <button onClick={() => toggleEditMode(item.id)} className={`flex-shrink-0 p-1 rounded hover:bg-black/20 text-black`}>
+                                <button onClick={() => toggleEditMode(item.id)} className={`flex-shrink-0 p-1 rounded hover:bg-black/20 text-black`}>
                                 <Edit className="h-3 w-3" />
                             </button>
                             <div className="flex gap-1 ml-2 relative">
@@ -767,7 +806,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                                     className="hidden"
                                     accept="image/*"
                                 />
-                                <Button type="button" variant="ghost" size="sm" onClick={() => setImage('/toi_global_poster.png')}>
+                                 <Button type="button" variant="ghost" size="sm" onClick={() => { setImage('/toi_global_poster.png'); setHasUnsavedChanges(true); }}>
                                     Reset to default
                                 </Button>
                             </div>
@@ -879,7 +918,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         return '';
     };
 
-        const handleQuickXlsDownload = () => {
+    const handleQuickXlsDownload = () => {
         const worksheet = XLSX.utils.json_to_sheet(mockEPGData.map(item => ({
             "Channel Name": "TOI Global",
             "MRP": "0",
@@ -1090,7 +1129,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                                     </p>
                                     <Button 
                                         variant="broadcast" 
-                                        onClick={() => handleTabChange('master-epg')}
+                                     onClick={() => { handleTabChange('master-epg'); setHasUnsavedChanges(false); }}
                                         className="mt-4"
                                     >
                                         Open Master EPG
@@ -1453,9 +1492,9 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             <div className="flex-grow overflow-hidden">
                 <Tabs defaultValue="json" className="h-full flex flex-col">
                     <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="json">JSON</TabsTrigger>
-                        <TabsTrigger value="xml">XML</TabsTrigger>
-                        <TabsTrigger value="xls">XLS</TabsTrigger>
+                        <TabsTrigger value="json" className="bg-white text-black data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">JSON</TabsTrigger>
+                        <TabsTrigger value="xml" className="bg-white text-black data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">XML</TabsTrigger>
+                        <TabsTrigger value="xls" className="bg-white text-black data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">XLS</TabsTrigger>
                     </TabsList>
                     <TabsContent value="json" className="flex-grow overflow-auto">
                         <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 h-full">

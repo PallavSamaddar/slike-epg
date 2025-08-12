@@ -463,33 +463,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
   });
 
-  // Calculate cumulative Y positions for dynamic repositioning
-  const calculateTimeSlotPositions = () => {
-    const positions = new Map<string, number>();
-    let currentY = 0;
-    
-    timeSlots.forEach((time) => {
-      positions.set(time, currentY);
-      
-      const isHour = time.endsWith(':00');
-      const blockForTime = scheduleBlocks.find(block => block.time === time);
-      const hasBlock = !!blockForTime;
-
-      if (isHour || hasBlock) {
-        const baseRowHeight = 60;
-        const blockHeight = hasBlock 
-          ? Math.max(120, 80 + (blockForTime.videos.length * 32)) + 16 // +16 for padding
-          : baseRowHeight;
-        
-        currentY += Math.max(baseRowHeight, blockHeight);
-      }
-    });
-    
-    return positions;
-  };
-
-  const timeSlotPositions = calculateTimeSlotPositions();
-  const totalHeight = Math.max(...Array.from(timeSlotPositions.values())) + 200; // Extra space for last row
+  // Single-day grid removed; positions calc no longer needed
 
   const getBlockColor = (time: string, status: string) => {
     // 00:00 and 01:00: light gray
@@ -907,248 +881,14 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             </div>
           </div>
         </div>
+        </div>
 
-        
-      </div>
+      
 
       <div className="grid grid-cols-10 gap-8 items-start">
-        {/* Main Schedule Grid */}
         <div className="col-span-8 overflow-x-auto">
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <Card className="bg-card-dark border-border w-full">
-              <CardHeader className="py-3">
-                <CardTitle>
-                  <span className="text-sm">Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="h-[75vh] overflow-y-auto">
-                <div className="relative" style={{ height: `${totalHeight}px` }}>
-                  {/* Time Slots */}
-                  <div className="relative">
-                    {timeSlots.map((time, index) => {
-                      const isHour = time.endsWith(':00');
-                      const hasBlock = scheduleBlocks.some(block => block.time === time);
-
-                      if (!isHour && !hasBlock) {
-                        return null;
-                      }
-
-                      return (
-                          <div 
-                            key={time} 
-                          className="absolute w-full"
-                          style={{ top: `${timeSlotPositions.get(time) || 0}px` }}
-                        >
-                          <div className="flex items-center gap-4 py-2 border-b border-border/30">
-                            <div className="w-16 text-xs text-muted-foreground font-mono">
-                              {time}
-                            </div>
-                              <div 
-                                className="flex-1 min-h-[60px] relative" 
-                                data-block-id={scheduleBlocks.find(b => b.time === time)?.id ?? ''}
-                                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
-                                onDrop={(e) => {
-                                  e.preventDefault();
-                                  const data = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
-                                  if (data) {
-                                    try {
-                                      const draggedData = JSON.parse(data);
-                                      if (draggedData.type === 'content-video') {
-                                        const targetBlock = scheduleBlocks.find(block => block.time === time);
-                                        if (targetBlock) {
-                                          setScheduleBlocks(prev => 
-                                            prev.map(block => 
-                                              block.id === targetBlock.id 
-                                                ? { ...block, videos: [...block.videos, draggedData.video] }
-                                                : block
-                                            )
-                                          );
-                                        }
-                                      }
-                                    } catch (error) {
-                                      console.error('Error parsing dragged data:', error);
-                                    }
-                                  }
-                                }}
-                              >
-                              {/* Red playhead arrow for current time (02:00) */}
-                              {time === '02:00' && (
-                                <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center">
-                                  <div className="w-0 h-0 border-l-[8px] border-l-red-500 border-y-[6px] border-y-transparent"></div>
-                                  <div className="w-1 h-8 bg-red-500 -ml-px"></div>
-                                </div>
-                              )}
-                               {/* Drop zone wraps blocks so drop events bubble */}
-                               <div 
-                                 className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
-                                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
-                                 onDrop={(e) => {
-                                   e.preventDefault();
-                                   const data = e.dataTransfer.getData('application/json');
-                                   if (data) {
-                                     try {
-                                       const draggedData = JSON.parse(data);
-                                       if (draggedData.type === 'content-video') {
-                                         const targetBlock = scheduleBlocks.find(block => block.time === time);
-                                         if (targetBlock) {
-                                           setScheduleBlocks(prev => 
-                                             prev.map(block => 
-                                               block.id === targetBlock.id 
-                                                 ? { ...block, videos: [...block.videos, draggedData.video] }
-                                                 : block
-                                             )
-                                           );
-                                         }
-                                       }
-                                     } catch (error) {
-                                       console.error('Error parsing dragged data:', error);
-                                     }
-                                   }
-                                 }}
-                               >
-                                {/* Scheduled blocks */}
-                                {scheduleBlocks
-                                  .filter(block => block.time === time && block.title !== 'Ad Break')
-                                  .map(block => (
-                                     <div
-                                         key={block.id}
-                                         className={`
-                                           p-3 rounded border-2 cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10
-                                           ${getBlockColor(block.time, block.status)}
-                                         `}
-                                       style={{ 
-                                         minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` 
-                                       }}
-                                       data-block-id={block.id}
-                                     >
-                                       <div className="flex items-center justify-between mb-2">
-                                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                                          {block.isEditing ? (
-                                            <Input
-                                              value={block.title}
-                                              onChange={(e) => setScheduleBlocks(prev => 
-                                                prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b)
-                                              )}
-                                              onBlur={() => updateBlockTitle(block.id, block.title)}
-                                              onKeyDown={(e) => {
-                                                if (e.key === 'Enter') {
-                                                  updateBlockTitle(block.id, block.title);
-                                                }
-                                              }}
-                                              className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
-                                              autoFocus
-                                            />
-                                           ) : (
-                                              <span className={`font-medium text-sm truncate text-black`}>
-                                                {block.title}
-                                              </span>
-                                           )}
-                                           <button
-                                             onClick={() => toggleEditMode(block.id)}
-                                             className={`flex-shrink-0 p-1 rounded hover:bg-black/20 text-black`}
-                                           >
-                                             <Edit className="h-3 w-3" />
-                                           </button>
-                                           <div className="flex gap-1 ml-2 relative">
-                                             {block.tags.slice(0, 1).map((tag, idx) => (
-                                              <div key={idx} className="relative group">
-                                                 <span className={`text-xs px-1 py-0.5 rounded cursor-pointer bg-black/10 text-black`}>
-                                                  {tag}
-                                                  {editingGenres === block.id && (
-                                                    <button
-                                                      onClick={() => removeGenreFromBlock(block.id, tag)}
-                                                       className="ml-1 text-red-600 hover:text-red-500"
-                                                    >
-                                                      <X className="h-2 w-2" />
-                                                    </button>
-                                                  )}
-                                                </span>
-                                              </div>
-                                            ))}
-                                             <button
-                                               onClick={() => toggleGenreEdit(block.id)}
-                                               className={`text-xs px-1 py-0.5 rounded hover:bg-black/20 text-black`}
-                                             >
-                                               <Edit className="h-3 w-3" />
-                                             </button>
-                                            {editingGenres === block.id && (
-                                              <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
-                                                <div className="flex flex-wrap gap-1 w-48">
-                                                  {availableGenres
-                                                    .filter(genre => !block.tags.includes(genre))
-                                                    .map(genre => (
-                                                      <button
-                                                        key={genre}
-                                                        onClick={() => addGenreToBlock(block.id, genre)}
-                                                        className="text-xs px-2 py-1 rounded bg-primary text-white hover:bg-primary/80"
-                                                      >
-                                                        {genre}
-                                                      </button>
-                                                    ))}
-                                                </div>
-                                                <button
-                                                  onClick={() => setEditingGenres(null)}
-                                                  className="mt-2 text-xs text-muted-foreground hover:text-foreground"
-                                                >
-                                                  Done
-                                                </button>
-                                              </div>
-                                            )}
-                                          </div>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            <Badge 
-                                              className="text-xs bg-black/10 text-black"
-                                            >
-                                              {block.type}
-                                            </Badge>
-                                          {block.status === 'live' && (
-                                            <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
-                                          )}
-                                        </div>
-                                      </div>
-                                      
-                                      <div className="flex gap-3">
-                                        {/* Videos List */}
-                                        <div className="flex-1">
-                                          <SortableContext 
-                                            items={block.videos.map(v => `${block.id}-${v.id}`)} 
-                                            strategy={verticalListSortingStrategy}
-                                          >
-                                            <div className="space-y-1">
-                                               {block.videos.map(video => (
-                                                 <DraggableVideo 
-                                                   key={video.id} 
-                                                   video={video} 
-                                                   blockId={block.id} 
-                                                   blockTime={block.time}
-                                                   onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
-                                                 />
-                                               ))}
-                                            </div>
-                                          </SortableContext>
-                                        </div>
-                                        
-                                         {/* Block Info */}
-                                         <div className="flex-shrink-0 text-right">
-                                         </div>
-                                      </div>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </DndContext>
-
           {/* Continuous 15-day stacked view (with full editing and drag-drop like today's section) */}
-          <Card className="bg-card-dark border-border mt-6">
+          <Card className="bg-card-dark border-border mt-6 w-[95%] mx-auto">
             <CardContent className="p-0">
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                 <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={handleContinuousScroll}>
@@ -1339,8 +1079,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             </CardContent>
           </Card>
         </div>
-
-        {/* Right Panel - Add Content and Actions (sticky when on today, floating when scrolled) */}
+        
         <div className="col-span-2">
           <div className="fixed right-8 top-0 w-[279px] max-h-screen overflow-y-auto space-y-4 z-40">
           {/* Channel Preview moved into floating sidebar */}
@@ -1589,7 +1328,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             </CardContent>
           </Card>
         </div>
-      </div>
+        </div>
       </div>
       <Toaster />
 
