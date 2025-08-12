@@ -855,30 +855,54 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       {/* Header */}
       <div className="grid grid-cols-10 gap-6 mb-6">
         {/* Column 1 - Channel Info (expanded) */}
-        <div className="col-span-10 flex items-start">
+        <div className="col-span-10">
           <div>
             <h1 className="text-2xl font-bold text-foreground">TOI Global</h1>
             <p className="text-muted-foreground">
               <strong>Playback Time</strong>: 25:30 hrs | <strong>Remaining Time</strong>: 34:30 hrs | <strong>Videos</strong>: 450 | <strong>Live Events</strong>: 21 | <strong>Ads Campaigns</strong>: 2 | <strong>Live Rec</strong>: 16
             </p>
-            <div className="flex items-start gap-8 mt-4">
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>On Air: Morning News Live</span>
+            <div className="flex items-center justify-between mt-4 pr-[320px]">
+              <div className="flex items-start gap-8">
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    <span>On Air: Morning News Live</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Start Time: 02:00 | End Time: 03:00
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Start Time: 02:00 | End Time: 03:00
-                </p>
+                <div>
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full" />
+                    <span>Next In Queue: Talk Show Today</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Start Time: 03:00 | End Time: 04:00
+                  </p>
+                </div>
               </div>
-              <div>
-                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-                  <div className="w-2 h-2 bg-orange-500 rounded-full" />
-                  <span>Next In Queue: Talk Show Today</span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Start Time: 03:00 | End Time: 04:00
-                </p>
+              <div className="flex items-center gap-2">
+                <Input 
+                  type="date" 
+                  value={selectedDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  max={(function(){ const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })()}
+                  onChange={(e) => { setSelectedDate(e.target.value); scrollToDate(e.target.value); }}
+                  className="bg-control-surface border-border text-foreground w-40"
+                />
+                <Button
+                  variant="control"
+                  size="sm"
+                  onClick={() => {
+                    toast({
+                      title: 'EPG saved',
+                      description: `Schedule for ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} saved successfully.`,
+                    });
+                  }}
+                >
+                  Save
+                </Button>
               </div>
             </div>
           </div>
@@ -893,30 +917,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <Card className="bg-card-dark border-border w-full">
               <CardHeader className="py-3">
-                <CardTitle className="flex items-center justify-between">
+                <CardTitle>
                   <span className="text-sm">Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                    <div className="flex items-center gap-2">
-                      <Input 
-                        type="date" 
-                        value={selectedDate}
-                      min={new Date().toISOString().split('T')[0]}
-                      max={(function(){ const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })()}
-                      onChange={(e) => { setSelectedDate(e.target.value); scrollToDate(e.target.value); }}
-                        className="bg-control-surface border-border text-foreground w-40"
-                      />
-                    <Button
-                      variant="control"
-                      size="sm"
-                      onClick={() => {
-                        toast({
-                          title: 'EPG saved',
-                          description: `Schedule for ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} saved successfully.`,
-                        });
-                      }}
-                    >
-                      Save
-                    </Button>
-                  </div>
                 </CardTitle>
               </CardHeader>
               <CardContent className="h-[75vh] overflow-y-auto">
@@ -932,8 +934,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                       }
 
                       return (
-                        <div 
-                          key={time} 
+                          <div 
+                            key={time} 
                           className="absolute w-full"
                           style={{ top: `${timeSlotPositions.get(time) || 0}px` }}
                         >
@@ -941,7 +943,34 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                             <div className="w-16 text-xs text-muted-foreground font-mono">
                               {time}
                             </div>
-                            <div className="flex-1 min-h-[60px] relative" data-block-id={scheduleBlocks.find(b => b.time === time)?.id ?? ''}>
+                              <div 
+                                className="flex-1 min-h-[60px] relative" 
+                                data-block-id={scheduleBlocks.find(b => b.time === time)?.id ?? ''}
+                                onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  const data = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
+                                  if (data) {
+                                    try {
+                                      const draggedData = JSON.parse(data);
+                                      if (draggedData.type === 'content-video') {
+                                        const targetBlock = scheduleBlocks.find(block => block.time === time);
+                                        if (targetBlock) {
+                                          setScheduleBlocks(prev => 
+                                            prev.map(block => 
+                                              block.id === targetBlock.id 
+                                                ? { ...block, videos: [...block.videos, draggedData.video] }
+                                                : block
+                                            )
+                                          );
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error('Error parsing dragged data:', error);
+                                    }
+                                  }
+                                }}
+                              >
                               {/* Red playhead arrow for current time (02:00) */}
                               {time === '02:00' && (
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center">
@@ -949,10 +978,10 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                   <div className="w-1 h-8 bg-red-500 -ml-px"></div>
                                 </div>
                               )}
-                               {/* Drop zone for scheduling */}
+                               {/* Drop zone wraps blocks so drop events bubble */}
                                <div 
                                  className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
-                                 onDragOver={(e) => e.preventDefault()}
+                                 onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
                                  onDrop={(e) => {
                                    e.preventDefault();
                                    const data = e.dataTransfer.getData('application/json');
@@ -960,10 +989,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                      try {
                                        const draggedData = JSON.parse(data);
                                        if (draggedData.type === 'content-video') {
-                                         // Find the block for this time slot
                                          const targetBlock = scheduleBlocks.find(block => block.time === time);
                                          if (targetBlock) {
-                                           // Add the dragged video to the target block
                                            setScheduleBlocks(prev => 
                                              prev.map(block => 
                                                block.id === targetBlock.id 
@@ -1134,17 +1161,46 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         {timeSlots.map((time) => (
                           <div key={`${day.key}-${time}`} className="flex items-center gap-4 py-2 border-b border-border/30 px-4">
                             <div className="w-16 text-xs text-muted-foreground font-mono">{time}</div>
-                            <div className="flex-1 min-h-[60px] relative">
-                              {/* Drop zone for scheduling from right sidebar */}
+                            <div 
+                              className="flex-1 min-h-[60px] relative"
+                              onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
+                              onDrop={(e) => {
+                                e.preventDefault();
+                                const data = e.dataTransfer.getData('application/json') || e.dataTransfer.getData('text/plain');
+                                if (data) {
+                                  try {
+                                    const draggedData = JSON.parse(data);
+                                    if (draggedData.type === 'content-video') {
+                                      const targetBlock = scheduleBlocks.find(block => block.time === time);
+                                      if (targetBlock) {
+                                        setScheduleBlocks(prev =>
+                                          prev.map(block =>
+                                            block.id === targetBlock.id
+                                              ? { ...block, videos: [...block.videos, draggedData.video] }
+                                              : block
+                                          )
+                                        );
+                                      }
+                                    }
+                                  } catch (error) {
+                                    console.error('Error parsing dragged data:', error);
+                                  }
+                                }
+                              }}
+                            >
+                              {/* Drop zone for scheduling from right sidebar (wraps blocks so drop bubbles) */}
                               <div
                                 className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
-                                onDragOver={(e) => e.preventDefault()}
+                                onDragOver={(e) => {
+                                  e.preventDefault();
+                                  e.dataTransfer.dropEffect = 'copy';
+                                }}
                                 onDrop={(e) => {
                                   e.preventDefault();
-                                  const data = e.dataTransfer.getData('application/json');
-                                  if (data) {
+                                  const json = e.dataTransfer.getData('application/json');
+                                  if (json) {
                                     try {
-                                      const draggedData = JSON.parse(data);
+                                      const draggedData = JSON.parse(json);
                                       if (draggedData.type === 'content-video') {
                                         const targetBlock = scheduleBlocks.find(block => block.time === time);
                                         if (targetBlock) {
@@ -1162,18 +1218,17 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                     }
                                   }
                                 }}
-                              />
-
-                              {/* Scheduled blocks with full UI */}
-                              {scheduleBlocks
-                                .filter(block => block.time === time && block.title !== 'Ad Break')
-                                .map((block, bi) => (
-                                  <div
-                                    key={`${day.key}-${block.id}`}
-                                    className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColor(block.time, block.status)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
-                                    style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
-                                    data-block-id={block.id}
-                                  >
+                              >
+                                {/* Scheduled blocks with full UI */}
+                                {scheduleBlocks
+                                  .filter(block => block.time === time && block.title !== 'Ad Break')
+                                  .map((block, bi) => (
+                                    <div
+                                      key={`${day.key}-${block.id}`}
+                                      className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColor(block.time, block.status)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
+                                      style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
+                                      data-block-id={block.id}
+                                    >
                                     <div className="flex items-center justify-between mb-2">
                                       <div className="flex items-center gap-2 flex-1 min-w-0">
                                         {block.isEditing ? (
@@ -1270,9 +1325,10 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                       </div>
                                       <div className="flex-shrink-0 text-right"></div>
                                     </div>
-                                  </div>
-                                ))}
-                            </div>
+                                    </div>
+                                  ))}
+                              </div>
+                          </div>
                           </div>
                         ))}
                       </div>
@@ -1332,17 +1388,17 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         { id: 'sv2', name: 'Comedy Special', duration: 25 },
                         { id: 'sv3', name: 'Documentary Clip', duration: 15 }
                        ].map(video => (
-                         <div 
-                           key={video.id} 
-                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                           draggable
-                           onDragStart={(e) => {
-                             e.dataTransfer.setData('application/json', JSON.stringify({
-                               type: 'content-video',
-                               video: video
-                             }));
-                           }}
-                         >
+                          <div 
+                            key={video.id} 
+                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={(e) => {
+                              const payload = JSON.stringify({ type: 'content-video', video });
+                              e.dataTransfer.setData('application/json', payload);
+                              e.dataTransfer.setData('text/plain', payload);
+                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
+                            }}
+                          >
                            <span className="flex-1 text-foreground">{video.name}</span>
                            <div className="flex items-center gap-2">
                              <span className="text-muted-foreground">{video.duration}m</span>
@@ -1382,17 +1438,17 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         { id: 'er2', name: 'Concert Performance', duration: 45 },
                         { id: 'er3', name: 'Conference Highlights', duration: 30 }
                        ].map(recording => (
-                         <div 
-                           key={recording.id} 
-                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                           draggable
-                           onDragStart={(e) => {
-                             e.dataTransfer.setData('application/json', JSON.stringify({
-                               type: 'content-video',
-                               video: recording
-                             }));
-                           }}
-                         >
+                          <div 
+                            key={recording.id} 
+                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={(e) => {
+                              const payload = JSON.stringify({ type: 'content-video', video: recording });
+                              e.dataTransfer.setData('application/json', payload);
+                              e.dataTransfer.setData('text/plain', payload);
+                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
+                            }}
+                          >
                            <span className="flex-1 text-foreground">{recording.name}</span>
                            <div className="flex items-center gap-2">
                              <span className="text-muted-foreground">{recording.duration}m</span>
@@ -1432,17 +1488,17 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         { id: 'le2', name: 'Talk Show Live', duration: 45 },
                         { id: 'le3', name: 'Breaking News', duration: 15 }
                        ].map(liveEvent => (
-                         <div 
-                           key={liveEvent.id} 
-                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                           draggable
-                           onDragStart={(e) => {
-                             e.dataTransfer.setData('application/json', JSON.stringify({
-                               type: 'content-video',
-                               video: liveEvent
-                             }));
-                           }}
-                         >
+                          <div 
+                            key={liveEvent.id} 
+                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={(e) => {
+                              const payload = JSON.stringify({ type: 'content-video', video: liveEvent });
+                              e.dataTransfer.setData('application/json', payload);
+                              e.dataTransfer.setData('text/plain', payload);
+                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
+                            }}
+                          >
                            <span className="flex-1 text-foreground">{liveEvent.name}</span>
                            <div className="flex items-center gap-2">
                              <span className="text-muted-foreground">{liveEvent.duration}m</span>
@@ -1484,17 +1540,17 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         { id: 'yt2', name: 'Tutorial Video', duration: 12 },
                         { id: 'yt3', name: 'Comedy Sketch', duration: 8 }
                        ].map(youtubeVideo => (
-                         <div 
-                           key={youtubeVideo.id} 
-                           className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                           draggable
-                           onDragStart={(e) => {
-                             e.dataTransfer.setData('application/json', JSON.stringify({
-                               type: 'content-video',
-                               video: youtubeVideo
-                             }));
-                           }}
-                         >
+                          <div 
+                            key={youtubeVideo.id} 
+                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
+                            draggable
+                            onDragStart={(e) => {
+                              const payload = JSON.stringify({ type: 'content-video', video: youtubeVideo });
+                              e.dataTransfer.setData('application/json', payload);
+                              e.dataTransfer.setData('text/plain', payload);
+                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
+                            }}
+                          >
                            <span className="flex-1 text-foreground">{youtubeVideo.name}</span>
                            <div className="flex items-center gap-2">
                              <span className="text-muted-foreground">{youtubeVideo.duration}m</span>
