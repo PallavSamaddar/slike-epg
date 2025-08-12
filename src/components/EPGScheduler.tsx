@@ -205,17 +205,18 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
   );
 };
 
-const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo }: { 
+const DraggableVideo = ({ video, blockId, blockTime, onDeleteVideo, dndId }: { 
   video: Video; 
   blockId: string; 
   blockTime: string;
   onDeleteVideo: (videoId: string) => void;
+  dndId?: string;
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
   
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
-    id: `${blockId}-${video.id}`,
+    id: dndId ?? `${blockId}-${video.id}`,
     data: { video, blockId }
   });
 
@@ -589,8 +590,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     // If reordering within the same block
     else if (activeData?.blockId === overData?.blockId) {
       const blockId = activeData?.blockId;
-      const activeVideoId = active.id.toString().split('-')[1];
-      const overVideoId = over.id.toString().split('-')[1];
+      const activeVideoId = active.id.toString().split('-').pop();
+      const overVideoId = over.id.toString().split('-').pop();
       
       if (blockId && activeVideoId !== overVideoId) {
         setScheduleBlocks(prev => {
@@ -891,38 +892,18 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         <div className="col-span-8 overflow-x-auto">
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <Card className="bg-card-dark border-border w-full">
-              <CardHeader>
+              <CardHeader className="py-3">
                 <CardTitle className="flex items-center justify-between">
                   <span className="text-sm">Schedule - {new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="h-4 w-4" />
-                      24-hour view
-                    </div>
                     <div className="flex items-center gap-2">
                       <Input 
                         type="date" 
                         value={selectedDate}
-                        min={new Date().toISOString().split('T')[0]}
-                        max={(function(){ const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })()}
-                        onChange={(e) => { setSelectedDate(e.target.value); scrollToDate(e.target.value); }}
+                      min={new Date().toISOString().split('T')[0]}
+                      max={(function(){ const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })()}
+                      onChange={(e) => { setSelectedDate(e.target.value); scrollToDate(e.target.value); }}
                         className="bg-control-surface border-border text-foreground w-40"
                       />
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm" onClick={() => {
-                        const d = new Date(startDay); d.setDate(d.getDate() - 15); d.setHours(0,0,0,0);
-                        setStartDay(d);
-                        setSelectedDate(formatIso(d));
-                        setTimeout(() => scrollToDate(formatIso(d)), 0);
-                      }}>Prev 15 days</Button>
-                      <Button variant="outline" size="sm" onClick={() => {
-                        const d = new Date(startDay); d.setDate(d.getDate() + 15); d.setHours(0,0,0,0);
-                        setStartDay(d);
-                        setSelectedDate(formatIso(d));
-                        setTimeout(() => scrollToDate(formatIso(d)), 0);
-                      }}>Next 15 days</Button>
-                    </div>
                     <Button
                       variant="control"
                       size="sm"
@@ -960,7 +941,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                             <div className="w-16 text-xs text-muted-foreground font-mono">
                               {time}
                             </div>
-                            <div className="flex-1 min-h-[60px] relative">
+                            <div className="flex-1 min-h-[60px] relative" data-block-id={scheduleBlocks.find(b => b.time === time)?.id ?? ''}>
                               {/* Red playhead arrow for current time (02:00) */}
                               {time === '02:00' && (
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2 z-20 flex items-center">
@@ -1139,46 +1120,166 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             </Card>
           </DndContext>
 
-          {/* Continuous 15-day stacked view (beta) */}
+          {/* Continuous 15-day stacked view (with full editing and drag-drop like today's section) */}
           <Card className="bg-card-dark border-border mt-6">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">Continuous 15-Day Schedule</CardTitle>
-            </CardHeader>
             <CardContent className="p-0">
-              <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={handleContinuousScroll}>
-                {days15.map((day, idx) => (
-                  <div key={day.key} ref={el => (dayRefs.current[idx] = el)} className="border-t border-border/30">
-                    <div className="flex items-center justify-between px-4 py-2">
-                      <span className="text-sm font-medium">Schedule - {day.label}</span>
-                    </div>
-                    <div className="relative">
-                      {timeSlots.map((time) => (
-                        <div key={`${day.key}-${time}`} className="flex items-center gap-4 py-2 border-b border-border/30 px-4">
-                          <div className="w-16 text-xs text-muted-foreground font-mono">{time}</div>
-                          <div className="flex-1 min-h-[60px] relative">
-                            {scheduleBlocks
-                              .filter(block => block.time === time && block.title !== 'Ad Break')
-                              .map((block, bi) => (
-                                <div
-                                  key={`${day.key}-${block.id}`}
-                                  className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColor(block.time, block.status)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
-                                  style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
-                                >
-                                  <div className="flex items-center justify-between mb-2">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                      <span className="font-medium text-sm truncate text-black">{block.title}</span>
-                                      <span className="text-xs bg-black/10 text-black px-1 py-0.5 rounded">{block.type}</span>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={handleContinuousScroll}>
+                  {days15.map((day, idx) => (
+                    <div key={day.key} ref={el => (dayRefs.current[idx] = el)} className="border-t border-border/30">
+                      <div className="flex items-center justify-between px-4 py-2">
+                        <span className="text-sm font-medium">Schedule - {day.label}</span>
+        </div>
+                      <div className="relative">
+                        {timeSlots.map((time) => (
+                          <div key={`${day.key}-${time}`} className="flex items-center gap-4 py-2 border-b border-border/30 px-4">
+                            <div className="w-16 text-xs text-muted-foreground font-mono">{time}</div>
+                            <div className="flex-1 min-h-[60px] relative">
+                              {/* Drop zone for scheduling from right sidebar */}
+                              <div
+                                className="absolute inset-0 border-2 border-dashed border-transparent hover:border-broadcast-blue/50 rounded transition-colors"
+                                onDragOver={(e) => e.preventDefault()}
+                                onDrop={(e) => {
+                                  e.preventDefault();
+                                  const data = e.dataTransfer.getData('application/json');
+                                  if (data) {
+                                    try {
+                                      const draggedData = JSON.parse(data);
+                                      if (draggedData.type === 'content-video') {
+                                        const targetBlock = scheduleBlocks.find(block => block.time === time);
+                                        if (targetBlock) {
+                                          setScheduleBlocks(prev =>
+                                            prev.map(block =>
+                                              block.id === targetBlock.id
+                                                ? { ...block, videos: [...block.videos, draggedData.video] }
+                                                : block
+                                            )
+                                          );
+                                        }
+                                      }
+                                    } catch (error) {
+                                      console.error('Error parsing dragged data:', error);
+                                    }
+                                  }
+                                }}
+                              />
+
+                              {/* Scheduled blocks with full UI */}
+                              {scheduleBlocks
+                                .filter(block => block.time === time && block.title !== 'Ad Break')
+                                .map((block, bi) => (
+                                  <div
+                                    key={`${day.key}-${block.id}`}
+                                    className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColor(block.time, block.status)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
+                                    style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
+                                    data-block-id={block.id}
+                                  >
+                                    <div className="flex items-center justify-between mb-2">
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        {block.isEditing ? (
+                                          <Input
+                                            value={block.title}
+                                            onChange={(e) => setScheduleBlocks(prev => prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b))}
+                                            onBlur={() => updateBlockTitle(block.id, block.title)}
+                                            onKeyDown={(e) => { if (e.key === 'Enter') { updateBlockTitle(block.id, block.title); }}}
+                                            className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
+                                            autoFocus
+                                          />
+                                        ) : (
+                                          <span className={`font-medium text-sm truncate text-black`}>
+                                            {block.title}
+                                          </span>
+                                        )}
+                                        <button
+                                          onClick={() => toggleEditMode(block.id)}
+                                          className={`flex-shrink-0 p-1 rounded hover:bg-black/20 text-black`}
+                                        >
+                                          <Edit className="h-3 w-3" />
+                                        </button>
+                                        <div className="flex gap-1 ml-2 relative">
+                                          {block.tags.slice(0, 1).map((tag, idx) => (
+                                            <div key={idx} className="relative group">
+                                              <span className={`text-xs px-1 py-0.5 rounded cursor-pointer bg-black/10 text-black`}>
+                                                {tag}
+                                                {editingGenres === block.id && (
+                                                  <button
+                                                    onClick={() => removeGenreFromBlock(block.id, tag)}
+                                                    className="ml-1 text-red-600 hover:text-red-500"
+                                                  >
+                                                    <X className="h-2 w-2" />
+                                                  </button>
+                                                )}
+                                              </span>
+                                            </div>
+                                          ))}
+                                          <button
+                                            onClick={() => toggleGenreEdit(block.id)}
+                                            className={`text-xs px-1 py-0.5 rounded hover:bg-black/20 text-black`}
+                                          >
+                                            <Edit className="h-3 w-3" />
+                                          </button>
+                                          {editingGenres === block.id && (
+                                            <div className="absolute top-6 left-0 z-10 bg-card-dark border border-border rounded-md p-2 shadow-lg">
+                                              <div className="flex flex-wrap gap-1 w-48">
+                                                {availableGenres
+                                                  .filter(genre => !block.tags.includes(genre))
+                                                  .map(genre => (
+                                                    <button
+                                                      key={genre}
+                                                      onClick={() => addGenreToBlock(block.id, genre)}
+                                                      className="text-xs px-2 py-1 rounded bg-primary text-white hover:bg-primary/80"
+                                                    >
+                                                      {genre}
+                                                    </button>
+                                                  ))}
+                                              </div>
+                                              <button
+                                                onClick={() => setEditingGenres(null)}
+                                                className="mt-2 text-xs text-muted-foreground hover:text-foreground"
+                                              >
+                                                Done
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <Badge className="text-xs bg-black/10 text-black">{block.type}</Badge>
+                                        {block.status === 'live' && (
+                                          <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
+                                        )}
+                                      </div>
+                                    </div>
+
+                                    <div className="flex gap-3">
+                                      <div className="flex-1">
+                                        <SortableContext items={block.videos.map(v => `${day.key}-${block.id}-${v.id}`)} strategy={verticalListSortingStrategy}>
+                                          <div className="space-y-1">
+                                            {block.videos.map(video => (
+                                              <DraggableVideo
+                                                key={video.id}
+                                                video={video}
+                                                blockId={block.id}
+                                                blockTime={block.time}
+                                                onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
+                                                dndId={`${day.key}-${block.id}-${video.id}`}
+                                              />
+                                            ))}
+                                          </div>
+                                        </SortableContext>
+                                      </div>
+                                      <div className="flex-shrink-0 text-right"></div>
                                     </div>
                                   </div>
-                                </div>
-                              ))}
+                                ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              </DndContext>
             </CardContent>
           </Card>
         </div>
@@ -1431,8 +1532,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
               </Button>
             </CardContent>
           </Card>
-          </div>
         </div>
+      </div>
       </div>
       <Toaster />
 
