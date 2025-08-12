@@ -312,6 +312,13 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedChannel, setSelectedChannel] = useState('Fast Channel 1');
+  // Continuous 15-day view state/refs
+  const [currentDayIndex, setCurrentDayIndex] = useState(0);
+  const continuousContainerRef = useRef<HTMLDivElement | null>(null);
+  const dayRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const [highlightedKey, setHighlightedKey] = useState<string | null>(null);
+  const [isSidebarFloating, setIsSidebarFloating] = useState(false);
+  const [startDay, setStartDay] = useState<Date>(() => { const d = new Date(); d.setHours(0,0,0,0); return d; });
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
@@ -495,6 +502,55 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     // Others: white background with black text and no border for cleaner look
     return 'bg-white text-black';
   };
+
+  // Build 15-day range from today
+  const getDaysArray = (startDate: Date, numberOfDays: number) => {
+    const days: { date: Date; key: string; label: string }[] = [];
+    for (let i = 0; i < numberOfDays; i++) {
+      const d = new Date(startDate);
+      d.setDate(startDate.getDate() + i);
+      const key = d.toISOString().split('T')[0];
+      const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' });
+      days.push({ date: d, key, label });
+    }
+    return days;
+  };
+  const days15 = getDaysArray(startDay, 15);
+
+  // Scroll container handler: update selectedDate/head as you scroll
+  const handleContinuousScroll = () => {
+    if (!continuousContainerRef.current) return;
+    const top = continuousContainerRef.current.getBoundingClientRect().top;
+    let closest = 0;
+    let minDist = Infinity;
+    dayRefs.current.forEach((el, idx) => {
+      if (!el) return;
+      const dist = Math.abs(el.getBoundingClientRect().top - top);
+      if (dist < minDist) { minDist = dist; closest = idx; }
+    });
+    if (closest !== currentDayIndex) {
+      setCurrentDayIndex(closest);
+      const dayKey = days15[closest].key;
+      setSelectedDate(dayKey);
+      setIsSidebarFloating(closest > 0);
+    }
+  };
+
+  // Smooth scroll to a specific day key and highlight first slot briefly
+  const scrollToDate = (isoDate: string) => {
+    const idx = days15.findIndex(d => d.key === isoDate);
+    if (idx >= 0) {
+      setCurrentDayIndex(idx);
+      setTimeout(() => {
+        dayRefs.current[idx]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setHighlightedKey(isoDate);
+        setTimeout(() => setHighlightedKey(null), 1200);
+      }, 0);
+      setIsSidebarFloating(idx > 0);
+    }
+  };
+
+  const formatIso = (d: Date) => d.toISOString().split('T')[0];
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -797,8 +853,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
       <div className="grid grid-cols-10 gap-6 mb-6">
-        {/* Column 1 - Channel Info (70%) */}
-        <div className="col-span-7 flex items-start">
+        {/* Column 1 - Channel Info (expanded) */}
+        <div className="col-span-10 flex items-start">
           <div>
             <h1 className="text-2xl font-bold text-foreground">TOI Global</h1>
             <p className="text-muted-foreground">
@@ -827,22 +883,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           </div>
         </div>
 
-        {/* Column 2 - Channel Image with Play Button (30%) */}
-        <div className="col-span-3 flex items-start justify-end">
-          <div className="relative aspect-video w-3/5 overflow-hidden rounded-lg group">
-            <img 
-              src="/toi_global_poster.png" 
-              alt="TOI Global Channel" 
-              className="w-full h-full object-cover"
-            />
-            {/* Play Button Overlay */}
-            <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200">
-                <div className="w-0 h-0 border-l-[6px] border-l-black border-y-[4px] border-y-transparent ml-0.5"></div>
-              </button>
-            </div>
-          </div>
-        </div>
+        
       </div>
 
       <div className="grid grid-cols-10 gap-8 items-start">
@@ -862,9 +903,25 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                       <Input 
                         type="date" 
                         value={selectedDate}
-                        onChange={(e) => setSelectedDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        max={(function(){ const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })()}
+                        onChange={(e) => { setSelectedDate(e.target.value); scrollToDate(e.target.value); }}
                         className="bg-control-surface border-border text-foreground w-40"
                       />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const d = new Date(startDay); d.setDate(d.getDate() - 15); d.setHours(0,0,0,0);
+                        setStartDay(d);
+                        setSelectedDate(formatIso(d));
+                        setTimeout(() => scrollToDate(formatIso(d)), 0);
+                      }}>Prev 15 days</Button>
+                      <Button variant="outline" size="sm" onClick={() => {
+                        const d = new Date(startDay); d.setDate(d.getDate() + 15); d.setHours(0,0,0,0);
+                        setStartDay(d);
+                        setSelectedDate(formatIso(d));
+                        setTimeout(() => scrollToDate(formatIso(d)), 0);
+                      }}>Next 15 days</Button>
                     </div>
                     <Button
                       variant="control"
@@ -1081,10 +1138,71 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
               </CardContent>
             </Card>
           </DndContext>
+
+          {/* Continuous 15-day stacked view (beta) */}
+          <Card className="bg-card-dark border-border mt-6">
+            <CardHeader>
+              <CardTitle className="text-sm text-foreground">Continuous 15-Day Schedule</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div ref={continuousContainerRef} className="h-[75vh] overflow-y-auto" onScroll={handleContinuousScroll}>
+                {days15.map((day, idx) => (
+                  <div key={day.key} ref={el => (dayRefs.current[idx] = el)} className="border-t border-border/30">
+                    <div className="flex items-center justify-between px-4 py-2">
+                      <span className="text-sm font-medium">Schedule - {day.label}</span>
+                    </div>
+                    <div className="relative">
+                      {timeSlots.map((time) => (
+                        <div key={`${day.key}-${time}`} className="flex items-center gap-4 py-2 border-b border-border/30 px-4">
+                          <div className="w-16 text-xs text-muted-foreground font-mono">{time}</div>
+                          <div className="flex-1 min-h-[60px] relative">
+                            {scheduleBlocks
+                              .filter(block => block.time === time && block.title !== 'Ad Break')
+                              .map((block, bi) => (
+                                <div
+                                  key={`${day.key}-${block.id}`}
+                                  className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColor(block.time, block.status)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
+                                  style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
+                                >
+                                  <div className="flex items-center justify-between mb-2">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                      <span className="font-medium text-sm truncate text-black">{block.title}</span>
+                                      <span className="text-xs bg-black/10 text-black px-1 py-0.5 rounded">{block.type}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Right Panel - Add Content and Actions */}
-        <div className="col-span-2 space-y-4">
+        {/* Right Panel - Add Content and Actions (sticky when on today, floating when scrolled) */}
+        <div className="col-span-2">
+          <div className="fixed right-8 top-0 w-[279px] max-h-screen overflow-y-auto space-y-4 z-40">
+          {/* Channel Preview moved into floating sidebar */}
+          <Card className="bg-card-dark border-border w-full">
+            <CardContent className="pt-4">
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg group">
+                <img 
+                  src="/toi_global_poster.png" 
+                  alt="TOI Global Channel" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200">
+                    <div className="w-0 h-0 border-l-[6px] border-l-black border-y-[4px] border-y-transparent ml-0.5"></div>
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           <Card className="bg-card-dark border-border w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
@@ -1313,6 +1431,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
               </Button>
             </CardContent>
           </Card>
+          </div>
         </div>
       </div>
       <Toaster />
