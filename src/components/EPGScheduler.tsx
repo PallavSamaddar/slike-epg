@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown, Save } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -959,6 +959,22 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                 <Button
                   variant="control"
                   size="sm"
+                  onClick={() => setIsManageAdsModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ads
+                </Button>
+                <Button
+                  variant="control"
+                  size="sm"
+                  onClick={handleNavigateToEPGPreview}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  EPG
+                </Button>
+                <Button
+                  variant="control"
+                  size="sm"
                   onClick={() => {
                     toast({
                       title: 'EPG saved',
@@ -966,6 +982,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                     });
                   }}
                 >
+                  <Save className="h-4 w-4 mr-2" />
                   Save
                 </Button>
               </div>
