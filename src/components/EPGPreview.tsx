@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, FC, useMemo, useCallback } from 'react';
-import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye } from 'lucide-react';
+import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye, AlertTriangle } from 'lucide-react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -112,6 +112,8 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSelectDateCalendarOpen, setIsSelectDateCalendarOpen] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [draftChannel, setDraftChannel] = useState<null | { id: string; name: string; description?: string; posterDataUrl?: string; resolution?: string; primaryGenre?: string | null; language?: string | null }>(null);
+  const isDraftMode = !!draftChannel;
   
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -252,6 +254,12 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   }, []);
 
   const [mockEPGData, setMockEPGData] = useState<EPGPreviewItem[]>(() => {
+    try {
+      const rawDraft = localStorage.getItem('fastChannelDraft');
+      if (rawDraft) {
+        return [];
+      }
+    } catch {}
     const today = new Date();
     const todayStr = today.toISOString().split('T')[0];
     const initialPrograms: EPGPreviewItem[] = [];
@@ -299,6 +307,29 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     
     return initialPrograms;
   });
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('fastChannelDraft');
+      setDraftChannel(raw ? JSON.parse(raw) : null);
+    } catch {
+      setDraftChannel(null);
+    }
+  }, []);
+
+  // Warn on page close if draft exists and no programs have been added
+  useEffect(() => {
+    const beforeUnload = (e: BeforeUnloadEvent) => {
+      const hasDraft = !!localStorage.getItem('fastChannelDraft');
+      const hasPrograms = mockEPGData.length > 0 || localStorage.getItem('fastChannelDraftHasPrograms') === 'true';
+      if (hasDraft && !hasPrograms) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+    window.addEventListener('beforeunload', beforeUnload);
+    return () => window.removeEventListener('beforeunload', beforeUnload);
+  }, [mockEPGData.length]);
 
   // Memoized slices to reduce filtering work per render
   const todayKey = useMemo(() => new Date().toISOString().split('T')[0], []);
@@ -407,11 +438,23 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         }
         setEditingProgram(null);
         setHasUnsavedChanges(true);
+        try {
+          if (localStorage.getItem('fastChannelDraft')) {
+            localStorage.setItem('fastChannelDraftHasPrograms', 'true');
+          }
+        } catch {}
     };
 
     const [isSaving, setIsSaving] = useState(false);
 
     const handleSaveEpg = () => {
+        // If in draft mode, enforce at least one program before creation
+        if (isDraftMode) {
+            if (mockEPGData.length === 0) {
+                toast({ title: 'Add at least one program', description: 'Please add a program to your new channel before saving.', variant: 'destructive' });
+                return;
+            }
+        }
         // Save Master EPG for next 15 days
         if (activeTabId === 'master-epg') {
             setIsSaving(true);
@@ -450,6 +493,23 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     title: 'Master EPG saved',
                     description: 'Master EPG saved and updated for the next 15 days.',
                 });
+                // Finalize draft channel after a successful save
+                if (isDraftMode) {
+                  try {
+                    const draftRaw = localStorage.getItem('fastChannelDraft');
+                    if (draftRaw) {
+                      const draft = JSON.parse(draftRaw);
+                      const rawList = localStorage.getItem('fastChannels');
+                      const list = rawList ? JSON.parse(rawList) : [];
+                      list.push({ id: draft.id, name: draft.name, resolution: draft.resolution || '1080p', status: 'offline' });
+                      localStorage.setItem('fastChannels', JSON.stringify(list));
+                    }
+                  } catch {}
+                  localStorage.removeItem('fastChannelDraft');
+                  localStorage.removeItem('fastChannelDraftHasPrograms');
+                  setDraftChannel(null);
+                  toast({ title: 'Channel created', description: 'Your channel has been created in Offline mode.' });
+                }
             }, 500);
             return;
         }
@@ -468,6 +528,22 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     title: 'EPG saved',
                     description: `Schedule for ${formatted} saved successfully.`,
                 });
+                if (isDraftMode) {
+                  try {
+                    const draftRaw = localStorage.getItem('fastChannelDraft');
+                    if (draftRaw) {
+                      const draft = JSON.parse(draftRaw);
+                      const rawList = localStorage.getItem('fastChannels');
+                      const list = rawList ? JSON.parse(rawList) : [];
+                      list.push({ id: draft.id, name: draft.name, resolution: draft.resolution || '1080p', status: 'offline' });
+                      localStorage.setItem('fastChannels', JSON.stringify(list));
+                    }
+                  } catch {}
+                  localStorage.removeItem('fastChannelDraft');
+                  localStorage.removeItem('fastChannelDraftHasPrograms');
+                  setDraftChannel(null);
+                  toast({ title: 'Channel created', description: 'Your channel has been created in Offline mode.' });
+                }
             }, 400);
             return;
         }
@@ -1317,6 +1393,15 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Left Side - Tab Interface and EPG Content */}
         <div className="lg:col-span-3">
+          {/* Draft Banner */}
+          {isDraftMode && (
+            <div className="mb-3 p-3 border border-border bg-yellow-50 text-yellow-800 rounded flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 mt-0.5" />
+              <div className="text-sm">
+                Add programs for your new channel ‘{draftChannel?.name}’ to complete setup.
+              </div>
+            </div>
+          )}
           {/* Tab Interface */}
           <div className="mb-2 border-b border-gray-200">
               <div className="flex items-center justify-between">

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe } from 'lucide-react';
+import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 
 interface LiveSource {
@@ -42,10 +44,19 @@ interface Props {
 }
 
 export const LiveEventsManager = ({ onNavigate }: Props) => {
+  const { toast } = useToast();
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [previewSource, setPreviewSource] = useState<LiveSource | null>(null);
   const [feedType, setFeedType] = useState<'input' | 'output'>('output');
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [channelName, setChannelName] = useState('');
+  const [channelDescription, setChannelDescription] = useState('');
+  const [posterDataUrl, setPosterDataUrl] = useState<string | null>(null);
+  const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
+  const [primaryGenre, setPrimaryGenre] = useState<string | undefined>(undefined);
+  const [language, setLanguage] = useState<string | undefined>(undefined);
+  const [posterWarning, setPosterWarning] = useState<string | null>(null);
 
   const mockSources: LiveSource[] = [
     {
@@ -98,6 +109,27 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
       lastHeartbeat: '5 minutes ago'
     }
   ];
+
+  // Append locally created channels (offline) from localStorage
+  const additionalChannels: LiveSource[] = (() => {
+    try {
+      const raw = localStorage.getItem('fastChannels');
+      if (!raw) return [];
+      const arr = JSON.parse(raw) as Array<{ id: string; name: string; status?: string; resolution?: string }>;
+      return arr.map((c) => ({
+        id: c.id,
+        name: c.name,
+        studioId: c.id.toUpperCase(),
+        status: (c.status as any) || 'offline',
+        streamHealth: 0,
+        bitrate: '0 Mbps',
+        resolution: c.resolution === '4k' ? '3840x2160' : c.resolution === '720p' ? '1280x720' : '1920x1080',
+        lastHeartbeat: '—'
+      }));
+    } catch {
+      return [];
+    }
+  })();
 
   const mockEvents: LiveEvent[] = [
     {
@@ -162,6 +194,76 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   };
 
 
+  const existingNames = [
+    ...mockSources.map(s => s.name.toLowerCase()),
+    ...additionalChannels.map(s => s.name.toLowerCase())
+  ];
+
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      setPosterDataUrl(dataUrl);
+      // Validate aspect ratio ~16:9
+      const img = new Image();
+      img.onload = () => {
+        const ratio = img.width / img.height;
+        const target = 16 / 9;
+        if (Math.abs(ratio - target) > 0.1) {
+          setPosterWarning('Poster is not ~16:9. It may be auto-cropped.');
+        } else {
+          setPosterWarning(null);
+        }
+      };
+      img.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCreateChannel = () => {
+    const trimmed = channelName.trim();
+    if (!trimmed) {
+      toast({ title: 'Channel Name is required', variant: 'destructive' });
+      return;
+    }
+    if (existingNames.includes(trimmed.toLowerCase())) {
+      toast({ title: 'Duplicate name', description: 'Another channel with this name already exists.', variant: 'destructive' });
+      return;
+    }
+    if (!posterDataUrl) {
+      toast({ title: 'Poster is required', variant: 'destructive' });
+      return;
+    }
+    if (channelDescription.length > 200) {
+      toast({ title: 'Description too long', description: 'Maximum 200 characters.', variant: 'destructive' });
+      return;
+    }
+
+    const draft = {
+      id: `draft-${Date.now()}`,
+      name: trimmed,
+      description: channelDescription,
+      posterDataUrl,
+      resolution,
+      primaryGenre: primaryGenre || null,
+      language: language || null,
+      createdAt: Date.now(),
+    };
+    try {
+      localStorage.setItem('fastChannelDraft', JSON.stringify(draft));
+      localStorage.removeItem('fastChannelDraftHasPrograms');
+    } catch {}
+    setIsCreateOpen(false);
+    setChannelName('');
+    setChannelDescription('');
+    setPosterDataUrl(null);
+    setPrimaryGenre(undefined);
+    setLanguage(undefined);
+    onNavigate?.('preview');
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
@@ -172,6 +274,12 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
               Fast Channels
             </h1>
             <p className="text-muted-foreground">Real-time monitoring and control of live streaming channels</p>
+          </div>
+          <div>
+            <Button variant="broadcast" onClick={() => setIsCreateOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Fast Channel
+            </Button>
           </div>
         </div>
       </div>
@@ -238,13 +346,13 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   Channel Status
                 </span>
                 <div className="text-sm text-muted-foreground">
-                  {mockSources.filter(s => s.status === 'online').length} of {mockSources.length} online
+                  {mockSources.filter(s => s.status === 'online').length + additionalChannels.filter(s => s.status === 'online').length} of {mockSources.length + additionalChannels.length} online
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockSources.map((source) => (
+                {[...mockSources, ...additionalChannels].map((source) => (
                   <div 
                     key={source.id} 
                     className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
@@ -550,6 +658,81 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+        
+        {/* Create Fast Channel Modal */}
+        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+          <DialogContent className="bg-card-dark border-border max-w-xl">
+            <DialogHeader>
+              <DialogTitle className="text-foreground">Create Fast Channel</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-foreground">Channel Name *</Label>
+                <Input value={channelName} onChange={(e) => setChannelName(e.target.value)} placeholder="Enter channel name" className="bg-control-surface border-border text-foreground" />
+              </div>
+              <div>
+                <Label className="text-foreground">Description</Label>
+                <Input value={channelDescription} onChange={(e) => setChannelDescription(e.target.value)} placeholder="Short description (max 200 chars)" className="bg-control-surface border-border text-foreground" />
+                <div className="text-xs text-muted-foreground mt-1">{channelDescription.length}/200</div>
+              </div>
+              <div>
+                <Label className="text-foreground">Poster *</Label>
+                <Input type="file" accept="image/*" onChange={handlePosterChange} className="bg-control-surface border-border text-foreground" />
+                {posterWarning && <div className="text-xs text-orange-500 mt-1">{posterWarning}</div>}
+                {posterDataUrl && (
+                  <div className="mt-2 w-64 h-36 rounded overflow-hidden border border-border">
+                    <img src={posterDataUrl} alt="Poster preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-foreground">Resolution</Label>
+                  <Select value={resolution} onValueChange={(v) => setResolution(v as any)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="720p">720p</SelectItem>
+                      <SelectItem value="1080p">1080p (Default)</SelectItem>
+                      <SelectItem value="4k">4K</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-foreground">Primary Genre (optional)</Label>
+                  <Select value={primaryGenre} onValueChange={(v) => setPrimaryGenre(v)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue placeholder="Select genre" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['News','Movies','Sports','Music','Comedy','Documentary','Talk Show','Kids','Lifestyle','Finance'].map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-foreground">Language (optional)</Label>
+                <Select value={language} onValueChange={(v) => setLanguage(v)}>
+                  <SelectTrigger className="bg-control-surface border-border text-foreground">
+                    <SelectValue placeholder="Select language" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {['English','Hindi','Spanish','French','German','Italian','Japanese'].map(l => (
+                      <SelectItem key={l} value={l}>{l}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
+                <Button variant="broadcast" onClick={handleCreateChannel}>Create Channel</Button>
+              </div>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
