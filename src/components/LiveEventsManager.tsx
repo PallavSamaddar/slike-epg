@@ -55,7 +55,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [posterDataUrl, setPosterDataUrl] = useState<string | null>(null);
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
   const [primaryGenre, setPrimaryGenre] = useState<string | undefined>(undefined);
-  const [language, setLanguage] = useState<string | undefined>(undefined);
+  const [language, setLanguage] = useState<string>('English');
   const [posterWarning, setPosterWarning] = useState<string | null>(null);
 
   const mockSources: LiveSource[] = [
@@ -260,7 +260,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     setChannelDescription('');
     setPosterDataUrl(null);
     setPrimaryGenre(undefined);
-    setLanguage(undefined);
+    setLanguage('English');
     onNavigate?.('preview');
   };
 
@@ -719,10 +719,23 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 <Label className="text-foreground">Language (optional)</Label>
                 <Select value={language} onValueChange={(v) => setLanguage(v)}>
                   <SelectTrigger className="bg-control-surface border-border text-foreground">
-                    <SelectValue placeholder="Select language" />
+                    <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {['English','Hindi','Spanish','French','German','Italian','Japanese'].map(l => (
+                    {[
+                      'English',
+                      'Hindi',
+                      'Tamil',
+                      'Malayalam',
+                      'Bengali',
+                      'Telugu',
+                      'Kannada',
+                      'Marathi',
+                      'Gujarati',
+                      'Punjabi',
+                      'Oriya',
+                      'Urdu',
+                    ].map(l => (
                       <SelectItem key={l} value={l}>{l}</SelectItem>
                     ))}
                   </SelectContent>
