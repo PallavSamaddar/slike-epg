@@ -1400,12 +1400,11 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
-      <PageHeader title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - EPG`} fullWidth />
-
-      {/* Main Layout - Tab Interface and RHS Sidebar */}
+      {/* Main Layout - Header + Tabs + EPG (LHS) and RHS Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Left Side - Tab Interface and EPG Content */}
+        {/* Left Side - Header, Tab Interface and EPG Content */}
         <div className="lg:col-span-3">
+          <PageHeader title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - EPG`} fullWidth />
           {/* Draft Banner */}
           {isDraftMode && (
             <div className="mb-3 p-3 border border-border bg-yellow-50 text-yellow-800 rounded flex items-start gap-2">
@@ -1504,6 +1503,23 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         
         {/* RHS Sidebar - Takes 1 column, starts from top */}
         <div className="space-y-6">
+          {/* Channel Preview (copied from Channel Detail RHS) */}
+          <Card className="bg-card-dark border-border w-full">
+            <CardContent className="pt-4">
+              <div className="relative aspect-video w-full overflow-hidden rounded-lg group">
+                <img 
+                  src="/toi_global_poster.png" 
+                  alt="Channel Preview" 
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200">
+                    <div className="w-0 h-0 border-l-[6px] border-l-black border-y-[4px] border-y-transparent ml-0.5"></div>
+                  </button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
           {/* Quick Actions Card */}
               <Card className="bg-card-dark border-border">
             <CardHeader>
