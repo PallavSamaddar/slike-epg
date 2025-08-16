@@ -138,6 +138,7 @@
   body {
     @apply bg-background text-foreground;
   }
+  .page-heading { font-size: 1.25rem; }
 }
 
 .epg-layout-row {

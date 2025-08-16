@@ -5,6 +5,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
+import PageHeader from '@/components/PageHeader';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -917,16 +918,11 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
-      {/* Header */}
+      <PageHeader title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - Channel Detail`} />
       <div className="grid grid-cols-10 gap-6 mb-6">
-        {/* Column 1 - Channel Info (expanded) */}
         <div className="col-span-10">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">TOI Global</h1>
-            <p className="text-muted-foreground">
-              <strong>Playback Time</strong>: 25:30 hrs | <strong>Remaining Time</strong>: 34:30 hrs | <strong>Videos</strong>: 450 | <strong>Live Events</strong>: 21 | <strong>Ads Campaigns</strong>: 2 | <strong>Live Rec</strong>: 16
-            </p>
-            <div className="flex items-center justify-between mt-4 pr-[320px]">
+            <div className="flex items-center justify-between mt-2 pr-[320px]">
               <div className="flex items-start gap-8">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">

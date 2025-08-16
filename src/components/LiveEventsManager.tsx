@@ -274,9 +274,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
       <div className="mb-8">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-broadcast-blue to-broadcast-blue-light bg-clip-text text-transparent">
-              Fast Channels
-            </h1>
+            <h1 className="page-heading text-slate-800 font-semibold">Fast Channels</h1>
             <p className="text-muted-foreground">Real-time monitoring and control of live streaming channels</p>
           </div>
           <div>
@@ -441,17 +439,25 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                try {
+                                  localStorage.setItem('activeChannelName', source.name);
+                                  localStorage.setItem('activeChannelStudioId', source.studioId);
+                                } catch {}
                                 onNavigate?.('scheduler');
                               }}
                             >
                               <Calendar className="h-4 w-4 mr-1" />
-                              Channel Schedule
+                              Channel Details
                             </Button>
                             <Button
                               variant="control"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
+                                try {
+                                  localStorage.setItem('activeChannelName', source.name);
+                                  localStorage.setItem('activeChannelStudioId', source.studioId);
+                                } catch {}
                                 onNavigate?.('preview');
                               }}
                             >

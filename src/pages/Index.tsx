@@ -1,4 +1,5 @@
 import { useEffect, useState, Suspense, lazy } from 'react';
+import { useLocation } from 'react-router-dom';
 import { EPGNavigation } from '@/components/EPGNavigation';
 const EPGScheduler = lazy(() => import('@/components/EPGScheduler').then(m => ({ default: m.EPGScheduler })));
 const LiveEventsManager = lazy(() => import('@/components/LiveEventsManager').then(m => ({ default: m.LiveEventsManager })));
@@ -6,6 +7,7 @@ const EPGPreview = lazy(() => import('@/components/EPGPreview').then(m => ({ def
 
 const Index = () => {
   const [activeView, setActiveView] = useState('dashboard');
+  const location = useLocation();
 
   // Guard navigation when there is a draft channel without programs
   const handleViewChange = (nextView: string) => {
@@ -30,9 +32,13 @@ const Index = () => {
   useEffect(() => {
     try {
       const draft = localStorage.getItem('fastChannelDraft');
-      if (draft) setActiveView('preview');
+      if (draft && location.pathname !== '/dashboard') {
+        setActiveView('preview');
+      } else if (location.pathname === '/dashboard') {
+        setActiveView('dashboard');
+      }
     } catch {}
-  }, []);
+  }, [location.pathname]);
 
   const renderActiveView = () => {
     switch (activeView) {

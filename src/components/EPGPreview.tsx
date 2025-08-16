@@ -3,6 +3,7 @@ import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Ed
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
+import PageHeader from '@/components/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Badge } from '@/components/ui/badge';
@@ -1399,6 +1400,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
+      <PageHeader title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - EPG`} fullWidth />
 
       {/* Main Layout - Tab Interface and RHS Sidebar */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
