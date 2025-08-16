@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Wifi, WifiOff, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus } from 'lucide-react';
+import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -25,6 +25,8 @@ interface LiveSource {
   currentProgram?: string;
   nextProgram?: string;
   nextProgramTime?: string;
+  posterUrl?: string;
+  language?: string;
 }
 
 interface LiveEvent {
@@ -115,7 +117,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     try {
       const raw = localStorage.getItem('fastChannels');
       if (!raw) return [];
-      const arr = JSON.parse(raw) as Array<{ id: string; name: string; status?: string; resolution?: string }>;
+      const arr = JSON.parse(raw) as Array<{ id: string; name: string; status?: string; resolution?: string; posterDataUrl?: string; language?: string } >;
       return arr.map((c) => ({
         id: c.id,
         name: c.name,
@@ -124,7 +126,9 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
         streamHealth: 0,
         bitrate: '0 Mbps',
         resolution: c.resolution === '4k' ? '3840x2160' : c.resolution === '720p' ? '1280x720' : '1920x1080',
-        lastHeartbeat: '—'
+        lastHeartbeat: '—',
+        posterUrl: c.posterDataUrl,
+        language: c.language
       }));
     } catch {
       return [];
@@ -353,98 +357,121 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
             <CardContent>
               <div className="space-y-4">
                 {[...mockSources, ...additionalChannels].map((source) => (
-                  <div 
-                    key={source.id} 
-                    className={`p-4 rounded-lg border-2 transition-colors cursor-pointer ${
-                      selectedSource === source.id 
-                        ? 'border-broadcast-blue bg-broadcast-blue/10' 
-                        : 'border-border bg-control-surface hover:border-broadcast-blue/50'
+                  <div
+                    key={source.id}
+                    className={`p-4 rounded-lg border-2 shadow-sm ${
+                      selectedSource === source.id
+                        ? 'border-broadcast-blue bg-broadcast-blue/10'
+                        : 'border-border bg-control-surface'
                     }`}
-                    onClick={(e) => {
-                      // Only navigate if clicking outside the details button area
-                      if (!(e.target as HTMLElement).closest('[data-details-button]')) {
-                        setSelectedSource(source.id);
-                        onNavigate?.('scheduler');
-                      }
-                    }}
                   >
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-3">
-                        {getStatusIcon(source.status)}
-                        <div>
-                          <h3 className="font-semibold text-foreground">{source.name}</h3>
-                          <p className="text-sm text-muted-foreground">{source.studioId}</p>
-                        </div>
+                    <div className="flex items-start gap-4">
+                      {/* Poster */}
+                      <div className="flex-shrink-0 w-[160px] h-[90px] rounded-md overflow-hidden border border-border bg-black/20">
+                        <img
+                          src={source.posterUrl || '/toi_global_poster.png'}
+                          alt={source.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Badge className={getStatusColor(source.status)}>
-                          {source.status}
-                        </Badge>
-                        {source.status === 'online' && (
-                          <div className="w-2 h-2 bg-pcr-live rounded-full animate-pulse-live"></div>
-                        )}
-                      </div>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">Stream Health</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Progress value={source.streamHealth} className="flex-1 h-2" />
-                          <span className="text-foreground font-mono">{source.streamHealth}%</span>
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Bitrate</p>
-                        <p className="text-foreground font-mono">{source.bitrate}</p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">Resolution</p>
-                        <p className="text-foreground font-mono">{source.resolution}</p>
-                      </div>
-                    </div>
-
-                    {source.currentProgram && (
-                      <div className="mt-3 pt-3 border-t border-border">
+                      {/* Middle - Info */}
+                      <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm text-muted-foreground">Current Program</p>
-                            <p className="font-medium text-foreground">{source.currentProgram}</p>
-                          </div>
-                          {source.nextProgram && (
-                            <div className="text-right">
-                              <p className="text-sm text-muted-foreground">Next: {source.nextProgramTime}</p>
-                              <p className="text-sm text-foreground">{source.nextProgram}</p>
+                          <div className="flex items-center gap-2 min-w-0">
+                            {getStatusIcon(source.status)}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="font-semibold text-foreground truncate">{source.name}</h3>
+                                <span className="text-xs text-muted-foreground font-mono">({source.studioId})</span>
+                                <span className="text-xs text-muted-foreground">|</span>
+                                <span className="text-xs font-mono text-foreground">[ {(source.language || 'English').toUpperCase()} ]</span>
+                              </div>
                             </div>
-                          )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className={getStatusColor(source.status)}>{source.status}</Badge>
+                            {source.status === 'online' && (
+                              <div className="w-2 h-2 bg-pcr-live rounded-full animate-pulse-live"></div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
 
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                      <p className="text-xs text-muted-foreground">
-                        Last heartbeat: {source.lastHeartbeat}
-                      </p>
-                      <div className="flex items-center gap-2">
-                        {source.status === 'online' ? (
-                          <Wifi className="h-4 w-4 text-status-online" />
-                        ) : (
-                          <WifiOff className="h-4 w-4 text-status-offline" />
+                        <div className="grid grid-cols-3 gap-4 text-sm mt-3">
+                          <div>
+                            <p className="text-muted-foreground">Stream Health</p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Progress value={source.streamHealth} className="flex-1 h-2" />
+                              <span className="text-foreground font-mono">{source.streamHealth}%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Bitrate</p>
+                            <p className="text-foreground font-mono">{source.bitrate}</p>
+                          </div>
+                          <div>
+                            <p className="text-muted-foreground">Resolution</p>
+                            <p className="text-foreground font-mono">{source.resolution}</p>
+                          </div>
+                        </div>
+
+                        {(source.currentProgram || source.nextProgram) && (
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <div className="flex items-start justify-between">
+                              <div>
+                                {source.currentProgram && (
+                                  <p className="text-sm text-foreground"><span className="font-semibold">Current:</span> {source.currentProgram}</p>
+                                )}
+                              </div>
+                              {source.nextProgram && (
+                                <div className="text-right">
+                                  <p className="text-sm text-muted-foreground">Next @{source.nextProgramTime}</p>
+                                  <p className="text-sm text-foreground">{source.nextProgram}</p>
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         )}
-                        <div data-details-button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            className="px-4 py-2 bg-slate-600 text-white border-slate-600 hover:bg-slate-700 hover:border-slate-700"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewSource(source);
-                              setPreviewDialogOpen(true);
-                            }}
-                          >
-                            <Eye className="h-4 w-4 mr-1" />
-                            Details
-                          </Button>
+
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                          <p className="text-xs text-muted-foreground">Last heartbeat: {source.lastHeartbeat}</p>
+                          <div className="flex items-center gap-2" data-details-button>
+                            <Button
+                              variant="control"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onNavigate?.('scheduler');
+                              }}
+                            >
+                              <Calendar className="h-4 w-4 mr-1" />
+                              Channel Schedule
+                            </Button>
+                            <Button
+                              variant="control"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onNavigate?.('preview');
+                              }}
+                            >
+                              <Calendar className="h-4 w-4 mr-1" />
+                              EPG
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="px-4 py-2 bg-slate-600 text-white border-slate-600 hover:bg-slate-700 hover:border-slate-700"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewSource(source);
+                                setPreviewDialogOpen(true);
+                              }}
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Details
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>

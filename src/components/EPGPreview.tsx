@@ -317,6 +317,17 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     }
   }, []);
 
+  // If navigated here from Copy EPG button on channel card, open the modal
+  useEffect(() => {
+    try {
+      const flag = localStorage.getItem('epg:openCopyModal');
+      if (flag) {
+        setIsRepeatModalOpen(true);
+        localStorage.removeItem('epg:openCopyModal');
+      }
+    } catch {}
+  }, []);
+
   // Warn on page close if draft exists and no programs have been added
   useEffect(() => {
     const beforeUnload = (e: BeforeUnloadEvent) => {
@@ -501,7 +512,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                       const draft = JSON.parse(draftRaw);
                       const rawList = localStorage.getItem('fastChannels');
                       const list = rawList ? JSON.parse(rawList) : [];
-                      list.push({ id: draft.id, name: draft.name, resolution: draft.resolution || '1080p', status: 'offline' });
+                      list.push({ id: draft.id, name: draft.name, resolution: draft.resolution || '1080p', status: 'offline', posterDataUrl: draft.posterDataUrl, language: draft.language });
                       localStorage.setItem('fastChannels', JSON.stringify(list));
                     }
                   } catch {}
@@ -535,7 +546,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                       const draft = JSON.parse(draftRaw);
                       const rawList = localStorage.getItem('fastChannels');
                       const list = rawList ? JSON.parse(rawList) : [];
-                      list.push({ id: draft.id, name: draft.name, resolution: draft.resolution || '1080p', status: 'offline' });
+                      list.push({ id: draft.id, name: draft.name, resolution: draft.resolution || '1080p', status: 'offline', posterDataUrl: draft.posterDataUrl, language: draft.language });
                       localStorage.setItem('fastChannels', JSON.stringify(list));
                     }
                   } catch {}
@@ -1424,31 +1435,29 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     )}
                   </div>
                 ))}
-                {/* Save EPG Button - Right Aligned with validations */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button variant="control" size="sm" onClick={handleSaveEpg} disabled={isSaving || !isSaveEpgEnabled()} className="ml-4">
-                          {isSaving ? (
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <Database className="h-4 w-4 mr-2" />
-                          )}
-                          Save EPG
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {(!isSaveEpgEnabled() && getSaveEpgTooltipMessage()) && (
-                      <TooltipContent>
-                        <p>{getSaveEpgTooltipMessage()}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
               </div>
-
-
+              {/* Save EPG Button - Extreme right with validations */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Button variant="control" size="sm" onClick={handleSaveEpg} disabled={isSaving || !isSaveEpgEnabled()} className="shrink-0">
+                        {isSaving ? (
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Database className="h-4 w-4 mr-2" />
+                        )}
+                        Save EPG
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  {(!isSaveEpgEnabled() && getSaveEpgTooltipMessage()) && (
+                    <TooltipContent>
+                      <p>{getSaveEpgTooltipMessage()}</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
 
