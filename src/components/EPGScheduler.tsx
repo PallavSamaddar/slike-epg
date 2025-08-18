@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback, memo } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown, Save } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown, Save, Flag } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useSortable } from '@dnd-kit/sortable';
@@ -18,6 +18,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ManageAdsModal } from '@/components/ManageAdsModal';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Video {
   id: string;
@@ -312,7 +313,13 @@ const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId }
 
 export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
   const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const formatLocalDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const [selectedDate, setSelectedDate] = useState(formatLocalDateKey(new Date()));
   const [selectedChannel, setSelectedChannel] = useState('Fast Channel 1');
   // Continuous 15-day view state/refs
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
@@ -328,6 +335,9 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   const [isAdConfigOpen, setIsAdConfigOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
+  const [hasScheduleChanges, setHasScheduleChanges] = useState(false);
+  // Map of ISO date -> array of ad markers for that date
+  const [adMarkersByDate, setAdMarkersByDate] = useState<Record<string, Array<{ time: string; campaign: string; duration: string; type?: string }>>>({});
   
   const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
@@ -518,7 +528,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     for (let i = 0; i < numberOfDays; i++) {
       const d = new Date(startDate);
       d.setDate(startDate.getDate() + i);
-      const key = d.toISOString().split('T')[0];
+      const key = formatLocalDateKey(d);
       const label = d.toLocaleDateString('en-GB', { weekday: 'long', day: '2-digit', month: 'short' });
       days.push({ date: d, key, label });
     }
@@ -651,6 +661,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           
           return newBlocks;
         });
+        setHasScheduleChanges(true);
       }
     }
     // If reordering within the same block
@@ -675,6 +686,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           
           return newBlocks;
         });
+        setHasScheduleChanges(true);
       }
     }
   };
@@ -793,7 +805,43 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
   // Handler for Manage Ads modal
   const handleManageAdsSave = (adConfig: Record<string, unknown>) => {
-    console.log('Ad configuration saved:', adConfig);
+    // adConfig: { campaign: string; duration: string; frequency: string }
+    try {
+      const { campaign, duration, frequency } = adConfig as { campaign: string; duration: string; frequency: string };
+      // Frequency formats like "00:30hr", "1:00hr" etc.
+      // Compute marker times for the current selectedDate from 00:00 to 24:00.
+      const [freqHourStr, freqMinStrWithHr] = frequency.split(':');
+      const freqHours = parseInt(freqHourStr, 10) || 0;
+      const freqMinutes = parseInt((freqMinStrWithHr || '0').replace(/hr/i, ''), 10) || 0;
+      let stepMinutes = freqHours * 60 + freqMinutes;
+      if (!stepMinutes || stepMinutes <= 0) {
+        stepMinutes = 30; // default fallback to 30 minutes
+      }
+
+      const markers: Array<{ time: string; campaign: string; duration: string; type?: string }> = [];
+      let minutes = 0;
+      // Avoid infinite loop on bad input
+      const maxIterations = 24 * 60 + 1;
+      let iter = 0;
+      while (minutes < 24 * 60 && iter < maxIterations && stepMinutes > 0) {
+        const hh = Math.floor(minutes / 60).toString().padStart(2, '0');
+        const mm = (minutes % 60).toString().padStart(2, '0');
+        markers.push({ time: `${hh}:${mm}`, campaign, duration });
+        minutes += stepMinutes;
+        iter += 1;
+      }
+
+      setAdMarkersByDate(prev => ({
+        ...prev,
+        [formatLocalDateKey(new Date(selectedDate))]: markers,
+      }));
+      toast({
+        title: 'Ads scheduled',
+        description: `${markers.length} ad marker${markers.length === 1 ? '' : 's'} added on ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}.`,
+      });
+    } catch (e) {
+      console.error('Error computing ad markers', e);
+    }
     setIsManageAdsModalOpen(false);
   };
 
@@ -949,7 +997,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                   value={selectedDate}
                   min={new Date().toISOString().split('T')[0]}
                   max={(function(){ const d = new Date(); d.setDate(d.getDate()+14); return d.toISOString().split('T')[0]; })()}
-                  onChange={(e) => { setSelectedDate(e.target.value); scrollToDate(e.target.value); }}
+                  onChange={(e) => { const key = formatLocalDateKey(new Date(e.target.value)); setSelectedDate(key); scrollToDate(key); }}
                   className="bg-control-surface border-border text-foreground w-40"
                 />
                 <Button
@@ -971,11 +1019,13 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                 <Button
                   variant="control"
                   size="sm"
+                  disabled={!hasScheduleChanges}
                   onClick={() => {
                     toast({
                       title: 'EPG saved',
                       description: `Schedule for ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} saved successfully.`,
                     });
+                    setHasScheduleChanges(false);
                   }}
                 >
                   <Save className="h-4 w-4 mr-2" />
@@ -1012,6 +1062,32 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         {timeSlots.map((time) => (
                           <div key={`${day.key}-${time}`} className="flex items-center gap-4 py-2 border-b border-border/30 px-4">
                             <div className="w-16 text-xs text-muted-foreground font-mono">{time}</div>
+                            {/* Ad flags next to time label */}
+                            {adMarkersByDate[day.key]?.some(m => m.time === time) ? (
+                              <div className="w-8 relative z-50 flex items-center justify-center">
+                                {adMarkersByDate[day.key]
+                                  .filter(m => m.time === time)
+                                  .map((m, idx) => (
+                                    <TooltipProvider key={`${day.key}-${time}-ad-left-${idx}`}>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Flag className="h-5 w-5 text-yellow-400" />
+                                        </TooltipTrigger>
+                                        <TooltipContent>
+                                          <div className="text-xs">
+                                            <div><span className="font-semibold">Campaign:</span> {m.campaign}</div>
+                                            <div><span className="font-semibold">Duration:</span> {m.duration}</div>
+                                            {m.type && <div><span className="font-semibold">Type:</span> {m.type}</div>}
+                                            <div><span className="font-semibold">Time:</span> {m.time}</div>
+                                          </div>
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  ))}
+                              </div>
+                            ) : (
+                              <div className="w-8" />
+                            )}
                             <div 
                               className="flex-1 min-h-[60px] relative"
                               onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = 'copy'; }}
@@ -1031,6 +1107,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                               : block
                                           )
                                         );
+                                        setHasScheduleChanges(true);
                                       }
                                     }
                                   } catch (error) {
@@ -1062,6 +1139,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                                 : block
                                             )
                                           );
+                                          setHasScheduleChanges(true);
                                         }
                                       }
                                     } catch (error) {

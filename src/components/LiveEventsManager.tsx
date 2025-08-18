@@ -373,7 +373,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   >
                     <div className="flex items-start gap-4">
                       {/* Poster */}
-                      <div className="flex-shrink-0 w-[160px] h-[90px] rounded-md overflow-hidden border border-border bg-black/20">
+                      <div className="flex-shrink-0 w-[20%] aspect-video rounded-md overflow-hidden border border-border bg-black/20">
                         <img
                           src={source.posterUrl || '/toi_global_poster.png'}
                           alt={source.name}
