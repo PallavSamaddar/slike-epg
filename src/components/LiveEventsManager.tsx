@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff } from 'lucide-react';
+import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -56,9 +56,12 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [channelDescription, setChannelDescription] = useState('');
   const [posterDataUrl, setPosterDataUrl] = useState<string | null>(null);
   const [resolution, setResolution] = useState<'720p' | '1080p' | '4k'>('1080p');
+  const [aspectRatio, setAspectRatio] = useState<'Landscape (16:9)' | 'Vertical (9:16)'>('Landscape (16:9)');
   const [primaryGenre, setPrimaryGenre] = useState<string | undefined>(undefined);
   const [language, setLanguage] = useState<string>('English');
   const [posterWarning, setPosterWarning] = useState<string | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState<string>('');
 
   const mockSources: LiveSource[] = [
     {
@@ -251,8 +254,10 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
       description: channelDescription,
       posterDataUrl,
       resolution,
+      aspectRatio,
       primaryGenre: primaryGenre || null,
       language: language || null,
+      tags,
       createdAt: Date.now(),
     };
     try {
@@ -265,6 +270,9 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     setPosterDataUrl(null);
     setPrimaryGenre(undefined);
     setLanguage('English');
+    setAspectRatio('Landscape (16:9)');
+    setTags([]);
+    setTagInput('');
     onNavigate?.('preview');
   };
 
@@ -720,6 +728,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   </div>
                 )}
               </div>
+              {/* Row 1: Resolution | Aspect Ratio */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-foreground">Resolution</Label>
@@ -735,10 +744,52 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   </Select>
                 </div>
                 <div>
-                  <Label className="text-foreground">Primary Genre (optional)</Label>
+                  <Label className="text-foreground">Aspect Ratio</Label>
+                  <Select value={aspectRatio} onValueChange={(v) => setAspectRatio(v as any)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Landscape (16:9)">Landscape (16:9)</SelectItem>
+                      <SelectItem value="Vertical (9:16)">Vertical (9:16)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Row 2: Language | Category */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-foreground">Language (optional)</Label>
+                  <Select value={language} onValueChange={(v) => setLanguage(v)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {[
+                        'English',
+                        'Hindi',
+                        'Tamil',
+                        'Malayalam',
+                        'Bengali',
+                        'Telugu',
+                        'Kannada',
+                        'Marathi',
+                        'Gujarati',
+                        'Punjabi',
+                        'Oriya',
+                        'Urdu',
+                      ].map(l => (
+                        <SelectItem key={l} value={l}>{l}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-foreground">Category</Label>
                   <Select value={primaryGenre} onValueChange={(v) => setPrimaryGenre(v)}>
                     <SelectTrigger className="bg-control-surface border-border text-foreground">
-                      <SelectValue placeholder="Select genre" />
+                      <SelectValue placeholder="Select category" />
                     </SelectTrigger>
                     <SelectContent>
                       {['News','Movies','Sports','Music','Comedy','Documentary','Talk Show','Kids','Lifestyle','Finance'].map(g => (
@@ -748,31 +799,43 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   </Select>
                 </div>
               </div>
+
+              {/* Tags input */}
               <div>
-                <Label className="text-foreground">Language (optional)</Label>
-                <Select value={language} onValueChange={(v) => setLanguage(v)}>
-                  <SelectTrigger className="bg-control-surface border-border text-foreground">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      'English',
-                      'Hindi',
-                      'Tamil',
-                      'Malayalam',
-                      'Bengali',
-                      'Telugu',
-                      'Kannada',
-                      'Marathi',
-                      'Gujarati',
-                      'Punjabi',
-                      'Oriya',
-                      'Urdu',
-                    ].map(l => (
-                      <SelectItem key={l} value={l}>{l}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label className="text-foreground">Tags</Label>
+                <div className="mt-2 flex flex-wrap items-center gap-2 p-2 bg-control-surface border border-border rounded">
+                  {tags.map((t, idx) => (
+                    <span key={`${t}-${idx}`} className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-foreground text-xs border border-border">
+                      {t}
+                      <button
+                        aria-label={`Remove ${t}`}
+                        className="hidden group-hover:inline-flex text-muted-foreground hover:text-foreground"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setTags(prev => prev.filter((tag, i) => i !== idx));
+                        }}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === ' ' || e.key === 'Spacebar') {
+                        const newTag = tagInput.trim();
+                        if (newTag) {
+                          e.preventDefault();
+                          setTags(prev => Array.from(new Set([...prev, newTag])));
+                          setTagInput('');
+                        }
+                      }
+                    }}
+                    placeholder="Type tag and press space"
+                    className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+                  />
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
