@@ -86,7 +86,7 @@ const generateDummyProgramsForDate = (date: Date, idOffset: number): EPGPreviewI
 
 type ViewMode = 'daily' | 'weekly' | 'monthly';
 
-export const EPGPreview = () => {
+export const EPGPreview = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
   const [selectedFormat, setSelectedFormat] = useState('xmltv');
   const [includeMetadata, setIncludeMetadata] = useState(true);
   const [distributor, setDistributor] = useState('Gracenote');
@@ -1531,9 +1531,9 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                 <Copy className="h-4 w-4 mr-2" />
                 Copy EPG
               </Button>
-              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsManageAdsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Manage Ads
+              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => onNavigate?.('scheduler')}>
+                <CalendarIcon className="h-4 w-4 mr-2" />
+                Channel Detail
               </Button>
             </CardContent>
           </Card>

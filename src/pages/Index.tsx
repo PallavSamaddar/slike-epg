@@ -47,7 +47,7 @@ const Index = () => {
       case 'scheduler':
         return <EPGScheduler onNavigate={setActiveView} />;
       case 'preview':
-        return <EPGPreview />;
+        return <EPGPreview onNavigate={setActiveView} />;
       // removed obsolete routes
       default:
         return <LiveEventsManager onNavigate={setActiveView} />;

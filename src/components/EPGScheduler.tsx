@@ -1433,21 +1433,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             </CardContent>
           </Card>
 
-          <Card className="bg-card-dark border-border w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-foreground">Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsManageAdsModalOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Manage Ads
-              </Button>
-              <Button variant="control" size="sm" className="w-full justify-start" onClick={handleNavigateToEPGPreview}>
-                <Calendar className="h-4 w-4 mr-2" />
-                Manage EPG
-              </Button>
-            </CardContent>
-          </Card>
+          {/* Actions card removed per request */}
         </div>
         </div>
       </div>
