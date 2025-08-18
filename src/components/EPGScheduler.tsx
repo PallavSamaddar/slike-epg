@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, memo } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
 import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown, Save, Flag } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -509,17 +509,28 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
   // Single-day grid removed; positions calc no longer needed
 
-  const getBlockColor = (time: string, status: string) => {
-    // 00:00 and 01:00: light gray
-    if (time === '00:00' || time === '01:00') {
-      return 'border-2 bg-gray-300 text-black border-gray-300';
-    }
-    // 02:00: green with white text
-    if (time === '02:00') {
-      return 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
-    }
-    // Others: white background with black text and no border for cleaner look
-    return 'bg-white text-black';
+  const sortedBlockIdsByTime = useMemo(() => {
+    const parseMinutes = (t: string) => {
+      const [hh, mm] = t.split(':').map((n) => parseInt(n, 10));
+      return (isNaN(hh) ? 0 : hh) * 60 + (isNaN(mm) ? 0 : mm);
+    };
+    return [...scheduleBlocks]
+      .sort((a, b) => parseMinutes(a.time) - parseMinutes(b.time))
+      .map((b) => b.id);
+  }, [scheduleBlocks]);
+
+  const getBlockColorForDay = (dayKey: string, blockId: string) => {
+    const todayKey = formatLocalDateKey(new Date());
+    const dulledGray = 'bg-gray-200 text-black border border-gray-200';
+    const green = 'border-2 bg-[#ACC572] text-white border-[#ACC572]';
+
+    // Future days: all gray (dulled)
+    if (dayKey !== todayKey) return dulledGray;
+
+    const index = sortedBlockIdsByTime.indexOf(blockId);
+    if (index <= 1) return 'bg-white text-black'; // ended -> white
+    if (index === 2) return green; // current -> green
+    return dulledGray; // upcoming -> dulled gray
   };
 
   // Build 15-day range from today
@@ -1154,7 +1165,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                   .map((block, bi) => (
                                     <div
                                       key={`${day.key}-${block.id}`}
-                                      className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColor(block.time, block.status)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
+                                      className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColorForDay(day.key, block.id)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
                                       style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
                                       data-block-id={block.id}
                                     >
