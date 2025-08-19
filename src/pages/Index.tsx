@@ -1,6 +1,5 @@
 import { useEffect, useState, Suspense, lazy } from 'react';
 import { useLocation } from 'react-router-dom';
-import { EPGNavigation } from '@/components/EPGNavigation';
 const EPGScheduler = lazy(() => import('@/components/EPGScheduler').then(m => ({ default: m.EPGScheduler })));
 const LiveEventsManager = lazy(() => import('@/components/LiveEventsManager').then(m => ({ default: m.LiveEventsManager })));
 const EPGPreview = lazy(() => import('@/components/EPGPreview').then(m => ({ default: m.EPGPreview })));
@@ -43,21 +42,20 @@ const Index = () => {
   const renderActiveView = () => {
     switch (activeView) {
       case 'dashboard':
-        return <LiveEventsManager onNavigate={setActiveView} />;
+        return <LiveEventsManager onNavigate={handleViewChange} />;
       case 'scheduler':
-        return <EPGScheduler onNavigate={setActiveView} />;
+        return <EPGScheduler onNavigate={handleViewChange} />;
       case 'preview':
-        return <EPGPreview onNavigate={setActiveView} />;
+        return <EPGPreview onNavigate={handleViewChange} />;
       // removed obsolete routes
       default:
-        return <LiveEventsManager onNavigate={setActiveView} />;
+        return <LiveEventsManager onNavigate={handleViewChange} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <EPGNavigation activeView={activeView} onViewChange={handleViewChange} />
-      <div className="flex-1 overflow-auto">
+    <div className="min-h-screen bg-background">
+      <div className="overflow-auto">
         <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading…</div>}>
           {renderActiveView()}
         </Suspense>
