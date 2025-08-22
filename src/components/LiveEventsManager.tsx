@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff, X } from 'lucide-react';
+import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff, X, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +62,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [posterWarning, setPosterWarning] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
 
   const mockSources: LiveSource[] = [
     {
@@ -355,143 +356,290 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   <Tv className="h-5 w-5 text-broadcast-blue" />
                   Channel Status
                 </span>
-                <div className="text-sm text-muted-foreground">
-                  {mockSources.filter(s => s.status === 'online').length + additionalChannels.filter(s => s.status === 'online').length} of {mockSources.length + additionalChannels.length} online
+                <div className="flex items-center gap-4">
+                  <div className="text-sm text-muted-foreground">
+                    {mockSources.filter(s => s.status === 'online').length + additionalChannels.filter(s => s.status === 'online').length} of {mockSources.length + additionalChannels.length} online
+                  </div>
+                  {/* View Toggle */}
+                  <div className="flex items-center gap-1 bg-control-surface border border-border rounded-lg p-1">
+                    <Button
+                      variant={viewMode === 'list' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('list')}
+                      className={`h-8 px-2 ${viewMode === 'list' ? 'bg-broadcast-blue text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant={viewMode === 'grid' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setViewMode('grid')}
+                      className={`h-8 px-2 ${viewMode === 'grid' ? 'bg-broadcast-blue text-white' : 'text-muted-foreground hover:text-foreground'}`}
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[...mockSources, ...additionalChannels].map((source) => (
-                  <div
-                    key={source.id}
-                    className={`p-4 rounded-lg border-2 shadow-sm ${
-                      selectedSource === source.id
-                        ? 'border-broadcast-blue bg-broadcast-blue/10'
-                        : 'border-border bg-control-surface'
-                    }`}
-                  >
-                    <div className="flex items-start gap-4">
-                      {/* Poster */}
-                      <div className="flex-shrink-0 w-[20%] aspect-video rounded-md overflow-hidden border border-border bg-black/20">
+              {viewMode === 'list' ? (
+                // List View (existing layout)
+                <div className="space-y-4">
+                  {[...mockSources, ...additionalChannels].map((source) => (
+                    <div
+                      key={source.id}
+                      className={`p-4 rounded-lg border-2 shadow-sm ${
+                        selectedSource === source.id
+                          ? 'border-broadcast-blue bg-broadcast-blue/10'
+                          : 'border-border bg-control-surface'
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        {/* Poster */}
+                        <div className="flex-shrink-0 w-[20%] aspect-video rounded-md overflow-hidden border border-border bg-black/20">
+                          <img
+                            src={source.posterUrl || '/toi_global_poster.png'}
+                            alt={source.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+
+                        {/* Middle - Info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 min-w-0">
+                              {getStatusIcon(source.status)}
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <h3 className="font-semibold text-foreground truncate">{source.name}</h3>
+                                  <span className="text-xs text-muted-foreground font-mono">({source.studioId})</span>
+                                  <span className="text-xs text-muted-foreground">|</span>
+                                  <span className="text-xs font-mono text-foreground">[ {(source.language || 'English').toUpperCase()} ]</span>
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getStatusColor(source.status)}>{source.status}</Badge>
+                              {source.status === 'online' && (
+                                <div className="w-2 h-2 bg-pcr-live rounded-full animate-pulse-live"></div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-3 gap-4 text-sm mt-3">
+                            <div>
+                              <p className="text-muted-foreground">Stream Health</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                <Progress value={source.streamHealth} className="flex-1 h-2" />
+                                <span className="text-foreground font-mono">{source.streamHealth}%</span>
+                              </div>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Bitrate</p>
+                              <p className="text-foreground font-mono">{source.bitrate}</p>
+                            </div>
+                            <div>
+                              <p className="text-muted-foreground">Resolution</p>
+                              <p className="text-foreground font-mono">{source.resolution}</p>
+                            </div>
+                          </div>
+
+                          {(source.currentProgram || source.nextProgram) && (
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <div className="flex items-start justify-between">
+                                <div>
+                                  {source.currentProgram && (
+                                    <p className="text-sm text-foreground"><span className="font-semibold">Current:</span> {source.currentProgram}</p>
+                                  )}
+                                </div>
+                                {source.nextProgram && (
+                                  <div className="text-right">
+                                    <p className="text-sm text-muted-foreground">Next @{source.nextProgramTime}</p>
+                                    <p className="text-sm text-foreground">{source.nextProgram}</p>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                            <p className="text-xs text-muted-foreground">Last heartbeat: {source.lastHeartbeat}</p>
+                            <div className="flex items-center gap-2" data-details-button>
+                              <Button
+                                variant="control"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    localStorage.setItem('activeChannelName', source.name);
+                                    localStorage.setItem('activeChannelStudioId', source.studioId);
+                                  } catch {}
+                                  onNavigate?.('scheduler');
+                                }}
+                              >
+                                <Calendar className="h-4 w-4 mr-1" />
+                                Channel Details
+                              </Button>
+                              <Button
+                                variant="control"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    localStorage.setItem('activeChannelName', source.name);
+                                    localStorage.setItem('activeChannelStudioId', source.studioId);
+                                  } catch {}
+                                  onNavigate?.('preview');
+                                }}
+                              >
+                                <Calendar className="h-4 w-4 mr-1" />
+                                EPG
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="px-4 py-2 bg-slate-600 text-white border-slate-600 hover:bg-slate-700 hover:border-slate-700"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setPreviewSource(source);
+                                  setPreviewDialogOpen(true);
+                                }}
+                              >
+                                <Eye className="h-4 w-4 mr-1" />
+                                Details
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Grid View (new card-based layout)
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {[...mockSources, ...additionalChannels].map((source) => (
+                    <Card
+                      key={source.id}
+                      className={`relative overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] cursor-pointer ${
+                        selectedSource === source.id
+                          ? 'ring-2 ring-broadcast-blue bg-broadcast-blue/5'
+                          : 'bg-control-surface border-border'
+                      }`}
+                      onClick={() => setSelectedSource(source.id)}
+                    >
+                      {/* Poster with overlay */}
+                      <div className="relative aspect-video w-full overflow-hidden">
                         <img
                           src={source.posterUrl || '/toi_global_poster.png'}
                           alt={source.name}
                           className="w-full h-full object-cover"
                         />
+                        {/* Status overlay */}
+                        <div className="absolute top-2 left-2">
+                          <Badge className={getStatusColor(source.status)}>
+                            {source.status}
+                          </Badge>
+                        </div>
+                        {/* Live indicator */}
+                        {source.status === 'online' && (
+                          <div className="absolute top-2 right-2">
+                            <div className="w-2 h-2 bg-pcr-live rounded-full animate-pulse-live"></div>
+                          </div>
+                        )}
+                        {/* Language badge */}
+                        <div className="absolute bottom-2 left-2">
+                          <Badge variant="outline" className="bg-black/50 text-white border-white/20 text-xs">
+                            {(source.language || 'English').toUpperCase()}
+                          </Badge>
+                        </div>
+                        {/* Resolution badge */}
+                        <div className="absolute bottom-2 right-2">
+                          <Badge variant="outline" className="bg-black/50 text-white border-white/20 text-xs">
+                            {source.resolution === '3840x2160' ? '4K' : source.resolution === '1920x1080' ? '1080p' : '720p'}
+                          </Badge>
+                        </div>
                       </div>
 
-                      {/* Middle - Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2 min-w-0">
-                            {getStatusIcon(source.status)}
-                            <div className="min-w-0">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <h3 className="font-semibold text-foreground truncate">{source.name}</h3>
-                                <span className="text-xs text-muted-foreground font-mono">({source.studioId})</span>
-                                <span className="text-xs text-muted-foreground">|</span>
-                                <span className="text-xs font-mono text-foreground">[ {(source.language || 'English').toUpperCase()} ]</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className={getStatusColor(source.status)}>{source.status}</Badge>
-                            {source.status === 'online' && (
-                              <div className="w-2 h-2 bg-pcr-live rounded-full animate-pulse-live"></div>
-                            )}
-                          </div>
+                      {/* Card content */}
+                      <CardContent className="p-4">
+                        {/* Channel name and studio ID */}
+                        <div className="mb-3">
+                          <h3 className="font-semibold text-foreground text-sm truncate mb-1">{source.name}</h3>
+                          <p className="text-xs text-muted-foreground font-mono">{source.studioId}</p>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-4 text-sm mt-3">
-                          <div>
-                            <p className="text-muted-foreground">Stream Health</p>
-                            <div className="flex items-center gap-2 mt-1">
-                              <Progress value={source.streamHealth} className="flex-1 h-2" />
-                              <span className="text-foreground font-mono">{source.streamHealth}%</span>
-                            </div>
+                        {/* Stream health indicator */}
+                        <div className="mb-3">
+                          <div className="flex items-center justify-between text-xs mb-1">
+                            <span className="text-muted-foreground">Health</span>
+                            <span className="font-mono text-foreground">{source.streamHealth}%</span>
                           </div>
-                          <div>
-                            <p className="text-muted-foreground">Bitrate</p>
-                            <p className="text-foreground font-mono">{source.bitrate}</p>
-                          </div>
-                          <div>
-                            <p className="text-muted-foreground">Resolution</p>
-                            <p className="text-foreground font-mono">{source.resolution}</p>
-                          </div>
+                          <Progress value={source.streamHealth} className="h-2" />
                         </div>
 
-                        {(source.currentProgram || source.nextProgram) && (
-                          <div className="mt-3 pt-3 border-t border-border">
-                            <div className="flex items-start justify-between">
-                              <div>
-                                {source.currentProgram && (
-                                  <p className="text-sm text-foreground"><span className="font-semibold">Current:</span> {source.currentProgram}</p>
-                                )}
-                              </div>
-                              {source.nextProgram && (
-                                <div className="text-right">
-                                  <p className="text-sm text-muted-foreground">Next @{source.nextProgramTime}</p>
-                                  <p className="text-sm text-foreground">{source.nextProgram}</p>
-                                </div>
-                              )}
-                            </div>
+                        {/* Current program info */}
+                        {source.currentProgram && (
+                          <div className="mb-3 p-2 bg-black/5 rounded text-xs">
+                            <p className="text-muted-foreground mb-1">Now Playing</p>
+                            <p className="text-foreground font-medium truncate">{source.currentProgram}</p>
                           </div>
                         )}
 
-                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                          <p className="text-xs text-muted-foreground">Last heartbeat: {source.lastHeartbeat}</p>
-                          <div className="flex items-center gap-2" data-details-button>
-                            <Button
-                              variant="control"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                try {
-                                  localStorage.setItem('activeChannelName', source.name);
-                                  localStorage.setItem('activeChannelStudioId', source.studioId);
-                                } catch {}
-                                onNavigate?.('scheduler');
-                              }}
-                            >
-                              <Calendar className="h-4 w-4 mr-1" />
-                              Channel Details
-                            </Button>
-                            <Button
-                              variant="control"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                try {
-                                  localStorage.setItem('activeChannelName', source.name);
-                                  localStorage.setItem('activeChannelStudioId', source.studioId);
-                                } catch {}
-                                onNavigate?.('preview');
-                              }}
-                            >
-                              <Calendar className="h-4 w-4 mr-1" />
-                              EPG
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="px-4 py-2 bg-slate-600 text-white border-slate-600 hover:bg-slate-700 hover:border-slate-700"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewSource(source);
-                                setPreviewDialogOpen(true);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-1" />
-                              Details
-                            </Button>
-                          </div>
+                        {/* Action buttons */}
+                        <div className="flex flex-col gap-2">
+                          <Button
+                            variant="control"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              try {
+                                localStorage.setItem('activeChannelName', source.name);
+                                localStorage.setItem('activeChannelStudioId', source.studioId);
+                              } catch {}
+                              onNavigate?.('scheduler');
+                            }}
+                            className="w-full text-xs"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            Channel Details
+                          </Button>
+                          <Button
+                            variant="control"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              try {
+                                localStorage.setItem('activeChannelName', source.name);
+                                localStorage.setItem('activeChannelStudioId', source.studioId);
+                              } catch {}
+                              onNavigate?.('preview');
+                            }}
+                            className="w-full text-xs"
+                          >
+                            <Calendar className="h-3 w-3 mr-1" />
+                            EPG
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPreviewSource(source);
+                              setPreviewDialogOpen(true);
+                            }}
+                            className="w-full text-xs"
+                          >
+                            <Eye className="h-3 w-3 mr-1" />
+                            Details
+                          </Button>
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
