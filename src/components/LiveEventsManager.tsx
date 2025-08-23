@@ -536,21 +536,28 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                         </div>
                       </div>
 
+                      {/* Health Progress Bar - below poster */}
+                      <div className="px-4 pt-2">
+                        <div className="w-full bg-gray-200 rounded-full h-1.5 overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full transition-all duration-300 ${
+                              source.streamHealth > 75 
+                                ? 'bg-green-500' 
+                                : source.streamHealth >= 40 
+                                ? 'bg-orange-500' 
+                                : 'bg-red-500'
+                            }`}
+                            style={{ width: `${source.streamHealth}%` }}
+                          />
+                        </div>
+                      </div>
+
                       {/* Card content */}
                       <CardContent className="p-4">
                         {/* Channel name and studio ID */}
                         <div className="mb-3">
                           <h3 className="font-semibold text-foreground text-sm truncate mb-1">{source.name}</h3>
                           <p className="text-xs text-muted-foreground font-mono">{source.studioId}</p>
-                        </div>
-
-                        {/* Stream health indicator */}
-                        <div className="mb-3">
-                          <div className="flex items-center justify-between text-xs mb-1">
-                            <span className="text-muted-foreground">Health</span>
-                            <span className="font-mono text-foreground">{source.streamHealth}%</span>
-                          </div>
-                          <Progress value={source.streamHealth} className="h-2" />
                         </div>
 
                         {/* Action buttons */}
