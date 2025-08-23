@@ -12,6 +12,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
+import { useEffect } from 'react';
 
 interface LiveSource {
   id: string;
@@ -63,6 +64,8 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
+  const [currentPage, setCurrentPage] = useState(1);
+  const channelsPerPage = 8;
 
   const mockSources: LiveSource[] = [
     {
@@ -138,6 +141,13 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
       return [];
     }
   })();
+
+  // Pagination logic
+  const allChannels = [...mockSources, ...additionalChannels];
+  const totalPages = Math.ceil(allChannels.length / channelsPerPage);
+  const startIndex = (currentPage - 1) * channelsPerPage;
+  const endIndex = startIndex + channelsPerPage;
+  const currentChannels = allChannels.slice(startIndex, endIndex);
 
   const mockEvents: LiveEvent[] = [
     {
@@ -277,6 +287,10 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     onNavigate?.('preview');
   };
 
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [viewMode]);
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       {/* Header */}
@@ -295,57 +309,6 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
         </div>
       </div>
 
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <Card className="bg-card-dark border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Live Channels</p>
-                <p className="text-2xl font-bold text-pcr-live">2</p>
-              </div>
-              <Radio className="h-8 w-8 text-pcr-live animate-pulse-live" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card-dark border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Errors</p>
-                <p className="text-2xl font-bold text-red-500">8</p>
-              </div>
-              <XCircle className="h-8 w-8 text-red-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card-dark border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Warnings</p>
-                <p className="text-2xl font-bold text-orange-500">12</p>
-              </div>
-              <AlertCircle className="h-8 w-8 text-orange-500" />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card-dark border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Off Line</p>
-                <p className="text-2xl font-bold text-broadcast-blue">5</p>
-              </div>
-              <WifiOff className="h-8 w-8 text-broadcast-blue" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="grid grid-cols-12 gap-6">
         {/* Live Sources Panel */}
         <div className="col-span-12">
@@ -358,7 +321,8 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 </span>
                 <div className="flex items-center gap-4">
                   <div className="text-sm text-muted-foreground">
-                    {mockSources.filter(s => s.status === 'online').length + additionalChannels.filter(s => s.status === 'online').length} of {mockSources.length + additionalChannels.length} online
+                    {currentChannels.filter(s => s.status === 'online').length} of {allChannels.length} online
+                    {totalPages > 1 && ` • Page ${currentPage} of ${totalPages}`}
                   </div>
                   {/* View Toggle */}
                   <div className="flex items-center gap-1 bg-control-surface border border-border rounded-lg p-1">
@@ -386,7 +350,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
               {viewMode === 'list' ? (
                 // List View (existing layout)
                 <div className="space-y-4">
-                  {[...mockSources, ...additionalChannels].map((source) => (
+                  {currentChannels.map((source) => (
                     <div
                       key={source.id}
                       className={`p-4 rounded-lg border-2 shadow-sm ${
@@ -526,7 +490,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
               ) : (
                 // Grid View (new card-based layout)
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {[...mockSources, ...additionalChannels].map((source) => (
+                  {currentChannels.map((source) => (
                     <Card
                       key={source.id}
                       className={`relative overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] cursor-pointer ${
@@ -644,6 +608,45 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       </CardContent>
                     </Card>
                   ))}
+                </div>
+              )}
+              
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-6 pt-4 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                    disabled={currentPage === 1}
+                    className="px-3"
+                  >
+                    Previous
+                  </Button>
+                  
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className="w-8 h-8 p-0"
+                      >
+                        {page}
+                      </Button>
+                    ))}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                    disabled={currentPage === totalPages}
+                    className="px-3"
+                  >
+                    Next
+                  </Button>
                 </div>
               )}
             </CardContent>
