@@ -465,7 +465,9 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
 
                           <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
                             <p className="text-xs text-muted-foreground">Last heartbeat: {source.lastHeartbeat}</p>
-                            <div className="flex items-center gap-2" data-details-button>
+                            {/* Action buttons */}
+                            <div className="space-y-2">
+                              {/* Channel Details - Full width */}
                               <Button
                                 variant="control"
                                 size="sm"
@@ -477,38 +479,43 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                   } catch {}
                                   onNavigate?.('scheduler');
                                 }}
+                                className="w-full text-xs"
                               >
-                                <Calendar className="h-4 w-4 mr-1" />
+                                <Calendar className="h-3 w-3 mr-1" />
                                 Channel Details
                               </Button>
-                              <Button
-                                variant="control"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    localStorage.setItem('activeChannelName', source.name);
-                                    localStorage.setItem('activeChannelStudioId', source.studioId);
-                                  } catch {}
-                                  onNavigate?.('preview');
-                                }}
-                              >
-                                <Calendar className="h-4 w-4 mr-1" />
-                                EPG
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="px-4 py-2 bg-slate-600 text-white border-slate-600 hover:bg-slate-700 hover:border-slate-700"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setPreviewSource(source);
-                                  setPreviewDialogOpen(true);
-                                }}
-                              >
-                                <Eye className="h-4 w-4 mr-1" />
-                                Details
-                              </Button>
+                              {/* EPG and Details - Same row */}
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="control"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      localStorage.setItem('activeChannelName', source.name);
+                                      localStorage.setItem('activeChannelStudioId', source.studioId);
+                                    } catch {}
+                                    onNavigate?.('preview');
+                                  }}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  EPG
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setPreviewSource(source);
+                                    setPreviewDialogOpen(true);
+                                  }}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Details
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -542,22 +549,25 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                             {source.status}
                           </Badge>
                         </div>
-                        {/* Live indicator */}
-                        {source.status === 'online' && (
-                          <div className="absolute top-2 right-2">
-                            <div className="w-2 h-2 bg-pcr-live rounded-full animate-pulse-live"></div>
-                          </div>
-                        )}
-                        {/* Language badge */}
-                        <div className="absolute bottom-2 left-2">
-                          <Badge variant="outline" className="bg-black/50 text-white border-white/20 text-xs">
-                            {(source.language || 'English').toUpperCase()}
-                          </Badge>
-                        </div>
                         {/* Resolution badge */}
-                        <div className="absolute bottom-2 right-2">
+                        <div className="absolute top-2 right-2">
                           <Badge variant="outline" className="bg-black/50 text-white border-white/20 text-xs">
                             {source.resolution === '3840x2160' ? '4K' : source.resolution === '1920x1080' ? '1080p' : '720p'}
+                          </Badge>
+                        </div>
+                        {/* Now Playing overlay */}
+                        {source.currentProgram && (
+                          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-3">
+                            <div className="text-white">
+                              <p className="text-xs text-white/70 mb-1">Now Playing</p>
+                              <p className="text-sm font-semibold truncate">{source.currentProgram}</p>
+                            </div>
+                          </div>
+                        )}
+                        {/* Language badge - positioned at bottom right */}
+                        <div className="absolute bottom-2 right-2">
+                          <Badge variant="outline" className="bg-black/50 text-white border-white/20 text-xs">
+                            {(source.language || 'English').toUpperCase()}
                           </Badge>
                         </div>
                       </div>
@@ -579,16 +589,9 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                           <Progress value={source.streamHealth} className="h-2" />
                         </div>
 
-                        {/* Current program info */}
-                        {source.currentProgram && (
-                          <div className="mb-3 p-2 bg-black/5 rounded text-xs">
-                            <p className="text-muted-foreground mb-1">Now Playing</p>
-                            <p className="text-foreground font-medium truncate">{source.currentProgram}</p>
-                          </div>
-                        )}
-
                         {/* Action buttons */}
-                        <div className="flex flex-col gap-2">
+                        <div className="space-y-2">
+                          {/* Channel Details - Full width */}
                           <Button
                             variant="control"
                             size="sm"
@@ -605,35 +608,38 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                             <Calendar className="h-3 w-3 mr-1" />
                             Channel Details
                           </Button>
-                          <Button
-                            variant="control"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              try {
-                                localStorage.setItem('activeChannelName', source.name);
-                                localStorage.setItem('activeChannelStudioId', source.studioId);
-                              } catch {}
-                              onNavigate?.('preview');
-                            }}
-                            className="w-full text-xs"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            EPG
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPreviewSource(source);
-                              setPreviewDialogOpen(true);
-                            }}
-                            className="w-full text-xs"
-                          >
-                            <Eye className="h-3 w-3 mr-1" />
-                            Details
-                          </Button>
+                          {/* EPG and Details - Same row */}
+                          <div className="flex gap-2">
+                            <Button
+                              variant="control"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                try {
+                                  localStorage.setItem('activeChannelName', source.name);
+                                  localStorage.setItem('activeChannelStudioId', source.studioId);
+                                } catch {}
+                                onNavigate?.('preview');
+                              }}
+                              className="flex-1 text-xs"
+                            >
+                              <Calendar className="h-3 w-3 mr-1" />
+                              EPG
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setPreviewSource(source);
+                                setPreviewDialogOpen(true);
+                              }}
+                              className="flex-1 text-xs"
+                            >
+                              <Eye className="h-3 w-3 mr-1" />
+                              Details
+                            </Button>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
