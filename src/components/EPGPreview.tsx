@@ -1589,27 +1589,10 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                   <Eye className="h-4 w-4 mr-2" />
                   Preview EPG
                 </Button>
+                <Button variant="control" className="w-full" onClick={() => toast({ title: 'EPG FTP updated successfully' })}>
+                  Export to FTP
+                </Button>
               </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-card-dark border-border">
-            <CardHeader>
-              <CardTitle className="text-sm text-foreground">Distribution</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="control" size="sm" className="w-full justify-start">
-                <FileText className="h-4 w-4 mr-2" />
-                Send to CDN
-              </Button>
-              <Button variant="control" size="sm" className="w-full justify-start">
-                <Database className="h-4 w-4 mr-2" />
-                Update OTT Platform
-              </Button>
-              <Button variant="control" size="sm" className="w-full justify-start">
-                <Code className="h-4 w-4 mr-2" />
-                Webhook Notify
-              </Button>
             </CardContent>
           </Card>
         </div>

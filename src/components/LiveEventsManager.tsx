@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Eye, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff, X, List, LayoutGrid } from 'lucide-react';
+import { Radio, XCircle, AlertTriangle, AlertCircle, CheckCircle, Clock, Settings, Tv, Play, RotateCcw, Power, Calendar, PlayCircle, Globe, Plus, WifiOff, X, List, LayoutGrid } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -360,12 +360,28 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        {/* Poster */}
-                        <div className="flex-shrink-0 w-[20%] aspect-video rounded-md overflow-hidden border border-border bg-black/20">
+                        {/* Poster - clickable to open Details modal */}
+                        <div
+                          className="flex-shrink-0 w-[20%] aspect-video rounded-md overflow-hidden border border-border bg-black/20 group cursor-pointer hover:shadow-md transition"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setPreviewSource(source);
+                            setPreviewDialogOpen(true);
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setPreviewSource(source);
+                              setPreviewDialogOpen(true);
+                            }
+                          }}
+                        >
                           <img
                             src={source.posterUrl || '/toi_global_poster.png'}
                             alt={source.name}
-                            className="w-full h-full object-cover"
+                            className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                           />
                         </div>
 
@@ -431,25 +447,24 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                             <p className="text-xs text-muted-foreground">Last heartbeat: {source.lastHeartbeat}</p>
                             {/* Action buttons */}
                             <div className="space-y-2">
-                              {/* Channel Details - Full width */}
-                              <Button
-                                variant="control"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  try {
-                                    localStorage.setItem('activeChannelName', source.name);
-                                    localStorage.setItem('activeChannelStudioId', source.studioId);
-                                  } catch {}
-                                  onNavigate?.('scheduler');
-                                }}
-                                className="w-full text-xs"
-                              >
-                                <Calendar className="h-3 w-3 mr-1" />
-                                Channel Details
-                              </Button>
-                              {/* EPG and Details - Same row */}
+                              {/* Details and EPG - Same row */}
                               <div className="flex gap-2">
+                                <Button
+                                  variant="control"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      localStorage.setItem('activeChannelName', source.name);
+                                      localStorage.setItem('activeChannelStudioId', source.studioId);
+                                    } catch {}
+                                    onNavigate?.('scheduler');
+                                  }}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  Details
+                                </Button>
                                 <Button
                                   variant="control"
                                   size="sm"
@@ -466,19 +481,6 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                   <Calendar className="h-3 w-3 mr-1" />
                                   EPG
                                 </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setPreviewSource(source);
-                                    setPreviewDialogOpen(true);
-                                  }}
-                                  className="flex-1 text-xs"
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  Details
-                                </Button>
                               </div>
                             </div>
                           </div>
@@ -493,19 +495,34 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   {currentChannels.map((source) => (
                     <Card
                       key={source.id}
-                      className={`relative overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] cursor-pointer ${
+                      className={`relative overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] ${
                         selectedSource === source.id
                           ? 'ring-2 ring-broadcast-blue bg-broadcast-blue/5'
                           : 'bg-control-surface border-border'
                       }`}
-                      onClick={() => setSelectedSource(source.id)}
                     >
-                      {/* Poster with overlay */}
-                      <div className="relative aspect-video w-full overflow-hidden">
+                      {/* Poster with overlay - clickable to open Details modal */}
+                      <div
+                        className="relative aspect-video w-full overflow-hidden group cursor-pointer hover:shadow-md transition"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setPreviewSource(source);
+                          setPreviewDialogOpen(true);
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            setPreviewSource(source);
+                            setPreviewDialogOpen(true);
+                          }
+                        }}
+                      >
                         <img
                           src={source.posterUrl || '/toi_global_poster.png'}
                           alt={source.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
                         />
                         {/* Status overlay */}
                         <div className="absolute top-2 left-2">
@@ -554,33 +571,32 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
 
                       {/* Card content */}
                       <CardContent className="p-4">
-                        {/* Channel name and studio ID */}
-                        <div className="mb-3">
-                          <h3 className="font-semibold text-foreground text-sm truncate mb-1">{source.name}</h3>
-                          <p className="text-xs text-muted-foreground font-mono">{source.studioId}</p>
+                        {/* Channel name (left) and studio ID (right) */}
+                        <div className="mb-3 flex items-center justify-between gap-2">
+                          <h3 className="font-semibold text-foreground text-sm truncate mb-0 min-w-0">{source.name}</h3>
+                          <p className="text-xs text-muted-foreground font-mono flex-shrink-0">{source.studioId}</p>
                         </div>
 
                         {/* Action buttons */}
                         <div className="space-y-2">
-                          {/* Channel Details - Full width */}
-                          <Button
-                            variant="control"
-                            size="sm"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              try {
-                                localStorage.setItem('activeChannelName', source.name);
-                                localStorage.setItem('activeChannelStudioId', source.studioId);
-                              } catch {}
-                              onNavigate?.('scheduler');
-                            }}
-                            className="w-full text-xs"
-                          >
-                            <Calendar className="h-3 w-3 mr-1" />
-                            Channel Details
-                          </Button>
-                          {/* EPG and Details - Same row */}
+                          {/* Details and EPG - Same row */}
                           <div className="flex gap-2">
+                            <Button
+                              variant="control"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                try {
+                                  localStorage.setItem('activeChannelName', source.name);
+                                  localStorage.setItem('activeChannelStudioId', source.studioId);
+                                } catch {}
+                                onNavigate?.('scheduler');
+                              }}
+                              className="flex-1 text-xs"
+                            >
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Details
+                            </Button>
                             <Button
                               variant="control"
                               size="sm"
@@ -596,19 +612,6 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                             >
                               <Calendar className="h-3 w-3 mr-1" />
                               EPG
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setPreviewSource(source);
-                                setPreviewDialogOpen(true);
-                              }}
-                              className="flex-1 text-xs"
-                            >
-                              <Eye className="h-3 w-3 mr-1" />
-                              Details
                             </Button>
                           </div>
                         </div>
