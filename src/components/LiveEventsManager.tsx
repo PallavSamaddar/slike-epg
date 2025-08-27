@@ -116,6 +116,81 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
       bitrate: '0 Mbps',
       resolution: 'N/A',
       lastHeartbeat: '5 minutes ago'
+    },
+    {
+      id: 'studio-4',
+      name: 'Fast Channel 5',
+      studioId: 'TIL-004',
+      status: 'online',
+      streamHealth: 92,
+      bitrate: '7.8 Mbps',
+      resolution: '1920x1080',
+      lastHeartbeat: '3 seconds ago',
+      currentProgram: 'Midday Movies',
+      nextProgram: 'News Bulletin',
+      nextProgramTime: '12:30'
+    },
+    {
+      id: 'studio-5',
+      name: 'Fast Channel 6',
+      studioId: 'TIL-005',
+      status: 'online',
+      streamHealth: 88,
+      bitrate: '7.2 Mbps',
+      resolution: '1920x1080',
+      lastHeartbeat: 'just now',
+      currentProgram: 'Classic Hits',
+      nextProgram: 'Top Charts',
+      nextProgramTime: '13:00'
+    },
+    {
+      id: 'studio-6',
+      name: 'Fast Channel 7',
+      studioId: 'TIL-006',
+      status: 'warning',
+      streamHealth: 62,
+      bitrate: '5.4 Mbps',
+      resolution: '1920x1080',
+      lastHeartbeat: '25 seconds ago',
+      currentProgram: 'Cooking Delight',
+      nextProgram: 'Travel Diaries',
+      nextProgramTime: '14:15'
+    },
+    {
+      id: 'studio-7',
+      name: 'Fast Channel 8',
+      studioId: 'TIL-007',
+      status: 'online',
+      streamHealth: 97,
+      bitrate: '8.7 Mbps',
+      resolution: '1920x1080',
+      lastHeartbeat: '1 second ago',
+      currentProgram: 'Documentary Now',
+      nextProgram: 'Nature Watch',
+      nextProgramTime: '15:00'
+    },
+    {
+      id: 'remote-2',
+      name: 'Fast Channel 9',
+      studioId: 'REM-002',
+      status: 'offline',
+      streamHealth: 0,
+      bitrate: '0 Mbps',
+      resolution: 'N/A',
+      lastHeartbeat: '10 minutes ago'
+    },
+    {
+      id: 'studio-8',
+      name: 'Fast Channel 10',
+      studioId: 'TIL-008',
+      status: 'online',
+      streamHealth: 90,
+      bitrate: '7.9 Mbps',
+      resolution: '1920x1080',
+      lastHeartbeat: '4 seconds ago',
+      currentProgram: 'Evening Recap',
+      nextProgram: 'Prime Stories',
+      nextProgramTime: '18:00'
     }
   ];
 
