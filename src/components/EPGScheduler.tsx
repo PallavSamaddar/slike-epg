@@ -207,12 +207,13 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
   );
 };
 
-const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId }: { 
+const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId, isInCurrentBlock }: { 
   video: Video; 
   blockId: string; 
   blockTime: string;
   onDeleteVideo: (videoId: string) => void;
   dndId?: string;
+  isInCurrentBlock?: boolean;
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
@@ -230,8 +231,7 @@ const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId }
 
   // Determine text color based on block time
   const getTextColor = () => {
-    // Always black for readability on white/gray cards
-    return 'text-black';
+    return isInCurrentBlock ? 'text-white' : 'text-black';
   };
 
   const handleDelete = useCallback(() => {
@@ -251,7 +251,7 @@ const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId }
           className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
         >
           <GripVertical className={`h-3 w-3 ${getTextColor()}`} />
-          <span className="flex-1 truncate">{video.name}</span>
+          <span className={`flex-1 truncate ${getTextColor()}`}>{video.name}</span>
           <span className={getTextColor()}>{video.duration}m</span>
         </div>
         
@@ -518,6 +518,13 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       .sort((a, b) => parseMinutes(a.time) - parseMinutes(b.time))
       .map((b) => b.id);
   }, [scheduleBlocks]);
+
+  const isCurrentBlock = useCallback((dayKey: string, blockId: string) => {
+    const todayKey = formatLocalDateKey(new Date());
+    if (dayKey !== todayKey) return false;
+    const index = sortedBlockIdsByTime.indexOf(blockId);
+    return index === 2; // current -> green
+  }, [sortedBlockIdsByTime]);
 
   const getBlockColorForDay = (dayKey: string, blockId: string) => {
     const todayKey = formatLocalDateKey(new Date());
@@ -1177,24 +1184,24 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                             onChange={(e) => setScheduleBlocks(prev => prev.map(b => b.id === block.id ? { ...b, title: e.target.value } : b))}
                                             onBlur={() => updateBlockTitle(block.id, block.title)}
                                             onKeyDown={(e) => { if (e.key === 'Enter') { updateBlockTitle(block.id, block.title); }}}
-                                            className="text-sm font-medium bg-white/90 text-black border-none h-6 px-1"
+                                            className={`text-sm font-medium bg-white/20 ${isCurrentBlock(day.key, block.id) ? 'text-white placeholder:text-white/80' : 'bg-white/90 text-black'} border-none h-6 px-1`}
                                             autoFocus
                                           />
                                         ) : (
-                                          <span className={`font-medium text-sm truncate text-black`}>
+                                          <span className={`font-medium text-sm truncate ${isCurrentBlock(day.key, block.id) ? 'text-white' : 'text-black'}`}>
                                             {block.title}
                                           </span>
                                         )}
                                         <button
                                           onClick={() => toggleEditMode(block.id)}
-                                          className={`flex-shrink-0 p-1 rounded hover:bg-black/20 text-black`}
+                                          className={`flex-shrink-0 p-1 rounded hover:bg-black/20 ${isCurrentBlock(day.key, block.id) ? 'text-white' : 'text-black'}`}
                                         >
                                           <Edit className="h-3 w-3" />
                                         </button>
                                         <div className="flex gap-1 ml-2 relative">
                                           {block.tags.slice(0, 1).map((tag, idx) => (
                                             <div key={idx} className="relative group">
-                                              <span className={`text-xs px-1 py-0.5 rounded cursor-pointer bg-black/10 text-black`}>
+                                              <span className={`text-xs px-1 py-0.5 rounded cursor-pointer ${isCurrentBlock(day.key, block.id) ? 'bg-white/20 text-white' : 'bg-black/10 text-black'}`}>
                                                 {tag}
                                                 {editingGenres === block.id && (
                                                   <button
@@ -1209,7 +1216,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                           ))}
                                           <button
                                             onClick={() => toggleGenreEdit(block.id)}
-                                            className={`text-xs px-1 py-0.5 rounded hover:bg-black/20 text-black`}
+                                            className={`text-xs px-1 py-0.5 rounded hover:bg-black/20 ${isCurrentBlock(day.key, block.id) ? 'text-white' : 'text-black'}`}
                                           >
                                             <Edit className="h-3 w-3" />
                                           </button>
@@ -1239,7 +1246,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-1">
-                                        <Badge className="text-xs bg-black/10 text-black">{block.type}</Badge>
+                                        <Badge className={`text-xs ${isCurrentBlock(day.key, block.id) ? 'bg-white/20 text-white' : 'bg-black/10 text-black'}`}>{block.type}</Badge>
                                         {block.status === 'live' && (
                                           <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
                                         )}
@@ -1258,6 +1265,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                                 blockTime={block.time}
                                                 onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
                                                 dndId={`${day.key}-${block.id}-${video.id}`}
+                                                isInCurrentBlock={isCurrentBlock(day.key, block.id)}
                                               />
                                             ))}
                                           </div>

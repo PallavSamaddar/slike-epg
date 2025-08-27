@@ -1628,14 +1628,18 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                         <TabsTrigger value="xls" className="bg-white text-black data-[state=active]:bg-broadcast-blue data-[state=active]:text-white">XLS</TabsTrigger>
                     </TabsList>
                     <TabsContent value="json" className="flex-grow overflow-auto">
-                        <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 h-full">
-                            {generatePreview('json')}
-                        </pre>
+                        <div className="bg-gray-700 rounded-lg p-3">
+                            <pre className="text-xs text-green-400 font-mono whitespace-pre">
+                                {generatePreview('json')}
+                            </pre>
+                        </div>
                     </TabsContent>
                     <TabsContent value="xml" className="flex-grow overflow-auto">
-                        <pre className="text-xs text-green-400 font-mono bg-black/50 rounded-lg p-3 h-full">
-                            {generatePreview('xml')}
-                        </pre>
+                        <div className="bg-gray-700 rounded-lg p-3">
+                            <pre className="text-xs text-green-400 font-mono whitespace-pre">
+                                {generatePreview('xml')}
+                            </pre>
+                        </div>
                     </TabsContent>
                     <TabsContent value="xls" className="flex-grow overflow-auto">
                         {generateXlsPreview()}
