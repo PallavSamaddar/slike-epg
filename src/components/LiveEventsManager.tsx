@@ -63,6 +63,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [posterWarning, setPosterWarning] = useState<string | null>(null);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
+  const [selectedPlaylist, setSelectedPlaylist] = useState<string>('Default Playlist');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const channelsPerPage = 8;
@@ -960,15 +961,31 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 <Input value={channelDescription} onChange={(e) => setChannelDescription(e.target.value)} placeholder="Short description (max 200 chars)" className="bg-control-surface border-border text-foreground" />
                 <div className="text-xs text-muted-foreground mt-1">{channelDescription.length}/200</div>
               </div>
-              <div>
-                <Label className="text-foreground">Poster *</Label>
-                <Input type="file" accept="image/*" onChange={handlePosterChange} className="bg-control-surface border-border text-foreground" />
-                {posterWarning && <div className="text-xs text-orange-500 mt-1">{posterWarning}</div>}
-                {posterDataUrl && (
-                  <div className="mt-2 w-64 h-36 rounded overflow-hidden border border-border">
-                    <img src={posterDataUrl} alt="Poster preview" className="w-full h-full object-cover" />
-                  </div>
-                )}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-foreground">Poster *</Label>
+                  <Input type="file" accept="image/*" onChange={handlePosterChange} className="bg-control-surface border-border text-foreground" />
+                  {posterWarning && <div className="text-xs text-orange-500 mt-1">{posterWarning}</div>}
+                  {posterDataUrl && (
+                    <div className="mt-2 w-64 h-36 rounded overflow-hidden border border-border">
+                      <img src={posterDataUrl} alt="Poster preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label className="text-foreground">Select Playlist</Label>
+                  <Select value={selectedPlaylist} onValueChange={(v) => setSelectedPlaylist(v)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Default Playlist">Default Playlist</SelectItem>
+                      <SelectItem value="Sports Highlights">Sports Highlights</SelectItem>
+                      <SelectItem value="Music Mix">Music Mix</SelectItem>
+                      <SelectItem value="Tech Reviews">Tech Reviews</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               {/* Row 1: Resolution | Aspect Ratio */}
               <div className="grid grid-cols-2 gap-4">

@@ -43,6 +43,7 @@ interface EPGPreviewItem {
   description?: string;
   status: 'live' | 'scheduled' | 'completed';
   genre: string;
+  playlist?: string;
   isEditing?: boolean;
   imageUrl?: string;
 }
@@ -77,10 +78,10 @@ const getRandomPoster = () => {
 const generateDummyProgramsForDate = (date: Date, idOffset: number): EPGPreviewItem[] => {
     const dateString = date.toISOString().split('T')[0];
     return [
-        { id: `d-${idOffset + 1}`, time: `${dateString}T09:00`, title: 'Morning Show', type: 'Event', duration: 120, geoZone: 'Global', description: 'A morning talk show.', status: 'scheduled', genre: 'Talk Show', imageUrl: getRandomPoster() },
-        { id: `d-${idOffset + 2}`, time: `${dateString}T11:00`, title: 'Cartoon Fun', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Animated series for kids.', status: 'scheduled', genre: 'Kids', imageUrl: getRandomPoster() },
-        { id: `d-${idOffset + 3}`, time: `${dateString}T15:00`, title: 'Indie Films', type: 'VOD', duration: 180, geoZone: 'US/EU', description: 'A selection of independent movies.', status: 'scheduled', genre: 'Movies', imageUrl: getRandomPoster() },
-        { id: `d-${idOffset + 4}`, time: `${dateString}T20:00`, title: 'Rock Anthems', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Classic rock music videos.', status: 'scheduled', genre: 'Music', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 1}`, time: `${dateString}T09:00`, title: 'Morning Show', type: 'Event', duration: 120, geoZone: 'Global', description: 'A morning talk show.', status: 'scheduled', genre: 'Talk Show', playlist: 'Default Playlist', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 2}`, time: `${dateString}T11:00`, title: 'Cartoon Fun', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Animated series for kids.', status: 'scheduled', genre: 'Kids', playlist: 'Default Playlist', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 3}`, time: `${dateString}T15:00`, title: 'Indie Films', type: 'VOD', duration: 180, geoZone: 'US/EU', description: 'A selection of independent movies.', status: 'scheduled', genre: 'Movies', playlist: 'Tech Reviews', imageUrl: getRandomPoster() },
+        { id: `d-${idOffset + 4}`, time: `${dateString}T20:00`, title: 'Rock Anthems', type: 'VOD', duration: 60, geoZone: 'Global', description: 'Classic rock music videos.', status: 'scheduled', genre: 'Music', playlist: 'Music Mix', imageUrl: getRandomPoster() },
     ];
 };
 
@@ -265,6 +266,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
     const todayStr = today.toISOString().split('T')[0];
     const initialPrograms: EPGPreviewItem[] = [];
     const genres = ['News','Movies','Sports','Music','Comedy','Documentary','Talk Show','Games','Cooking'];
+    const playlists = ['Default Playlist','Sports Highlights','Music Mix','Tech Reviews'];
     const titles = [
       'Midnight Kickoff','Early Hour Highlights','Dawn Documentaries','Sunrise Show','Morning Mix',
       'Daily Briefing','Brunch Beats','Noon News','Afternoon Feature','Tea Time Talk',
@@ -276,6 +278,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
       const hh = String(hour).padStart(2, '0');
       const title = titles[hour % titles.length] || `Program ${hh}:00`;
       const genre = genres[hour % genres.length];
+      const playlist = playlists[hour % playlists.length];
       initialPrograms.push({
         id: `m-${hour}`,
         time: `${todayStr}T${hh}:00`,
@@ -286,6 +289,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         description: `${title} - ${genre} segment`,
         status: 'scheduled',
         genre,
+        playlist,
         imageUrl: getRandomPoster(),
       });
     }
@@ -649,6 +653,9 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     <div className="flex items-center gap-4">
                         <div>
                             <p className="text-sm text-muted-foreground">{item.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                                Playlist: {item.playlist || 'Default Playlist'}
+                            </p>
                         </div>
                     </div>
                 </div>
@@ -662,6 +669,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
         const [endTime, setEndTime] = useState('');
         const [title, setTitle] = useState(programToEdit?.title || '');
         const [genre, setGenre] = useState(programToEdit?.genre || '');
+        const [playlist, setPlaylist] = useState(programToEdit?.playlist || 'Default Playlist');
         const [description, setDescription] = useState(programToEdit?.description || '');
         const [studioId, setStudioId] = useState(''); // Assuming studioId is not part of EPGPreviewItem yet
         const [image, setImage] = useState<string | null>(programToEdit?.imageUrl || '/toi_global_poster.png');
@@ -816,6 +824,7 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                     description,
                     status: 'scheduled',
                     genre,
+                    playlist,
                     isEditing: false,
                     imageUrl: image || '/toi_global_poster.png',
                 };
@@ -880,17 +889,33 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
                             {errors.studioId && <p className="text-red-500 text-xs mt-1">{errors.studioId}</p>}
                         </div>
                     )}
-                    <div>
-                        <Label htmlFor="genre">Genre</Label>
-                        <Select onValueChange={(value) => { setGenre(value); validateField('genre', value); }} value={genre}>
-                            <SelectTrigger className="bg-control-surface border-border">
-                                <SelectValue placeholder="Select genre" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableGenres.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                        {errors.genre && <p className="text-red-500 text-xs mt-1">{errors.genre}</p>}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label htmlFor="genre">Genre</Label>
+                            <Select onValueChange={(value) => { setGenre(value); validateField('genre', value); }} value={genre}>
+                                <SelectTrigger className="bg-control-surface border-border">
+                                    <SelectValue placeholder="Select genre" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {availableGenres.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                            {errors.genre && <p className="text-red-500 text-xs mt-1">{errors.genre}</p>}
+                        </div>
+                        <div>
+                            <Label htmlFor="playlist">Select Playlist</Label>
+                            <Select onValueChange={(value) => setPlaylist(value)} value={playlist}>
+                                <SelectTrigger className="bg-control-surface border-border">
+                                    <SelectValue placeholder="Select playlist" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Default Playlist">Default Playlist</SelectItem>
+                                    <SelectItem value="Sports Highlights">Sports Highlights</SelectItem>
+                                    <SelectItem value="Music Mix">Music Mix</SelectItem>
+                                    <SelectItem value="Tech Reviews">Tech Reviews</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     <div>
                         <Label htmlFor="description">Description</Label>
@@ -1527,6 +1552,10 @@ const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
             </CardHeader>
             <CardContent className="space-y-3">
               <AddBlockDialog type="VOD" onAdd={handleSaveProgram} existingPrograms={mockEPGData} programToEdit={null} onCancel={() => {}} />
+              <Button variant="control" size="sm" className="w-full justify-start" onClick={() => onNavigate?.('playlists')}>
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Playlist
+              </Button>
               <Button variant="control" size="sm" className="w-full justify-start" onClick={() => setIsRepeatModalOpen(true)}>
                 <Copy className="h-4 w-4 mr-2" />
                 Copy EPG

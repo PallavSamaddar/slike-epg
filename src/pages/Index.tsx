@@ -24,6 +24,13 @@ const Index = () => {
         localStorage.removeItem('fastChannelDraftHasPrograms');
       }
     } catch {}
+    
+    // Handle playlist navigation
+    if (nextView.startsWith('playlist')) {
+      window.location.href = `/${nextView}`;
+      return;
+    }
+    
     setActiveView(nextView);
   };
 
