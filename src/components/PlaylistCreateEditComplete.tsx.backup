@@ -59,8 +59,7 @@ import {
   Tag,
   Globe,
   Star,
-  Loader2,
-  Settings
+  Loader2
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
@@ -156,16 +155,10 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   const [pinnedAssets, setPinnedAssets] = useState<string[]>([]);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   
-  // Common state
-  const [isActive, setIsActive] = useState(true);
-  
   // Filter application state
   const [hasUnsavedFilters, setHasUnsavedFilters] = useState(false);
   const [isApplyingFilters, setIsApplyingFilters] = useState(false);
   const [lastSavedSettings, setLastSavedSettings] = useState({
-    playlistName,
-    playlistDescription,
-    isActive,
     sortBy,
     maxContent,
     refreshFrequency,
@@ -174,21 +167,15 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     podcast,
     hlsUrl,
     mp4Url,
-    dedupeWindow,
-    fallbackStrategy,
     recommendation
   });
   const [lastSavedFilters, setLastSavedFilters] = useState(JSON.stringify(filterGroups));
   const [previewAssets, setPreviewAssets] = useState<Asset[]>([]);
   const [previewCount, setPreviewCount] = useState(0);
+  
+  // Common state
+  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
-  
-  // RHS Settings tracking
-  const [lastSavedTime, setLastSavedTime] = useState(new Date());
-  const [hasUnsavedSettings, setHasUnsavedSettings] = useState(false);
-  
-  // RHS panel state
-  const [isRhsOpen, setIsRhsOpen] = useState(false);
   
   // Keyword autosuggest state - per filter row
   const [filterKeywordStates, setFilterKeywordStates] = useState<Record<string, {
@@ -424,28 +411,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     }
     
     setLoading(true);
-    
-    // Update last saved settings
-    setLastSavedSettings({
-      playlistName,
-      playlistDescription,
-      isActive,
-      sortBy,
-      maxContent,
-      refreshFrequency,
-      shortsPlaylist,
-      shufflePlaylist,
-      podcast,
-      hlsUrl,
-      mp4Url,
-      dedupeWindow,
-      fallbackStrategy,
-      recommendation
-    });
-    
-    // Update last saved time
-    setLastSavedTime(new Date());
-    
     setTimeout(() => {
       setLoading(false);
       toast.success('Playlist saved successfully');
@@ -456,31 +421,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
-  };
-
-  // Format relative time
-  const formatRelativeTime = (date: Date): string => {
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-    
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  };
-
-  // Format absolute time
-  const formatAbsoluteTime = (date: Date | undefined): string => {
-    if (!date) return 'never';
-    return date.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
   };
 
   const calculateTotalDuration = () => {
@@ -973,48 +913,11 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         event.preventDefault();
         resolveFilters();
       }
-      if (event.key === 'Escape' && isRhsOpen) {
-        setIsRhsOpen(false);
-      }
     };
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [mode, hasUnsavedFilters, isApplyingFilters, isRhsOpen]);
-
-  // Track unsaved settings changes
-  useEffect(() => {
-    const hasChanges = 
-      playlistName !== lastSavedSettings.playlistName ||
-      playlistDescription !== lastSavedSettings.playlistDescription ||
-      isActive !== lastSavedSettings.isActive ||
-      sortBy !== lastSavedSettings.sortBy ||
-      maxContent !== lastSavedSettings.maxContent ||
-      refreshFrequency !== lastSavedSettings.refreshFrequency ||
-      shortsPlaylist !== lastSavedSettings.shortsPlaylist ||
-      shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
-      podcast !== lastSavedSettings.podcast ||
-      hlsUrl !== lastSavedSettings.hlsUrl ||
-      mp4Url !== lastSavedSettings.mp4Url ||
-      dedupeWindow !== lastSavedSettings.dedupeWindow ||
-      fallbackStrategy !== lastSavedSettings.fallbackStrategy ||
-      recommendation !== lastSavedSettings.recommendation;
-    
-    setHasUnsavedSettings(hasChanges);
-  }, [
-    playlistName, playlistDescription, isActive, sortBy, maxContent, refreshFrequency, shortsPlaylist, 
-    shufflePlaylist, podcast, hlsUrl, mp4Url, dedupeWindow, fallbackStrategy, recommendation, lastSavedSettings
-  ]);
-
-  // Update relative time every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Force re-render to update relative time
-      setLastSavedTime(prev => new Date(prev.getTime()));
-    }, 60000);
-    
-    return () => clearInterval(interval);
-  }, []);
+  }, [mode, hasUnsavedFilters, isApplyingFilters]);
 
   // Preview Result Item Component
   const PreviewResultItem = ({ item, index, isPinned, onPin, onRemove }: { 
@@ -1422,48 +1325,70 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     );
   };
 
-
   return (
-    <div className="min-h-screen bg-[#F7F9FC] text-foreground">
+    <div className="min-h-screen bg-[#F7F9FC] text-foreground p-6">
       <PageHeader 
         title={isEdit ? 'Edit Playlist' : 'Create Playlist'}
         subtitle={isEdit ? 'Modify your playlist settings and content' : 'Create a new playlist for your content'}
       />
       
-      {/* Main Layout - Desktop: 70/30, Tablet/Mobile: Stacked */}
-      <div className="flex flex-col lg:flex-row gap-6 p-6">
-        {/* Main Content Area */}
-        <div className="flex-1 lg:max-w-[70%]">
-          {/* Header Actions */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => onNavigate?.('playlists')}>
-                ← Back to Playlists
-              </Button>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Mobile/Tablet Settings Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsRhsOpen(!isRhsOpen)}
-                className="lg:hidden"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-              
-              <Button 
-                onClick={handleSavePlaylist}
-                disabled={loading}
-                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Saving...' : 'Save Playlist'}
-              </Button>
-            </div>
+      {/* Header Actions */}
+      <div className="flex justify-between items-center mb-6">
+        <div className="flex items-center space-x-4">
+          <Button variant="outline" onClick={() => onNavigate?.('playlists')}>
+            ← Back to Playlists
+          </Button>
+        </div>
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="active-toggle" className="text-sm font-medium">
+              {isActive ? 'Active' : 'Inactive'}
+            </Label>
+            <Switch
+              id="active-toggle"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+            />
           </div>
+          <Button 
+            onClick={handleSavePlaylist}
+            disabled={loading}
+            className="bg-primary hover:bg-primary/90"
+          >
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Saving...' : 'Save Playlist'}
+          </Button>
+        </div>
+      </div>
 
+      {/* Basic Info */}
+      <Card className="bg-card-dark border-border mb-6">
+        <CardHeader>
+          <CardTitle>Playlist Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div>
+            <Label htmlFor="name">Playlist Name *</Label>
+            <Input
+              id="name"
+              value={playlistName}
+              onChange={(e) => setPlaylistName(e.target.value)}
+              placeholder="Enter playlist name"
+              className="bg-control-surface border-border text-foreground"
+            />
+          </div>
+          <div>
+            <Label htmlFor="description">Description</Label>
+            <Textarea
+              id="description"
+              value={playlistDescription}
+              onChange={(e) => setPlaylistDescription(e.target.value)}
+              placeholder="Enter playlist description"
+              className="bg-control-surface border-border text-foreground"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Mode Selector */}
       <Card className="bg-card-dark border-border mb-6">
@@ -1860,7 +1785,182 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         </CardContent>
       </Card>
 
+      {/* Playlist Settings - Consolidated at bottom */}
+      <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5 mb-6">
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-[#1F2937]">Playlist Settings</h3>
+            {hasUnsavedFilters && (
+              <Badge variant="outline" className="text-xs text-[#6B7280] border-[#E6E8EF]">
+                Unsaved changes
+              </Badge>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <Label className="text-sm font-medium text-[#1F2937]">Sort By</Label>
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="newest">Newest First</SelectItem>
+                  <SelectItem value="oldest">Oldest First</SelectItem>
+                  <SelectItem value="updated">Recently Updated</SelectItem>
+                  <SelectItem value="az">A→Z</SelectItem>
+                  <SelectItem value="za">Z→A</SelectItem>
+                  <SelectItem value="longest">Longest First</SelectItem>
+                  <SelectItem value="shortest">Shortest First</SelectItem>
+                  <SelectItem value="live">Live Rec First</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
+            <div>
+              <Label className="text-sm font-medium text-[#1F2937]">Max Number of Content</Label>
+              <Input
+                type="number"
+                min="1"
+                value={maxContent}
+                onChange={(e) => setMaxContent(parseInt(e.target.value) || 1)}
+                className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
+                placeholder="50"
+              />
+              <p className="text-xs text-[#6B7280] mt-1">Limits resolved items before editorial ordering</p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-[#1F2937]">Refresh Frequency</Label>
+              <Select value={refreshFrequency} onValueChange={setRefreshFrequency}>
+                <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hourly">Hourly</SelectItem>
+                  <SelectItem value="6hours">6 hours</SelectItem>
+                  <SelectItem value="daily">Daily</SelectItem>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="manual">Manual</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-[#1F2937]">Shorts Playlist</Label>
+                <Switch 
+                  checked={shortsPlaylist} 
+                  onCheckedChange={setShortsPlaylist}
+                  className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8]"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-[#1F2937]">Shuffle Playlist</Label>
+                <Switch 
+                  checked={shufflePlaylist} 
+                  onCheckedChange={setShufflePlaylist}
+                  className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8]"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-[#1F2937]">Podcast</Label>
+                <Switch 
+                  checked={podcast} 
+                  onCheckedChange={setPodcast}
+                  className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8]"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <Label className="text-sm font-medium text-[#1F2937]">HLS URL</Label>
+                <Switch 
+                  checked={hlsUrl} 
+                  onCheckedChange={setHlsUrl}
+                  className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8]"
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">MP4 URL</Label>
+                <Select value={mp4Url} onValueChange={setMp4Url} disabled={!hlsUrl}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2 disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="480p">480p</SelectItem>
+                    <SelectItem value="720p">720p</SelectItem>
+                    <SelectItem value="1080p">1080p</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-medium text-[#1F2937]">Recommendation</Label>
+              <Switch 
+                checked={recommendation} 
+                onCheckedChange={setRecommendation}
+                className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8]"
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Mode Controls */}
+      {(mode === 'basic' || mode === 'advanced' || mode === 'preview') && (
+        <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5 mb-6">
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Playlist Controls</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">Ordering</Label>
+                <Select value={ordering} onValueChange={setOrdering}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="chronological">Chronological</SelectItem>
+                    <SelectItem value="random">Random</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">Duplicate Checker</Label>
+                <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="24h">24 hours</SelectItem>
+                    <SelectItem value="48h">48 hours</SelectItem>
+                    <SelectItem value="7d">7 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">Fallback Strategy</Label>
+                <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="loop">Loop</SelectItem>
+                    <SelectItem value="slate">Slate</SelectItem>
+                    <SelectItem value="filler">Filler Playlist</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Preview */}
       {(mode === 'basic' || mode === 'advanced' || mode === 'preview') && (
@@ -1934,416 +2034,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           </CardContent>
         </Card>
       )}
-        </div>
-
-        {/* RHS Settings Panel - Desktop */}
-        <div className="hidden lg:block lg:w-[30%] lg:max-w-[420px]">
-          <RHSSettingsPanel
-            playlistName={playlistName}
-            setPlaylistName={setPlaylistName}
-            playlistDescription={playlistDescription}
-            setPlaylistDescription={setPlaylistDescription}
-            isActive={isActive}
-            setIsActive={setIsActive}
-            sortBy={sortBy}
-            setSortBy={setSortBy}
-            maxContent={maxContent}
-            setMaxContent={setMaxContent}
-            refreshFrequency={refreshFrequency}
-            setRefreshFrequency={setRefreshFrequency}
-            shortsPlaylist={shortsPlaylist}
-            setShortsPlaylist={setShortsPlaylist}
-            shufflePlaylist={shufflePlaylist}
-            setShufflePlaylist={setShufflePlaylist}
-            podcast={podcast}
-            setPodcast={setPodcast}
-            hlsUrl={hlsUrl}
-            setHlsUrl={setHlsUrl}
-            mp4Url={mp4Url}
-            setMp4Url={setMp4Url}
-            dedupeWindow={dedupeWindow}
-            setDedupeWindow={setDedupeWindow}
-            fallbackStrategy={fallbackStrategy}
-            setFallbackStrategy={setFallbackStrategy}
-            recommendation={recommendation}
-            setRecommendation={setRecommendation}
-            hasUnsavedSettings={hasUnsavedSettings}
-            lastSavedTime={lastSavedTime}
-          />
-        </div>
-
-        {/* RHS Settings Panel - Mobile/Tablet Drawer */}
-        {isRhsOpen && (
-          <div className="lg:hidden fixed inset-0 z-50 bg-black bg-opacity-50" onClick={() => setIsRhsOpen(false)}>
-            <div className="absolute right-0 top-0 h-full w-full max-w-sm bg-white shadow-xl" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between p-4 border-b border-[#EEF1F6]">
-                <h3 className="text-lg font-semibold text-[#1F2937]">Settings</h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsRhsOpen(false)}
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-              <div className="h-[calc(100vh-80px)] overflow-y-auto">
-                <div className="p-4">
-                  <RHSSettingsPanel
-                    playlistName={playlistName}
-                    setPlaylistName={setPlaylistName}
-                    playlistDescription={playlistDescription}
-                    setPlaylistDescription={setPlaylistDescription}
-                    isActive={isActive}
-                    setIsActive={setIsActive}
-                    sortBy={sortBy}
-                    setSortBy={setSortBy}
-                    maxContent={maxContent}
-                    setMaxContent={setMaxContent}
-                    refreshFrequency={refreshFrequency}
-                    setRefreshFrequency={setRefreshFrequency}
-                    shortsPlaylist={shortsPlaylist}
-                    setShortsPlaylist={setShortsPlaylist}
-                    shufflePlaylist={shufflePlaylist}
-                    setShufflePlaylist={setShufflePlaylist}
-                    podcast={podcast}
-                    setPodcast={setPodcast}
-                    hlsUrl={hlsUrl}
-                    setHlsUrl={setHlsUrl}
-                    mp4Url={mp4Url}
-                    setMp4Url={setMp4Url}
-                    dedupeWindow={dedupeWindow}
-                    setDedupeWindow={setDedupeWindow}
-                    fallbackStrategy={fallbackStrategy}
-                    setFallbackStrategy={setFallbackStrategy}
-                    recommendation={recommendation}
-                    setRecommendation={setRecommendation}
-                    hasUnsavedSettings={hasUnsavedSettings}
-                    lastSavedTime={lastSavedTime}
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
-
-// RHS Settings Panel Component
-const RHSSettingsPanel = ({ playlistName, setPlaylistName, playlistDescription, setPlaylistDescription, isActive, setIsActive, sortBy, setSortBy, maxContent, setMaxContent, refreshFrequency, setRefreshFrequency, shortsPlaylist, setShortsPlaylist, shufflePlaylist, setShufflePlaylist, podcast, setPodcast, hlsUrl, setHlsUrl, mp4Url, setMp4Url, dedupeWindow, setDedupeWindow, fallbackStrategy, setFallbackStrategy, recommendation, setRecommendation, hasUnsavedSettings, lastSavedTime }: {
-  playlistName: string;
-  setPlaylistName: (value: string) => void;
-  playlistDescription: string;
-  setPlaylistDescription: (value: string) => void;
-  isActive: boolean;
-  setIsActive: (value: boolean) => void;
-  sortBy: string;
-  setSortBy: (value: string) => void;
-  maxContent: number;
-  setMaxContent: (value: number) => void;
-  refreshFrequency: string;
-  setRefreshFrequency: (value: string) => void;
-  shortsPlaylist: boolean;
-  setShortsPlaylist: (value: boolean) => void;
-  shufflePlaylist: boolean;
-  setShufflePlaylist: (value: boolean) => void;
-  podcast: boolean;
-  setPodcast: (value: boolean) => void;
-  hlsUrl: boolean;
-  setHlsUrl: (value: boolean) => void;
-  mp4Url: string;
-  setMp4Url: (value: string) => void;
-  dedupeWindow: string;
-  setDedupeWindow: (value: string) => void;
-  fallbackStrategy: string;
-  setFallbackStrategy: (value: string) => void;
-  recommendation: boolean;
-  setRecommendation: (value: boolean) => void;
-  hasUnsavedSettings: boolean;
-  lastSavedTime: Date | undefined;
-}) => {
-  // Format relative time
-  const formatRelativeTime = (date: Date | undefined): string => {
-    if (!date) return 'never';
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
-
-    if (diffInSeconds < 60) return 'just now';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
-    return `${Math.floor(diffInSeconds / 86400)}d ago`;
-  };
-
-  // Format absolute time
-  const formatAbsoluteTime = (date: Date | undefined): string => {
-    if (!date) return 'never';
-    return date.toLocaleString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
-  };
-
-  return (
-    <div className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] h-fit sticky top-6">
-      {/* RHS Header */}
-      <div className="p-4 border-b border-[#EEF1F6]">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-[#1F2937]">Settings</h3>
-          <div className="flex items-center space-x-2">
-            <div className={`w-2 h-2 rounded-full ${hasUnsavedSettings ? 'bg-[#F59E0B]' : 'bg-[#10B981]'}`} />
-            {hasUnsavedSettings && (
-              <Badge variant="outline" className="text-xs text-[#F59E0B] border-[#F59E0B]">
-                Unsaved
-              </Badge>
-            )}
-          </div>
-        </div>
-        <div className="mt-2 text-xs text-[#6B7280]">
-          Last saved {formatRelativeTime(lastSavedTime)} · {formatAbsoluteTime(lastSavedTime)}
-        </div>
-      </div>
-
-      {/* Playlist Information */}
-      <div className="p-4 border-b border-[#EEF1F6]">
-        <h4 className="text-sm font-semibold text-[#1F2937] mb-4">Playlist Information</h4>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="playlist-name" className="text-sm font-semibold text-[#1F2937]">Playlist Name *</Label>
-            <Input
-              id="playlist-name"
-              value={playlistName}
-              onChange={(e) => setPlaylistName(e.target.value)}
-              placeholder="Enter playlist name"
-              className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
-            />
-            {!playlistName && (
-              <p className="text-xs text-red-500">Playlist name is required</p>
-            )}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="playlist-description" className="text-sm font-semibold text-[#1F2937]">Description</Label>
-            <Textarea
-              id="playlist-description"
-              value={playlistDescription}
-              onChange={(e) => setPlaylistDescription(e.target.value)}
-              placeholder="Enter playlist description"
-              className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
-              rows={3}
-            />
-            <p className="text-xs text-[#6B7280]">{playlistDescription.length}/150 characters</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Settings Content */}
-      <div className="p-4 space-y-4">
-        {/* Status */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Status</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={isActive}
-              onCheckedChange={setIsActive}
-              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8]"
-            />
-            <span className="text-sm text-[#6B7280]">{isActive ? 'Active' : 'Inactive'}</span>
-          </div>
-        </div>
-
-        {/* Sort By */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Sort By</Label>
-          <Select value={sortBy} onValueChange={setSortBy}>
-            <SelectTrigger className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="newest">Newest First</SelectItem>
-              <SelectItem value="oldest">Oldest First</SelectItem>
-              <SelectItem value="recently-updated">Recently Updated</SelectItem>
-              <SelectItem value="a-z">A→Z</SelectItem>
-              <SelectItem value="z-a">Z→A</SelectItem>
-              <SelectItem value="longest">Longest First</SelectItem>
-              <SelectItem value="shortest">Shortest First</SelectItem>
-              <SelectItem value="live-first">Live Rec First</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Max Number of Content */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Max Number of Content</Label>
-          <Input
-            type="number"
-            min="1"
-            value={maxContent}
-            onChange={(e) => setMaxContent(parseInt(e.target.value) || 1)}
-            className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
-          />
-          <p className="text-xs text-[#6B7280]">Limits resolved items before editorial ordering</p>
-        </div>
-
-        {/* Refresh Frequency */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Refresh Frequency</Label>
-          <Select value={refreshFrequency} onValueChange={setRefreshFrequency}>
-            <SelectTrigger className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="manual">Manual</SelectItem>
-              <SelectItem value="hourly">Hourly</SelectItem>
-              <SelectItem value="6h">6 hours</SelectItem>
-              <SelectItem value="daily">Daily</SelectItem>
-              <SelectItem value="weekly">Weekly</SelectItem>
-            </SelectContent>
-          </Select>
-          {refreshFrequency !== 'manual' && (
-            <p className="text-xs text-[#6B7280]">
-              Next scheduled: {new Date(Date.now() + 3600000).toLocaleTimeString()}
-            </p>
-          )}
-        </div>
-
-        {/* Shorts Playlist */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Shorts Playlist</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={shortsPlaylist}
-              onCheckedChange={setShortsPlaylist}
-              disabled={!isActive}
-              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8] disabled:shadow-[0_1px_2px_rgba(0,0,0,0.06)] disabled:hover:bg-[#F2F4F8] disabled:focus-visible:outline-[#E3E8F2]"
-            />
-            <span className="text-sm text-[#6B7280]">{shortsPlaylist ? 'Enabled' : 'Disabled'}</span>
-          </div>
-          {!isActive && (
-            <p className="text-xs text-[#6B7280]">Enable playlist to configure this setting</p>
-          )}
-        </div>
-
-        {/* Shuffle Playlist */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Shuffle Playlist</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={shufflePlaylist}
-              onCheckedChange={setShufflePlaylist}
-              disabled={!isActive}
-              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8] disabled:shadow-[0_1px_2px_rgba(0,0,0,0.06)] disabled:hover:bg-[#F2F4F8] disabled:focus-visible:outline-[#E3E8F2]"
-            />
-            <span className="text-sm text-[#6B7280]">{shufflePlaylist ? 'Enabled' : 'Disabled'}</span>
-          </div>
-          <p className="text-xs text-[#6B7280]">Applies only to the unlocked tail in ordered lists</p>
-        </div>
-
-        {/* Podcast */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Podcast</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={podcast}
-              onCheckedChange={setPodcast}
-              disabled={!isActive}
-              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8] disabled:shadow-[0_1px_2px_rgba(0,0,0,0.06)] disabled:hover:bg-[#F2F4F8] disabled:focus-visible:outline-[#E3E8F2]"
-            />
-            <span className="text-sm text-[#6B7280]">{podcast ? 'Enabled' : 'Disabled'}</span>
-          </div>
-        </div>
-
-        {/* Delivery */}
-        <div className="space-y-3">
-          <Label className="text-sm font-semibold text-[#1F2937]">Delivery</Label>
-
-          {/* HLS URL */}
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={hlsUrl}
-              onCheckedChange={setHlsUrl}
-              disabled={!isActive}
-              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8] disabled:shadow-[0_1px_2px_rgba(0,0,0,0.06)] disabled:hover:bg-[#F2F4F8] disabled:focus-visible:outline-[#E3E8F2]"
-            />
-            <span className="text-sm text-[#6B7280]">HLS URL</span>
-          </div>
-
-          {/* MP4 URL */}
-          <div className="space-y-2">
-            <div className="flex items-center space-x-2">
-              <Switch
-                checked={mp4Url !== 'disabled'}
-                onCheckedChange={(checked) => setMp4Url(checked ? '480p' : 'disabled')}
-                disabled={!isActive}
-                className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8] disabled:shadow-[0_1px_2px_rgba(0,0,0,0.06)] disabled:hover:bg-[#F2F4F8] disabled:focus-visible:outline-[#E3E8F2]"
-              />
-              <span className="text-sm text-[#6B7280]">MP4 URL</span>
-            </div>
-            {mp4Url !== 'disabled' && (
-              <Select value={mp4Url} onValueChange={setMp4Url}>
-                <SelectTrigger className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="480p">480p</SelectItem>
-                  <SelectItem value="720p">720p</SelectItem>
-                  <SelectItem value="1080p">1080p</SelectItem>
-                </SelectContent>
-              </Select>
-            )}
-          </div>
-        </div>
-
-        {/* Duplicate Checker */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Duplicate Checker</Label>
-          <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
-            <SelectTrigger className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-              <SelectValue placeholder="Select window" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="none">None</SelectItem>
-              <SelectItem value="24h">24 hours</SelectItem>
-              <SelectItem value="48h">48 hours</SelectItem>
-              <SelectItem value="7d">7 days</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Fallback Strategy */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Fallback Strategy</Label>
-          <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
-            <SelectTrigger className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-              <SelectValue placeholder="Select strategy" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="loop">Loop</SelectItem>
-              <SelectItem value="slate">Slate</SelectItem>
-              <SelectItem value="filler">Filler Playlist</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Recommendation */}
-        <div className="space-y-2">
-          <Label className="text-sm font-semibold text-[#1F2937]">Recommendation</Label>
-          <div className="flex items-center space-x-2">
-            <Switch
-              checked={recommendation}
-              onCheckedChange={setRecommendation}
-              disabled={!isActive}
-              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] disabled:bg-[#F2F4F8] disabled:border-[#D7DDE8] disabled:shadow-[0_1px_2px_rgba(0,0,0,0.06)] disabled:hover:bg-[#F2F4F8] disabled:focus-visible:outline-[#E3E8F2]"
-            />
-            <span className="text-sm text-[#6B7280]">{recommendation ? 'Enabled' : 'Disabled'}</span>
-          </div>
-          <p className="text-xs text-[#6B7280]">Future hook</p>
-        </div>
-      </div>
     </div>
   );
 };
