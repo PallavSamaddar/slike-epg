@@ -27,8 +27,10 @@ interface Props {
   onNavigate?: (view: string) => void;
 }
 
-export const PlaylistManagement = ({ onNavigate }: Props) => {
+const PlaylistManagement = ({ onNavigate }: Props) => {
   const { toast } = useToast();
+  
+  console.log('PlaylistManagement component loaded');
   const [playlists, setPlaylists] = useState<Playlist[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -268,7 +270,7 @@ export const PlaylistManagement = ({ onNavigate }: Props) => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onNavigate?.(`playlist-edit-${playlist.id}`)}>
+                            <DropdownMenuItem onClick={() => onNavigate?.(`playlists/${playlist.id}/edit`)}>
                               <Edit className="h-4 w-4 mr-2" />
                               Edit
                             </DropdownMenuItem>
@@ -363,3 +365,5 @@ export const PlaylistManagement = ({ onNavigate }: Props) => {
     </div>
   );
 };
+
+export default PlaylistManagement;

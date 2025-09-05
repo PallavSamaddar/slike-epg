@@ -9,14 +9,6 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { 
   Table, 
   TableBody, 
   TableCell, 
@@ -24,6 +16,14 @@ import {
   TableHeader, 
   TableRow 
 } from '@/components/ui/table';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { 
   DndContext,
   closestCenter,
@@ -46,15 +46,18 @@ import {
   Plus, 
   X, 
   Search, 
-  Filter, 
-  GripVertical, 
-  Play, 
-  Clock, 
-  Eye,
   Save,
   Zap,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  GripVertical,
+  Eye,
+  Filter,
+  Calendar,
+  Clock,
+  Tag,
+  Globe,
+  Star
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
@@ -65,7 +68,13 @@ interface Asset {
   duration: number; // in minutes
   type: 'Video' | 'Shorts' | 'Vertical Video' | 'Live Recording' | 'Audio';
   vendor: string;
+  category: string;
+  product: string;
+  language: string;
   createdAt: string;
+  publishedTo: string[];
+  videoId: string;
+  priority: string;
   thumbnail?: string;
 }
 
@@ -95,32 +104,60 @@ interface Props {
   isEdit?: boolean;
 }
 
-const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) => {
+const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: Props) => {
   const [playlistName, setPlaylistName] = useState('');
   const [playlistDescription, setPlaylistDescription] = useState('');
   const [mode, setMode] = useState<'basic' | 'advanced'>('basic');
   const [dedupeWindow, setDedupeWindow] = useState('none');
   const [fallbackStrategy, setFallbackStrategy] = useState('loop');
+  const [ordering, setOrdering] = useState('manual');
   
   // Basic mode state
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchVendor, setSearchVendor] = useState('');
-  const [searchType, setSearchType] = useState('');
+  const [searchVendor, setSearchVendor] = useState('all');
+  const [searchType, setSearchType] = useState('all');
   const [availableAssets, setAvailableAssets] = useState<Asset[]>([]);
   const [playlistItems, setPlaylistItems] = useState<PlaylistItem[]>([]);
-  const [selectedAssets, setSelectedAssets] = useState<string[]>([]);
   
   // Advanced mode state
   const [filterGroups, setFilterGroups] = useState<FilterGroup[]>([
-    { id: '1', type: 'include', filters: [] }
+    { 
+      id: '1', 
+      type: 'include', 
+      filters: [
+        {
+          id: 'default-filter-1',
+          field: 'keywords',
+          operator: 'contains',
+          value: '',
+          label: 'keywords contains'
+        }
+      ]
+    }
   ]);
   const [previewAssets, setPreviewAssets] = useState<Asset[]>([]);
   const [previewCount, setPreviewCount] = useState(0);
   
   // Common state
-  const [isDraft, setIsDraft] = useState(false);
-  const [isActivated, setIsActivated] = useState(false);
+  const [isActive, setIsActive] = useState(true);
   const [loading, setLoading] = useState(false);
+  
+  // Keyword autosuggest state - per filter row
+  const [filterKeywordStates, setFilterKeywordStates] = useState<Record<string, {
+    suggestions: string[];
+    showSuggestions: boolean;
+    selectedKeywords: string[];
+    highlightedIndex: number;
+    inputValue: string;
+  }>>({
+    'default-filter-1': {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    }
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -129,14 +166,32 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     })
   );
 
-  // Dummy data
-  const vendors = ['ANI', 'AFP', 'TOI', 'NBT', 'Reuters', 'BBC'];
+  // Data options
+  const vendors = ['ANI', 'AFP', 'TOI', 'NBT'];
   const assetTypes = ['Video', 'Shorts', 'Vertical Video', 'Live Recording', 'Audio'];
   const categories = ['News', 'Sports', 'Entertainment', 'Finance', 'Lifestyle'];
   const products = ['TOI', 'Languages', 'ET Online', 'IndiaTimes'];
-  const languages = ['English', 'Hindi', 'Tamil', 'Telugu', 'Bengali', 'Marathi', 'Gujarati'];
+  const languages = ['Hindi', 'English', 'Bengali', 'Marathi', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Gujarati', 'Punjabi'];
   const publishedTo = ['Denmark', 'YouTube', 'Facebook'];
   const priorities = ['Latest', 'Trending', 'Top Viewed'];
+  const keywordLibrary = [
+    'cricket', 'highlights', 'breaking news', 'bollywood', 'politics', 'stock market', 'IPL', 'world cup', 
+    'weather', 'elections', 'interview', 'analysis', 'explainer', 'tech review', 'gadget', 'smartphone', 
+    'startup', 'finance tips', 'viral', 'travel', 'food', 'health'
+  ];
+  const durationPresets = [
+    { label: 'Above 2 mins', value: '2+' },
+    { label: 'Above 5 mins', value: '5+' },
+    { label: 'Above 10 mins', value: '10+' },
+    { label: 'Above 15 mins', value: '15+' }
+  ];
+  const createdOnPresets = [
+    { label: 'Today', value: 'today' },
+    { label: '7 days', value: '7d' },
+    { label: '15 days', value: '15d' },
+    { label: '30 days', value: '30d' },
+    { label: 'Custom', value: 'custom' }
+  ];
 
   useEffect(() => {
     generateDummyAssets();
@@ -146,19 +201,24 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
   }, [isEdit, playlistId]);
 
   const generateDummyAssets = () => {
-    const assets: Asset[] = Array.from({ length: 50 }, (_, i) => ({
+    const assets: Asset[] = Array.from({ length: 100 }, (_, i) => ({
       id: `asset-${i + 1}`,
-      title: `Sample Asset ${i + 1}`,
+      title: `Sample Asset ${i + 1} - ${categories[Math.floor(Math.random() * categories.length)]}`,
       duration: Math.floor(Math.random() * 30) + 1,
       type: assetTypes[Math.floor(Math.random() * assetTypes.length)] as any,
       vendor: vendors[Math.floor(Math.random() * vendors.length)],
+      category: categories[Math.floor(Math.random() * categories.length)],
+      product: products[Math.floor(Math.random() * products.length)],
+      language: languages[Math.floor(Math.random() * languages.length)],
       createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
+      publishedTo: publishedTo.slice(0, Math.floor(Math.random() * 3) + 1),
+      videoId: `VID-${Math.random().toString(36).substr(2, 9).toUpperCase()}`,
+      priority: priorities[Math.floor(Math.random() * priorities.length)],
     }));
     setAvailableAssets(assets);
   };
 
   const loadPlaylistData = () => {
-    // Simulate loading playlist data
     setPlaylistName('Sample Playlist');
     setPlaylistDescription('A sample playlist for testing');
     setMode('basic');
@@ -166,8 +226,8 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
 
   const filteredAssets = availableAssets.filter(asset => {
     const matchesQuery = !searchQuery || asset.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesVendor = !searchVendor || asset.vendor === searchVendor;
-    const matchesType = !searchType || asset.type === searchType;
+    const matchesVendor = !searchVendor || searchVendor === 'all' || asset.vendor === searchVendor;
+    const matchesType = !searchType || searchType === 'all' || asset.type === searchType;
     return matchesQuery && matchesVendor && matchesType;
   });
 
@@ -199,6 +259,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     }
   };
 
+  // Advanced mode filter functions
   const addFilterGroup = () => {
     const newGroup: FilterGroup = {
       id: `group-${Date.now()}`,
@@ -212,14 +273,28 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     setFilterGroups(prev => prev.filter(group => group.id !== groupId));
   };
 
-  const addFilter = (groupId: string, field: string) => {
+  const addFilter = (groupId: string, field: string = 'keywords') => {
+    const filterId = `filter-${Date.now()}`;
     const newFilter: Filter = {
-      id: `filter-${Date.now()}`,
+      id: filterId,
       field,
       operator: 'contains',
       value: '',
       label: `${field} contains`
     };
+    
+    // Initialize keyword state for this filter
+    setFilterKeywordStates(prev => ({
+      ...prev,
+      [filterId]: {
+        suggestions: [],
+        showSuggestions: false,
+        selectedKeywords: [],
+        highlightedIndex: -1,
+        inputValue: ''
+      }
+    }));
+    
     setFilterGroups(prev => prev.map(group => 
       group.id === groupId 
         ? { ...group, filters: [...group.filters, newFilter] }
@@ -228,6 +303,13 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
   };
 
   const removeFilter = (groupId: string, filterId: string) => {
+    // Clean up keyword state for this filter
+    setFilterKeywordStates(prev => {
+      const newState = { ...prev };
+      delete newState[filterId];
+      return newState;
+    });
+    
     setFilterGroups(prev => prev.map(group => 
       group.id === groupId 
         ? { ...group, filters: group.filters.filter(f => f.id !== filterId) }
@@ -236,6 +318,20 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
   };
 
   const updateFilter = (groupId: string, filterId: string, updates: Partial<Filter>) => {
+    // If field is changing, reset the secondary control state
+    if (updates.field) {
+      setFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          suggestions: [],
+          showSuggestions: false,
+          selectedKeywords: [],
+          highlightedIndex: -1,
+          inputValue: ''
+        }
+      }));
+    }
+    
     setFilterGroups(prev => prev.map(group => 
       group.id === groupId 
         ? { 
@@ -250,7 +346,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
 
   const calculatePreview = () => {
     // Simulate advanced filtering
-    const count = Math.floor(Math.random() * 100) + 10;
+    const count = Math.floor(Math.random() * 200) + 10;
     setPreviewCount(count);
     
     const sampleAssets = availableAssets.slice(0, Math.min(20, count));
@@ -263,12 +359,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     }
   }, [filterGroups, mode]);
 
-  const handleSaveDraft = () => {
-    setIsDraft(true);
-    toast.success('Draft saved successfully');
-  };
-
-  const handleActivate = () => {
+  const handleSavePlaylist = () => {
     if (!playlistName.trim()) {
       toast.error('Please enter a playlist name');
       return;
@@ -286,9 +377,8 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     
     setLoading(true);
     setTimeout(() => {
-      setIsActivated(true);
       setLoading(false);
-      toast.success('Playlist activated successfully');
+      toast.success('Playlist saved successfully');
     }, 1000);
   };
 
@@ -308,6 +398,414 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     return Math.round(fillPercentage);
   };
 
+  const getFieldOptions = (field: string) => {
+    switch (field) {
+      case 'vendor': return vendors;
+      case 'category': return categories;
+      case 'product': return products;
+      case 'language': return languages;
+      case 'assetType': return assetTypes;
+      case 'publishedTo': return publishedTo;
+      case 'priority': return priorities;
+      case 'duration': return durationPresets;
+      case 'createdOn': return createdOnPresets;
+      default: return [];
+    }
+  };
+
+  const handleKeywordInput = (filterId: string, value: string) => {
+    const currentState = filterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (value.length > 0) {
+      const suggestions = keywordLibrary.filter(keyword => 
+        keyword.toLowerCase().includes(value.toLowerCase()) && 
+        !currentState.selectedKeywords.includes(keyword)
+      ).slice(0, 5);
+      
+      setFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          inputValue: value,
+          suggestions,
+          showSuggestions: true,
+          highlightedIndex: -1
+        }
+      }));
+    } else {
+      setFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          inputValue: value,
+          showSuggestions: false
+        }
+      }));
+    }
+  };
+
+  const addKeywordChip = (filterId: string, keyword: string) => {
+    const currentState = filterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (!currentState.selectedKeywords.includes(keyword)) {
+      setFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          selectedKeywords: [...currentState.selectedKeywords, keyword],
+          inputValue: '',
+          showSuggestions: false,
+          highlightedIndex: -1
+        }
+      }));
+    }
+  };
+
+  const removeKeywordChip = (filterId: string, keyword: string) => {
+    const currentState = filterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    setFilterKeywordStates(prev => ({
+      ...prev,
+      [filterId]: {
+        ...currentState,
+        selectedKeywords: currentState.selectedKeywords.filter(k => k !== keyword)
+      }
+    }));
+  };
+
+  const handleKeywordKeyDown = (filterId: string, e: React.KeyboardEvent) => {
+    const currentState = filterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (!currentState.showSuggestions || currentState.suggestions.length === 0) {
+      if (e.key === 'Enter' && currentState.inputValue.trim()) {
+        addKeywordChip(filterId, currentState.inputValue.trim());
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setFilterKeywordStates(prev => ({
+          ...prev,
+          [filterId]: {
+            ...currentState,
+            highlightedIndex: currentState.highlightedIndex < currentState.suggestions.length - 1 
+              ? currentState.highlightedIndex + 1 
+              : 0
+          }
+        }));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setFilterKeywordStates(prev => ({
+          ...prev,
+          [filterId]: {
+            ...currentState,
+            highlightedIndex: currentState.highlightedIndex > 0 
+              ? currentState.highlightedIndex - 1 
+              : currentState.suggestions.length - 1
+          }
+        }));
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (currentState.highlightedIndex >= 0 && currentState.highlightedIndex < currentState.suggestions.length) {
+          addKeywordChip(filterId, currentState.suggestions[currentState.highlightedIndex]);
+        } else if (currentState.inputValue.trim()) {
+          addKeywordChip(filterId, currentState.inputValue.trim());
+        }
+        break;
+      case 'Escape':
+        setFilterKeywordStates(prev => ({
+          ...prev,
+          [filterId]: {
+            ...currentState,
+            showSuggestions: false,
+            highlightedIndex: -1
+          }
+        }));
+        break;
+    }
+  };
+
+  const handleKeywordFocus = (filterId: string) => {
+    const currentState = filterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (currentState.inputValue.length > 0) {
+      const suggestions = keywordLibrary.filter(keyword => 
+        keyword.toLowerCase().includes(currentState.inputValue.toLowerCase()) && 
+        !currentState.selectedKeywords.includes(keyword)
+      ).slice(0, 5);
+      
+      setFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          suggestions,
+          showSuggestions: true
+        }
+      }));
+    }
+  };
+
+  const renderFilterField = (filter: Filter, groupId: string) => {
+    const options = getFieldOptions(filter.field);
+    const keywordState = filterKeywordStates[filter.id] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (filter.field === 'keywords') {
+      return (
+        <div className="flex-1 relative">
+          <div className="min-h-[40px] p-2 border border-gray-300 rounded-md bg-control-surface flex flex-wrap gap-1 items-center">
+            {keywordState.selectedKeywords.map((keyword, index) => (
+              <div
+                key={index}
+                className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-sm"
+              >
+                {keyword}
+                <button
+                  type="button"
+                  onClick={() => removeKeywordChip(filter.id, keyword)}
+                  className="ml-1 text-blue-600 hover:text-blue-800"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <Input
+              placeholder="Type keywords here..."
+              value={keywordState.inputValue}
+              onChange={(e) => handleKeywordInput(filter.id, e.target.value)}
+              onKeyDown={(e) => handleKeywordKeyDown(filter.id, e)}
+              onFocus={() => handleKeywordFocus(filter.id)}
+              className="flex-1 min-w-[120px] border-0 bg-transparent focus:ring-0 focus:outline-none"
+            />
+          </div>
+          {keywordState.showSuggestions && keywordState.suggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+              {keywordState.suggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className={`px-3 py-2 cursor-pointer text-sm ${
+                    index === keywordState.highlightedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
+                  }`}
+                  onClick={() => addKeywordChip(filter.id, suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    if (filter.field === 'videoId') {
+      return (
+        <Input
+          placeholder="Type Video ID here"
+          value={filter.value}
+          onChange={(e) => updateFilter(groupId, filter.id, { value: e.target.value })}
+          className="flex-1 bg-control-surface border-border text-foreground"
+        />
+      );
+    }
+    
+    if (filter.field === 'duration') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 bg-control-surface border-border">
+            <SelectValue placeholder="Select Duration" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: any) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'createdOn') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 bg-control-surface border-border">
+            <SelectValue placeholder="Select Creation Day" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: any) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    // Multi-select for vendor, category, language
+    if (filter.field === 'vendor') {
+      return (
+        <div className="flex-1">
+          <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+            <SelectTrigger className="bg-control-surface border-border">
+              <SelectValue placeholder="Select Vendor" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option: string) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    if (filter.field === 'category') {
+      return (
+        <div className="flex-1">
+          <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+            <SelectTrigger className="bg-control-surface border-border">
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option: string) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    if (filter.field === 'language') {
+      return (
+        <div className="flex-1">
+          <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+            <SelectTrigger className="bg-control-surface border-border">
+              <SelectValue placeholder="Select Language" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option: string) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    // Single-select for product, assetType, publishedTo, priority
+    if (filter.field === 'product') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 bg-control-surface border-border">
+            <SelectValue placeholder="Select Product" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'assetType') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 bg-control-surface border-border">
+            <SelectValue placeholder="Select Asset Type" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'publishedTo') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 bg-control-surface border-border">
+            <SelectValue placeholder="Select Destination" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'priority') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 bg-control-surface border-border">
+            <SelectValue placeholder="Select Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    // Default fallback
+    return (
+      <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
+        <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectValue placeholder={`Select ${filter.field}`} />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((option: string) => (
+            <SelectItem key={option} value={option}>{option}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       <PageHeader 
@@ -322,22 +820,24 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
             ← Back to Playlists
           </Button>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Label htmlFor="active-toggle" className="text-sm font-medium">
+              {isActive ? 'Active' : 'Inactive'}
+            </Label>
+            <Switch
+              id="active-toggle"
+              checked={isActive}
+              onCheckedChange={setIsActive}
+            />
+          </div>
           <Button 
-            variant="outline" 
-            onClick={handleSaveDraft}
-            disabled={isDraft}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isDraft ? 'Draft Saved' : 'Save Draft'}
-          </Button>
-          <Button 
-            onClick={handleActivate}
-            disabled={loading || isActivated}
+            onClick={handleSavePlaylist}
+            disabled={loading}
             className="bg-primary hover:bg-primary/90"
           >
-            <Zap className="h-4 w-4 mr-2" />
-            {loading ? 'Activating...' : isActivated ? 'Activated' : 'Activate'}
+            <Save className="h-4 w-4 mr-2" />
+            {loading ? 'Saving...' : 'Save Playlist'}
           </Button>
         </div>
       </div>
@@ -409,7 +909,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
                         <SelectValue placeholder="All vendors" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All vendors</SelectItem>
+                        <SelectItem value="all">All vendors</SelectItem>
                         {vendors.map(vendor => (
                           <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
                         ))}
@@ -424,7 +924,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
                         <SelectValue placeholder="All types" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">All types</SelectItem>
+                        <SelectItem value="all">All types</SelectItem>
                         {assetTypes.map(type => (
                           <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
@@ -444,6 +944,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
                           <TableHead>Duration</TableHead>
                           <TableHead>Type</TableHead>
                           <TableHead>Vendor</TableHead>
+                          <TableHead>Created</TableHead>
                           <TableHead>Action</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -456,6 +957,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
                               <Badge variant="outline">{asset.type}</Badge>
                             </TableCell>
                             <TableCell>{asset.vendor}</TableCell>
+                            <TableCell>{new Date(asset.createdAt).toLocaleDateString()}</TableCell>
                             <TableCell>
                               <Button
                                 size="sm"
@@ -564,12 +1066,7 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
                                 <SelectItem value="priority">Priority</SelectItem>
                               </SelectContent>
                             </Select>
-                            <Input
-                              placeholder="Enter value"
-                              value={filter.value}
-                              onChange={(e) => updateFilter(group.id, filter.id, { value: e.target.value })}
-                              className="flex-1 bg-control-surface border-border text-foreground"
-                            />
+                            {renderFilterField(filter, group.id)}
                             <Button
                               variant="ghost"
                               size="sm"
@@ -647,42 +1144,58 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
         </CardContent>
       </Card>
 
-      {/* Common Controls */}
-      <Card className="bg-card-dark border-border mb-6">
-        <CardHeader>
-          <CardTitle>Playlist Settings</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <Label>Dedupe Window</Label>
-            <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
-              <SelectTrigger className="bg-control-surface border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">None</SelectItem>
-                <SelectItem value="24h">24 hours</SelectItem>
-                <SelectItem value="48h">48 hours</SelectItem>
-                <SelectItem value="7d">7 days</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div>
-            <Label>Fallback Strategy</Label>
-            <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
-              <SelectTrigger className="bg-control-surface border-border text-foreground">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="loop">Loop</SelectItem>
-                <SelectItem value="slate">Slate</SelectItem>
-                <SelectItem value="filler">Filler Playlist</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Basic Mode Controls */}
+      {mode === 'basic' && (
+        <Card className="bg-card-dark border-border mb-6">
+          <CardHeader>
+            <CardTitle>Playlist Controls</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <Label>Ordering</Label>
+              <Select value={ordering} onValueChange={setOrdering}>
+                <SelectTrigger className="bg-control-surface border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="manual">Manual</SelectItem>
+                  <SelectItem value="chronological">Chronological</SelectItem>
+                  <SelectItem value="random">Random</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Dedupe Window</Label>
+              <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
+                <SelectTrigger className="bg-control-surface border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="24h">24 hours</SelectItem>
+                  <SelectItem value="48h">48 hours</SelectItem>
+                  <SelectItem value="7d">7 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Fallback Strategy</Label>
+              <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
+                <SelectTrigger className="bg-control-surface border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="loop">Loop</SelectItem>
+                  <SelectItem value="slate">Slate</SelectItem>
+                  <SelectItem value="filler">Filler Playlist</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Preview (Basic Mode) */}
       {mode === 'basic' && (
@@ -712,6 +1225,45 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
                   </div>
                 );
               })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Common Controls (Advanced Mode) */}
+      {mode === 'advanced' && (
+        <Card className="bg-card-dark border-border">
+          <CardHeader>
+            <CardTitle>Playlist Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label>Dedupe Window</Label>
+              <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
+                <SelectTrigger className="bg-control-surface border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">None</SelectItem>
+                  <SelectItem value="24h">24 hours</SelectItem>
+                  <SelectItem value="48h">48 hours</SelectItem>
+                  <SelectItem value="7d">7 days</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label>Fallback Strategy</Label>
+              <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
+                <SelectTrigger className="bg-control-surface border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="loop">Loop</SelectItem>
+                  <SelectItem value="slate">Slate</SelectItem>
+                  <SelectItem value="filler">Filler Playlist</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </CardContent>
         </Card>
@@ -768,4 +1320,4 @@ const SortableItem = ({ item, onRemove }: { item: PlaylistItem; onRemove: (id: s
   );
 };
 
-export default PlaylistCreateEdit;
+export default PlaylistCreateEditComplete;
