@@ -660,17 +660,17 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'keywords') {
       return (
         <div className="flex-1 relative">
-          <div className="min-h-[40px] p-2 border border-gray-300 rounded-md bg-control-surface flex flex-wrap gap-1 items-center">
+          <div className="min-h-[32px] p-2 border border-[#E6E8EF] rounded-md bg-white flex flex-wrap gap-1 items-center focus-within:ring-2 focus-within:ring-[#3B82F6] focus-within:ring-offset-2">
             {keywordState.selectedKeywords.map((keyword, index) => (
               <div
                 key={index}
-                className="inline-flex items-center px-2 py-1 rounded-full bg-blue-100 text-blue-800 text-sm"
+                className="inline-flex items-center px-2 py-1 rounded-full bg-[#EAF1FF] text-[#1F2937] text-xs"
               >
                 {keyword}
                 <button
                   type="button"
                   onClick={() => removeKeywordChip(filter.id, keyword)}
-                  className="ml-1 text-blue-600 hover:text-blue-800"
+                  className="ml-1 text-[#6B7280] hover:text-[#1F2937]"
                 >
                   ×
                 </button>
@@ -682,16 +682,16 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
               onChange={(e) => handleKeywordInput(filter.id, e.target.value)}
               onKeyDown={(e) => handleKeywordKeyDown(filter.id, e)}
               onFocus={() => handleKeywordFocus(filter.id)}
-              className="flex-1 min-w-[120px] border-0 bg-transparent focus:ring-0 focus:outline-none"
+              className="flex-1 min-w-[120px] border-0 bg-transparent focus:ring-0 focus:outline-none text-xs"
             />
           </div>
           {keywordState.showSuggestions && keywordState.suggestions.length > 0 && (
-            <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-40 overflow-y-auto">
+            <div className="absolute z-10 w-full mt-1 bg-white border border-[#E6E8EF] rounded-md shadow-lg max-h-40 overflow-y-auto">
               {keywordState.suggestions.map((suggestion, index) => (
                 <div
                   key={index}
-                  className={`px-3 py-2 cursor-pointer text-sm ${
-                    index === keywordState.highlightedIndex ? 'bg-blue-100' : 'hover:bg-gray-100'
+                  className={`px-3 py-2 cursor-pointer text-xs ${
+                    index === keywordState.highlightedIndex ? 'bg-[#F3F6FB]' : 'hover:bg-[#F3F6FB]'
                   }`}
                   onClick={() => addKeywordChip(filter.id, suggestion)}
                 >
@@ -710,7 +710,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           placeholder="Type Video ID here"
           value={filter.value}
           onChange={(e) => updateFilter(groupId, filter.id, { value: e.target.value })}
-          className="flex-1 bg-control-surface border-border text-foreground"
+          className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
         />
       );
     }
@@ -718,7 +718,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'duration') {
       return (
         <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-          <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
             <SelectValue placeholder="Select Duration" />
           </SelectTrigger>
           <SelectContent>
@@ -733,7 +733,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'createdOn') {
       return (
         <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-          <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
             <SelectValue placeholder="Select Creation Day" />
           </SelectTrigger>
           <SelectContent>
@@ -750,7 +750,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       return (
         <div className="flex-1">
           <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-            <SelectTrigger className="bg-control-surface border-border">
+            <SelectTrigger className="h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
               <SelectValue placeholder="Select Vendor" />
             </SelectTrigger>
             <SelectContent>
@@ -767,7 +767,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       return (
         <div className="flex-1">
           <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-            <SelectTrigger className="bg-control-surface border-border">
+            <SelectTrigger className="h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
               <SelectValue placeholder="Select Category" />
             </SelectTrigger>
             <SelectContent>
@@ -784,7 +784,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       return (
         <div className="flex-1">
           <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-            <SelectTrigger className="bg-control-surface border-border">
+            <SelectTrigger className="h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
               <SelectValue placeholder="Select Language" />
             </SelectTrigger>
             <SelectContent>
@@ -801,7 +801,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'product') {
       return (
         <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-          <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
             <SelectValue placeholder="Select Product" />
           </SelectTrigger>
           <SelectContent>
@@ -816,7 +816,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'assetType') {
       return (
         <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-          <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
             <SelectValue placeholder="Select Asset Type" />
           </SelectTrigger>
           <SelectContent>
@@ -831,7 +831,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'publishedTo') {
       return (
         <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-          <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
             <SelectValue placeholder="Select Destination" />
           </SelectTrigger>
           <SelectContent>
@@ -846,7 +846,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     if (filter.field === 'priority') {
       return (
         <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-          <SelectTrigger className="flex-1 bg-control-surface border-border">
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
             <SelectValue placeholder="Select Priority" />
           </SelectTrigger>
           <SelectContent>
@@ -861,7 +861,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     // Default fallback
     return (
       <Select value={filter.value} onValueChange={(value) => updateFilter(groupId, filter.id, { value })}>
-        <SelectTrigger className="flex-1 bg-control-surface border-border">
+        <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
           <SelectValue placeholder={`Select ${filter.field}`} />
         </SelectTrigger>
         <SelectContent>
@@ -1079,133 +1079,175 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             </TabsContent>
             
             <TabsContent value="advanced" className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Filter Composer */}
-                <div className="space-y-6">
-                  <h3 className="text-lg font-semibold">Filter Composer</h3>
-                  
-                  {filterGroups.map((group) => (
-                    <Card key={group.id} className="bg-control-surface border-border">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={group.type === 'include'}
-                              onCheckedChange={(checked) => 
-                                setFilterGroups(prev => prev.map(g => 
-                                  g.id === group.id 
-                                    ? { ...g, type: checked ? 'include' : 'exclude' }
-                                    : g
-                                ))
-                              }
-                            />
-                            <span className="font-medium">
-                              {group.type === 'include' ? 'Include' : 'Exclude'}
-                            </span>
+              {/* Responsive 3-column grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-6">
+                {/* Filter Composer - 44% (Desktop: 5.3 columns, Tablet: full width, Mobile: full width) */}
+                <div className="md:col-span-2 lg:col-span-5">
+                  <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Filter Composer</h3>
+                      
+                      {filterGroups.map((group) => (
+                        <Card key={group.id} className="bg-[#F7F9FC] border border-[#EEF1F6] rounded-lg p-3">
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={group.type === 'include'}
+                                  onCheckedChange={(checked) => 
+                                    setFilterGroups(prev => prev.map(g => 
+                                      g.id === group.id 
+                                        ? { ...g, type: checked ? 'include' : 'exclude' }
+                                        : g
+                                    ))
+                                  }
+                                />
+                                <span className="text-sm font-medium text-[#1F2937]">
+                                  {group.type === 'include' ? 'Include' : 'Exclude'}
+                                </span>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => removeFilterGroup(group.id)}
+                                className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#1F2937]"
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {group.filters.map((filter) => (
+                                <div key={filter.id} className="flex items-center space-x-2">
+                                  <Select
+                                    value={filter.field}
+                                    onValueChange={(value) => updateFilter(group.id, filter.id, { field: value })}
+                                  >
+                                    <SelectTrigger className="w-24 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="keywords">Keywords</SelectItem>
+                                      <SelectItem value="vendor">Vendor</SelectItem>
+                                      <SelectItem value="category">Category</SelectItem>
+                                      <SelectItem value="product">Product</SelectItem>
+                                      <SelectItem value="language">Language</SelectItem>
+                                      <SelectItem value="duration">Duration</SelectItem>
+                                      <SelectItem value="assetType">Asset Type</SelectItem>
+                                      <SelectItem value="createdOn">Created On</SelectItem>
+                                      <SelectItem value="publishedTo">Published To</SelectItem>
+                                      <SelectItem value="videoId">Video ID</SelectItem>
+                                      <SelectItem value="priority">Priority</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <div className="flex-1">
+                                    {renderFilterField(filter, group.id)}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeFilter(group.id, filter.id)}
+                                    className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#1F2937]"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => addFilter(group.id, 'keywords')}
+                                className="w-full h-8 text-xs"
+                              >
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Filter
+                              </Button>
+                            </div>
                           </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeFilterGroup(group.id)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="space-y-3">
-                        {group.filters.map((filter) => (
-                          <div key={filter.id} className="flex items-center space-x-2">
-                            <Select
-                              value={filter.field}
-                              onValueChange={(value) => updateFilter(group.id, filter.id, { field: value })}
-                            >
-                              <SelectTrigger className="w-32 bg-control-surface border-border">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="keywords">Keywords</SelectItem>
-                                <SelectItem value="vendor">Vendor</SelectItem>
-                                <SelectItem value="category">Category</SelectItem>
-                                <SelectItem value="product">Product</SelectItem>
-                                <SelectItem value="language">Language</SelectItem>
-                                <SelectItem value="duration">Duration</SelectItem>
-                                <SelectItem value="assetType">Asset Type</SelectItem>
-                                <SelectItem value="createdOn">Created On</SelectItem>
-                                <SelectItem value="publishedTo">Published To</SelectItem>
-                                <SelectItem value="videoId">Video ID</SelectItem>
-                                <SelectItem value="priority">Priority</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            {renderFilterField(filter, group.id)}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFilter(group.id, filter.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => addFilter(group.id, 'keywords')}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Filter
-                        </Button>
-                      </CardContent>
-                    </Card>
-                  ))}
-                  
-                  <Button
-                    variant="outline"
-                    onClick={addFilterGroup}
-                    className="w-full"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Filter Group
-                  </Button>
+                        </Card>
+                      ))}
+                      
+                      <Button
+                        variant="outline"
+                        onClick={addFilterGroup}
+                        className="w-full h-8 text-xs"
+                      >
+                        <Plus className="h-3 w-3 mr-1" />
+                        Add Filter Group
+                      </Button>
+                    </div>
+                  </Card>
                 </div>
 
-                {/* Preview Panel */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Preview</h3>
-                  
-                  <Card className="bg-control-surface border-border">
-                    <CardContent className="p-4">
-                      <div className="text-center mb-4">
-                        <div className="text-2xl font-bold text-primary">{previewCount}</div>
-                        <div className="text-sm text-muted-foreground">Assets Found</div>
-                      </div>
-                      
-                      {previewCount === 0 ? (
-                        <div className="text-center text-muted-foreground py-4">
-                          <AlertCircle className="h-8 w-8 mx-auto mb-2" />
-                          <p>No assets match your filters</p>
-                          <p className="text-xs">Try adjusting your filter criteria</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-2">
-                          <div className="text-sm font-medium mb-2">Sample Items (Top 20):</div>
-                          <div className="max-h-64 overflow-y-auto space-y-1">
-                            {previewAssets.map((asset) => (
-                              <div key={asset.id} className="flex items-center justify-between text-sm">
-                                <span className="truncate">{asset.title}</span>
-                                <span className="text-muted-foreground">{formatDuration(asset.duration)}</span>
-                              </div>
-                            ))}
+                {/* Preview Results - 30% (Desktop: 3.6 columns, Tablet: 50%, Mobile: full width) */}
+                <div className="md:col-span-1 lg:col-span-4">
+                  <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Preview Results</h3>
+
+                      {/* Results List */}
+                      <div className="space-y-1 max-h-[600px] overflow-y-auto">
+                        {previewCount === 0 ? (
+                          <div className="text-center py-8 text-[#6B7280]">
+                            <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                            <p>No assets match your filters. Adjust filters to see results.</p>
                           </div>
-                          {previewCount > 20 && (
-                            <Button variant="outline" size="sm" className="w-full">
-                              <Eye className="h-4 w-4 mr-2" />
-                              View All {previewCount} Items
-                            </Button>
-                          )}
+                        ) : (
+                          previewAssets.map(asset => (
+                            <AssetListItem
+                              key={asset.id}
+                              asset={asset}
+                              onAdd={() => handleAddAsset(asset)}
+                              isInPlaylist={playlistItems.some(item => item.asset.id === asset.id)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Playlist Order - 25% (Desktop: 3 columns, Tablet: 50%, Mobile: full width) */}
+                <div className="md:col-span-1 lg:col-span-3">
+                  <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Playlist Order</h3>
+
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext items={playlistItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
+                          <div className="space-y-1 max-h-[600px] overflow-y-auto">
+                            {playlistItems.length === 0 ? (
+                              <div className="text-center py-8 text-[#6B7280] border-2 border-dashed border-[#B9D2FF] rounded-lg">
+                                <p>Drag assets here to build your playlist</p>
+                              </div>
+                            ) : (
+                              playlistItems.map((item, index) => (
+                                <PlaylistOrderItem
+                                  key={item.id}
+                                  item={item}
+                                  index={index}
+                                  onRemove={handleRemoveAsset}
+                                />
+                              ))
+                            )}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+
+                      {/* Footer */}
+                      {playlistItems.length > 0 && (
+                        <div className="border-t border-[#EEF1F6] pt-4">
+                          <div className="flex justify-between text-sm text-[#6B7280]">
+                            <span>Total Items: {playlistItems.length}</span>
+                            <span>Duration: {formatDuration(calculateTotalDuration())}</span>
+                          </div>
                         </div>
                       )}
-                    </CardContent>
+                    </div>
                   </Card>
                 </div>
               </div>
@@ -1214,8 +1256,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         </CardContent>
       </Card>
 
-      {/* Basic Mode Controls */}
-      {mode === 'basic' && (
+      {/* Mode Controls */}
+      {(mode === 'basic' || mode === 'advanced') && (
         <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5 mb-6">
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Playlist Controls</h3>
@@ -1267,8 +1309,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         </Card>
       )}
 
-      {/* Preview (Basic Mode) */}
-      {mode === 'basic' && (
+      {/* Preview */}
+      {(mode === 'basic' || mode === 'advanced') && (
         <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
           <div className="space-y-4">
             <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Preview</h3>
