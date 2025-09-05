@@ -1609,7 +1609,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <TabsContent value="advanced" className="mt-6">
               {/* Advance 2-column layout */}
               <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                {/* Left Column - 60% (Filter Composer + Playlist Settings) */}
+                {/* Left Column - 60% (Filter Composer) */}
                 <div className="lg:col-span-3 space-y-6">
                   {/* Filter Composer */}
                   <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
@@ -1896,44 +1896,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         </Card>
       )}
 
-      {/* Common Controls (Advanced Mode) */}
-      {mode === 'advanced' && (
-        <Card className="bg-card-dark border-border">
-          <CardHeader>
-            <CardTitle>Playlist Settings</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <Label>Duplicate Checker</Label>
-              <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="24h">24 hours</SelectItem>
-                  <SelectItem value="48h">48 hours</SelectItem>
-                  <SelectItem value="7d">7 days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label>Fallback Strategy</Label>
-              <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="loop">Loop</SelectItem>
-                  <SelectItem value="slate">Slate</SelectItem>
-                  <SelectItem value="filler">Filler Playlist</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
-      )}
         </div>
 
         {/* RHS Settings Panel - Desktop */}
