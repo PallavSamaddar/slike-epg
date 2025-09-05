@@ -49,6 +49,7 @@ import {
   Save,
   Zap,
   AlertCircle,
+  Check,
   CheckCircle,
   GripVertical,
   Eye,
@@ -580,6 +581,72 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     }
   };
 
+  // Asset List Item Component
+  const AssetListItem = ({ asset, onAdd, isInPlaylist }: { asset: Asset, onAdd: () => void, isInPlaylist: boolean }) => {
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#F3F6FB] transition-colors group">
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-[#1F2937] truncate" title={asset.title}>
+            {asset.title}
+          </h4>
+          <p className="text-sm text-[#6B7280]">
+            {asset.vendor} • {asset.type} • {formatDuration(asset.duration)} • {new Date(asset.createdAt).toLocaleDateString()}
+          </p>
+        </div>
+        {isInPlaylist ? (
+          <div 
+            className="flex items-center gap-2 text-[#6B7280] text-sm cursor-default"
+            title="Already in Playlist"
+          >
+            <Check className="h-4 w-4" />
+            <span>Added</span>
+          </div>
+        ) : (
+          <Button
+            size="sm"
+            onClick={onAdd}
+            className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#3B82F6] hover:bg-[#2563EB] text-white"
+          >
+            <Plus className="h-4 w-4 mr-1" />
+            Add
+          </Button>
+        )}
+      </div>
+    );
+  };
+
+  // Playlist Order Item Component
+  const PlaylistOrderItem = ({ item, index, onRemove }: { item: PlaylistItem, index: number, onRemove: (id: string) => void }) => {
+    return (
+      <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#F3F6FB] transition-colors group">
+        <div className="text-[#6B7280] cursor-grab hover:text-[#1F2937]">
+          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+            <path d="M3 4a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 16a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" />
+          </svg>
+        </div>
+        <div className="bg-[#F3F6FB] text-[#6B7280] text-xs px-2 py-1 rounded-full font-medium min-w-[24px] text-center">
+          {index + 1}
+        </div>
+        <div className="flex-1 min-w-0">
+          <h4 className="font-semibold text-[#1F2937] truncate" title={item.asset.title}>
+            {item.asset.title}
+          </h4>
+          <p className="text-sm text-[#6B7280]">
+            {item.asset.vendor} • {item.asset.type} • {formatDuration(item.asset.duration)}
+          </p>
+        </div>
+        <Button
+          size="sm"
+          variant="ghost"
+          onClick={() => onRemove(item.id)}
+          className="opacity-0 group-hover:opacity-100 transition-opacity text-[#6B7280] hover:text-[#DC2626]"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    );
+  };
+
   const renderFilterField = (filter: Filter, groupId: string) => {
     const options = getFieldOptions(filter.field);
     const keywordState = filterKeywordStates[filter.id] || {
@@ -807,7 +874,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-6">
+    <div className="min-h-screen bg-[#F7F9FC] text-foreground p-6">
       <PageHeader 
         title={isEdit ? 'Edit Playlist' : 'Create Playlist'}
         subtitle={isEdit ? 'Modify your playlist settings and content' : 'Create a new playlist for your content'}
@@ -884,126 +951,129 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             </TabsList>
             
             <TabsContent value="basic" className="mt-6">
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Search Panel */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Search Assets</h3>
-                  
-                  <div>
-                    <Label>Search Keywords</Label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Search assets..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 bg-control-surface border-border text-foreground"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label>Vendor</Label>
-                    <Select value={searchVendor} onValueChange={setSearchVendor}>
-                      <SelectTrigger className="bg-control-surface border-border text-foreground">
-                        <SelectValue placeholder="All vendors" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All vendors</SelectItem>
-                        {vendors.map(vendor => (
-                          <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div>
-                    <Label>Asset Type</Label>
-                    <Select value={searchType} onValueChange={setSearchType}>
-                      <SelectTrigger className="bg-control-surface border-border text-foreground">
-                        <SelectValue placeholder="All types" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All types</SelectItem>
-                        {assetTypes.map(type => (
-                          <SelectItem key={type} value={type}>{type}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                {/* Results Panel */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Search Results</h3>
-                  <div className="max-h-96 overflow-y-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Duration</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Vendor</TableHead>
-                          <TableHead>Created</TableHead>
-                          <TableHead>Action</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredAssets.slice(0, 10).map((asset) => (
-                          <TableRow key={asset.id}>
-                            <TableCell className="font-medium">{asset.title}</TableCell>
-                            <TableCell>{formatDuration(asset.duration)}</TableCell>
-                            <TableCell>
-                              <Badge variant="outline">{asset.type}</Badge>
-                            </TableCell>
-                            <TableCell>{asset.vendor}</TableCell>
-                            <TableCell>{new Date(asset.createdAt).toLocaleDateString()}</TableCell>
-                            <TableCell>
-                              <Button
-                                size="sm"
-                                onClick={() => handleAddAsset(asset)}
-                                disabled={playlistItems.some(item => item.asset.id === asset.id)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                </div>
-
-                {/* Playlist Order Panel */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">Playlist Order</h3>
-                  
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                  >
-                    <SortableContext
-                      items={playlistItems.map(item => item.id)}
-                      strategy={verticalListSortingStrategy}
-                    >
-                      <div className="space-y-2 max-h-96 overflow-y-auto">
-                        {playlistItems.map((item) => (
-                          <SortableItem
-                            key={item.id}
-                            item={item}
-                            onRemove={handleRemoveAsset}
-                          />
-                        ))}
+              {/* Responsive 3-column grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Search Assets - 25% (3 columns) */}
+                <div className="lg:col-span-3">
+                  <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Search Assets</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <Label htmlFor="search" className="text-sm font-medium text-[#1F2937]">Search</Label>
+                          <div className="relative mt-1">
+                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
+                            <Input
+                              id="search"
+                              placeholder="Search assets..."
+                              value={searchQuery}
+                              onChange={(e) => setSearchQuery(e.target.value)}
+                              className="pl-10 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
+                            />
+                          </div>
+                        </div>
+                        <div className="border-t border-[#EEF1F6] pt-4">
+                          <Label htmlFor="vendor" className="text-sm font-medium text-[#1F2937]">Vendor</Label>
+                          <Select value={searchVendor} onValueChange={setSearchVendor}>
+                            <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                              <SelectValue placeholder="All vendors" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All vendors</SelectItem>
+                              {vendors.map(vendor => (
+                                <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="border-t border-[#EEF1F6] pt-4">
+                          <Label htmlFor="type" className="text-sm font-medium text-[#1F2937]">Type</Label>
+                          <Select value={searchType} onValueChange={setSearchType}>
+                            <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                              <SelectValue placeholder="All types" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="all">All types</SelectItem>
+                              {assetTypes.map(type => (
+                                <SelectItem key={type} value={type}>{type}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
                       </div>
-                    </SortableContext>
-                  </DndContext>
-                  
-                  {playlistItems.length === 0 && (
-                    <div className="text-center text-muted-foreground py-8">
-                      No assets added yet
                     </div>
-                  )}
+                  </Card>
+                </div>
+
+                {/* Search Results - 40% (5 columns) */}
+                <div className="lg:col-span-5">
+                  <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Search Results</h3>
+
+                      {/* Results List */}
+                      <div className="space-y-1 max-h-[600px] overflow-y-auto">
+                        {filteredAssets.length === 0 ? (
+                          <div className="text-center py-8 text-[#6B7280]">
+                            <p>No assets found. Try adjusting filters.</p>
+                          </div>
+                        ) : (
+                          filteredAssets.map(asset => (
+                            <AssetListItem
+                              key={asset.id}
+                              asset={asset}
+                              onAdd={() => handleAddAsset(asset)}
+                              isInPlaylist={playlistItems.some(item => item.asset.id === asset.id)}
+                            />
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Playlist Order - 35% (4 columns) */}
+                <div className="lg:col-span-4">
+                  <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+                    <div className="space-y-4">
+                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Playlist Order</h3>
+                      
+                      <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                      >
+                        <SortableContext items={playlistItems.map(item => item.id)} strategy={verticalListSortingStrategy}>
+                          <div className="space-y-1 max-h-[600px] overflow-y-auto">
+                            {playlistItems.length === 0 ? (
+                              <div className="border-2 border-dashed border-[#B9D2FF] rounded-lg p-8 text-center text-[#6B7280]">
+                                <p>Drag assets here to build your playlist</p>
+                              </div>
+                            ) : (
+                              playlistItems.map((item, index) => (
+                                <PlaylistOrderItem
+                                  key={item.id}
+                                  item={item}
+                                  index={index}
+                                  onRemove={handleRemoveAsset}
+                                />
+                              ))
+                            )}
+                          </div>
+                        </SortableContext>
+                      </DndContext>
+
+                      {/* Footer with totals */}
+                      {playlistItems.length > 0 && (
+                        <div className="border-t border-[#EEF1F6] pt-3 mt-4">
+                          <div className="flex justify-between text-sm text-[#6B7280]">
+                            <span>Total items: {playlistItems.length}</span>
+                            <span>Duration: {formatDuration(calculateTotalDuration())}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </Card>
                 </div>
               </div>
             </TabsContent>
@@ -1146,87 +1216,88 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
       {/* Basic Mode Controls */}
       {mode === 'basic' && (
-        <Card className="bg-card-dark border-border mb-6">
-          <CardHeader>
-            <CardTitle>Playlist Controls</CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div>
-              <Label>Ordering</Label>
-              <Select value={ordering} onValueChange={setOrdering}>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manual">Manual</SelectItem>
-                  <SelectItem value="chronological">Chronological</SelectItem>
-                  <SelectItem value="random">Random</SelectItem>
-                </SelectContent>
-              </Select>
+        <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5 mb-6">
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Playlist Controls</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">Ordering</Label>
+                <Select value={ordering} onValueChange={setOrdering}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="chronological">Chronological</SelectItem>
+                    <SelectItem value="random">Random</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">Dedupe Window</Label>
+                <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    <SelectItem value="24h">24 hours</SelectItem>
+                    <SelectItem value="48h">48 hours</SelectItem>
+                    <SelectItem value="7d">7 days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <Label className="text-sm font-medium text-[#1F2937]">Fallback Strategy</Label>
+                <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
+                  <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="loop">Loop</SelectItem>
+                    <SelectItem value="slate">Slate</SelectItem>
+                    <SelectItem value="filler">Filler Playlist</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            
-            <div>
-              <Label>Dedupe Window</Label>
-              <Select value={dedupeWindow} onValueChange={setDedupeWindow}>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  <SelectItem value="24h">24 hours</SelectItem>
-                  <SelectItem value="48h">48 hours</SelectItem>
-                  <SelectItem value="7d">7 days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label>Fallback Strategy</Label>
-              <Select value={fallbackStrategy} onValueChange={setFallbackStrategy}>
-                <SelectTrigger className="bg-control-surface border-border text-foreground">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="loop">Loop</SelectItem>
-                  <SelectItem value="slate">Slate</SelectItem>
-                  <SelectItem value="filler">Filler Playlist</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
+          </div>
         </Card>
       )}
 
       {/* Preview (Basic Mode) */}
       {mode === 'basic' && (
-        <Card className="bg-card-dark border-border">
-          <CardHeader>
-            <CardTitle>Preview</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Preview</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[30, 60, 120].map((minutes) => {
                 const fillPercentage = simulateSlotFill(minutes);
                 return (
-                  <div key={minutes} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">{minutes}-min slot</span>
-                      <span className="text-sm text-muted-foreground">{fillPercentage}% filled</span>
+                  <div key={minutes} className="text-center p-4 bg-[#F7F9FC] rounded-lg">
+                    <div className="text-2xl font-bold text-[#1F2937]">{minutes} min</div>
+                    <div className="text-sm text-[#6B7280]">Slot</div>
+                    <div className="mt-2">
+                      <div className="w-full bg-[#E6E8EF] rounded-full h-2">
+                        <div 
+                          className="bg-[#3B82F6] h-2 rounded-full transition-all duration-300" 
+                          style={{ width: `${fillPercentage}%` }}
+                        ></div>
+                      </div>
+                      <div className="text-xs text-[#6B7280] mt-1">
+                        {fillPercentage}% filled
+                      </div>
                     </div>
-                    <div className="w-full bg-control-surface rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${fillPercentage}%` }}
-                      />
-                    </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-[#6B7280] mt-2">
                       {formatDuration(calculateTotalDuration())} / {formatDuration(minutes)}
                     </div>
                   </div>
                 );
               })}
             </div>
-          </CardContent>
+          </div>
         </Card>
       )}
 
