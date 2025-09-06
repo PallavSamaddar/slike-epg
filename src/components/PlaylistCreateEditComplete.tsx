@@ -1527,22 +1527,22 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       {/* Mode Selector */}
       <div className="mb-6">
         <Tabs value={mode} onValueChange={(value) => setMode(value as 'basic' | 'advanced' | 'preview')}>
-          <TabsList className="grid w-full grid-cols-3 bg-gray-100 border border-gray-200 rounded-t-lg">
+          <TabsList className="grid w-full grid-cols-3 bg-white border-b border-gray-200 rounded-t-lg">
             <TabsTrigger 
               value="basic"
-              className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:font-semibold data-[state=active]:shadow-sm hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
+              className="data-[state=active]:text-black data-[state=active]:font-bold data-[state=active]:border-b-2 data-[state=active]:border-gray-500 data-[state=active]:bg-transparent hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
             >
               Basic
             </TabsTrigger>
             <TabsTrigger 
               value="advanced"
-              className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:font-semibold data-[state=active]:shadow-sm hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
+              className="data-[state=active]:text-black data-[state=active]:font-bold data-[state=active]:border-b-2 data-[state=active]:border-gray-500 data-[state=active]:bg-transparent hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
             >
               Advance
             </TabsTrigger>
             <TabsTrigger 
               value="preview"
-              className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:font-semibold data-[state=active]:shadow-sm hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
+              className="data-[state=active]:text-black data-[state=active]:font-bold data-[state=active]:border-b-2 data-[state=active]:border-gray-500 data-[state=active]:bg-transparent hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
             >
               Preview Playlist
             </TabsTrigger>
