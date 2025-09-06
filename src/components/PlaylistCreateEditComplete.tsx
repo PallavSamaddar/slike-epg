@@ -2347,7 +2347,7 @@ const RHSSettingsPanel = ({
             </div>
             <div className="mt-2 p-2 bg-[#F3F4F6] rounded-md">
               <p className="text-xs text-[#111827] leading-relaxed">
-                Randomizes the <strong>order of unpinned items</strong> each time the playlist refreshes. Pinned items stay fixed at the top.
+                Randomizes the order of unpinned items each time the playlist refreshes.
               </p>
             </div>
           </div>
