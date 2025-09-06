@@ -169,13 +169,123 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     shufflePlaylist: false,
     hlsUrl: false,
     mp4Url: '1080p',
-    recommendation: false
+    recommendation: false,
+    playlistItems: [] as PlaylistItem[],
+    previewResults: [] as PlaylistItem[],
+    pinnedAssets: [] as string[]
   });
   const [lastSavedTime, setLastSavedTime] = useState(new Date());
   const [hasUnsavedSettings, setHasUnsavedSettings] = useState(false);
   
+  // Initialize lastSavedSettings with current state on mount
+  useEffect(() => {
+    setLastSavedSettings({
+      playlistName,
+      playlistDescription,
+      isActive,
+      sortBy,
+      duration,
+      refreshFrequency,
+      duplicateChecker,
+      shortsPlaylist,
+      shufflePlaylist,
+      hlsUrl,
+      mp4Url,
+      recommendation,
+      playlistItems: [...playlistItems],
+      previewResults: [...previewResults],
+      pinnedAssets: [...pinnedAssets]
+    });
+  }, []); // Only run once on mount
+  
   // Playlist ID for display
   const [playlistIdDisplay, setPlaylistIdDisplay] = useState(playlistId || `PL-${Math.random().toString(36).substr(2, 6).toUpperCase()}`);
+
+  // Combined Playlist Selector - Single Source of Truth
+  const getCombinedPlaylist = () => {
+    // Start with Basic items (manual playlist)
+    const basicItems = [...playlistItems];
+    
+    // Add Advance items from Preview Results
+    const advanceItems = [...previewResults];
+    
+    // Combine and deduplicate by assetId (keep first occurrence in order)
+    const combinedItems: PlaylistItem[] = [];
+    const seenAssetIds = new Set<string>();
+    
+    // Add Basic items first (respecting their order and pin/lock)
+    basicItems.forEach(item => {
+      if (!seenAssetIds.has(item.asset.id)) {
+        combinedItems.push(item);
+        seenAssetIds.add(item.asset.id);
+      }
+    });
+    
+    // Add Advance items (respecting editor re-order, pins)
+    advanceItems.forEach(item => {
+      if (!seenAssetIds.has(item.asset.id)) {
+        combinedItems.push(item);
+        seenAssetIds.add(item.asset.id);
+      }
+    });
+    
+    // Apply shuffle to unpinned tail if shuffle is enabled
+    if (shufflePlaylist) {
+      // Separate pinned and unpinned items
+      const pinnedItems = combinedItems.filter(item => pinnedAssets.includes(item.asset.id));
+      const unpinnedItems = combinedItems.filter(item => !pinnedAssets.includes(item.asset.id));
+      
+      // Shuffle only the unpinned items
+      const shuffledUnpinned = [...unpinnedItems].sort(() => Math.random() - 0.5);
+      
+      // Reconstruct with pinned items first, then shuffled unpinned
+      return [...pinnedItems, ...shuffledUnpinned];
+    }
+    
+    return combinedItems;
+  };
+
+  // Playlist Fill Progress calculations - Always use combined playlist
+  const calculatePlaylistFill = () => {
+    const targetMinutes = duration || 120; // Default to 2 hours
+    const combinedPlaylist = getCombinedPlaylist();
+    const filledMinutes = combinedPlaylist.reduce((sum, item) => sum + item.asset.duration, 0);
+    
+    return {
+      targetMinutes,
+      filledMinutes,
+      percentFilled: Math.min((filledMinutes / targetMinutes) * 100, 100),
+      percentOver: filledMinutes > targetMinutes ? ((filledMinutes - targetMinutes) / targetMinutes) * 100 : 0,
+      isOverTarget: filledMinutes > targetMinutes,
+      isNearTarget: filledMinutes >= targetMinutes * 0.9 && filledMinutes <= targetMinutes,
+      combinedPlaylist
+    };
+  };
+
+  const formatDuration = (minutes: number): string => {
+    if (minutes < 60) {
+      return `${Math.round(minutes)}m`;
+    }
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = Math.round(minutes % 60);
+    return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  };
+
+  const getProgressLabel = () => {
+    const { targetMinutes, filledMinutes, isOverTarget } = calculatePlaylistFill();
+    const targetFmt = formatDuration(targetMinutes);
+    const filledFmt = formatDuration(filledMinutes);
+    
+    if (isOverTarget) {
+      const overMinutes = filledMinutes - targetMinutes;
+      const overFmt = formatDuration(overMinutes);
+      return `Filled ${filledFmt} · Target ${targetFmt} · Over by ${overFmt}`;
+    } else {
+      const remainingMinutes = targetMinutes - filledMinutes;
+      const remainingFmt = formatDuration(remainingMinutes);
+      return `Filled ${filledFmt} · Target ${targetFmt} · Remaining ${remainingFmt}`;
+    }
+  };
 
   // Preview Results state for Advance mode
   const [previewResults, setPreviewResults] = useState<PlaylistItem[]>([]);
@@ -413,6 +523,23 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
   // Track unsaved settings changes
   useEffect(() => {
+    // Helper function to compare arrays by length and IDs
+    const arraysEqual = (arr1: any[], arr2: any[], idField: string = 'id') => {
+      if (arr1.length !== arr2.length) return false;
+      
+      // For PlaylistItem arrays, compare by item.id
+      if (idField === 'id' && arr1.length > 0 && arr1[0].id) {
+        const ids1 = arr1.map(item => item.id).sort();
+        const ids2 = arr2.map(item => item.id).sort();
+        return ids1.every((id, index) => id === ids2[index]);
+      }
+      
+      // For string arrays (pinnedAssets), compare directly
+      const items1 = arr1.map(item => item[idField] || item).sort();
+      const items2 = arr2.map(item => item[idField] || item).sort();
+      return items1.every((item, index) => item === items2[index]);
+    };
+
     const hasChanges = 
       playlistName !== lastSavedSettings.playlistName ||
       playlistDescription !== lastSavedSettings.playlistDescription ||
@@ -425,12 +552,15 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
       hlsUrl !== lastSavedSettings.hlsUrl ||
       mp4Url !== lastSavedSettings.mp4Url ||
-      recommendation !== lastSavedSettings.recommendation;
+      recommendation !== lastSavedSettings.recommendation ||
+      !arraysEqual(playlistItems, lastSavedSettings.playlistItems, 'id') ||
+      !arraysEqual(previewResults, lastSavedSettings.previewResults, 'id') ||
+      !arraysEqual(pinnedAssets, lastSavedSettings.pinnedAssets);
     
     setHasUnsavedSettings(hasChanges);
   }, [
     playlistName, playlistDescription, isActive, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, 
-    shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings
+    shufflePlaylist, hlsUrl, mp4Url, recommendation, playlistItems, previewResults, pinnedAssets, lastSavedSettings
   ]);
 
   // Update relative time every 60 seconds
@@ -441,6 +571,24 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     
     return () => clearInterval(interval);
   }, [lastSavedTime]);
+
+  // Force re-render when combined playlist changes (for progress bar updates)
+  const [, forceUpdate] = useState({});
+  const triggerProgressUpdate = () => forceUpdate({});
+
+  // Live update triggers for combined playlist changes
+  useEffect(() => {
+    triggerProgressUpdate();
+  }, [
+    playlistItems, // Basic items changes
+    previewResults, // Advance items changes
+    pinnedAssets, // Pin/unpin changes
+    duration, // RHS Duration changes
+    duplicateChecker, // Duplicate checker changes
+    shufflePlaylist, // Shuffle toggle changes
+    shortsPlaylist, // Shorts toggle changes
+    mode // Tab switching
+  ]);
 
   // Copy playlist ID to clipboard
   const handleCopyPlaylistId = async () => {
@@ -483,7 +631,10 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       shufflePlaylist,
       hlsUrl,
       mp4Url,
-      recommendation
+      recommendation,
+      playlistItems: [...playlistItems],
+      previewResults: [...previewResults],
+      pinnedAssets: [...pinnedAssets]
     });
     
     // Update last saved time
@@ -493,12 +644,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       setLoading(false);
       toast.success('Playlist saved successfully');
     }, 1000);
-  };
-
-  const formatDuration = (minutes: number) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
   };
 
   // Format relative time
@@ -971,7 +1116,10 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         shufflePlaylist,
         hlsUrl,
         mp4Url,
-        recommendation
+        recommendation,
+        playlistItems: [...playlistItems],
+        previewResults: [...previewResults],
+        pinnedAssets: [...pinnedAssets]
       });
       
       // Update last saved filters
@@ -1032,27 +1180,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [mode, hasUnsavedFilters, isApplyingFilters, isRhsOpen]);
 
-  // Track unsaved settings changes
-  useEffect(() => {
-    const hasChanges = 
-      playlistName !== lastSavedSettings.playlistName ||
-      playlistDescription !== lastSavedSettings.playlistDescription ||
-      isActive !== lastSavedSettings.isActive ||
-      sortBy !== lastSavedSettings.sortBy ||
-      duration !== lastSavedSettings.duration ||
-      refreshFrequency !== lastSavedSettings.refreshFrequency ||
-      duplicateChecker !== lastSavedSettings.duplicateChecker ||
-      shortsPlaylist !== lastSavedSettings.shortsPlaylist ||
-      shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
-      hlsUrl !== lastSavedSettings.hlsUrl ||
-      mp4Url !== lastSavedSettings.mp4Url ||
-      recommendation !== lastSavedSettings.recommendation;
-    
-    setHasUnsavedSettings(hasChanges);
-  }, [
-    playlistName, playlistDescription, isActive, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, 
-    shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings
-  ]);
 
   // Update relative time every 60 seconds
   useEffect(() => {
@@ -1493,14 +1620,64 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       
       <Button 
         onClick={handleSavePlaylist}
-        disabled={loading || !playlistName.trim()}
-        className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 text-sm font-semibold"
+        disabled={loading || !hasUnsavedSettings}
+        className={`px-6 text-sm font-semibold ${
+          hasUnsavedSettings 
+            ? 'bg-[#3B82F6] hover:bg-[#2563EB] text-white' 
+            : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+        }`}
       >
         <Save className="w-4 h-4 mr-2" />
         {loading ? 'Saving...' : 'Save Playlist'}
       </Button>
     </div>
   );
+
+  // Playlist Fill Progress Component
+  const PlaylistFillProgress = () => {
+    const { targetMinutes, filledMinutes, percentFilled, percentOver, isOverTarget, isNearTarget } = calculatePlaylistFill();
+    
+    const getFillColor = () => {
+      if (isOverTarget) return '#3B82F6'; // blue-600
+      if (isNearTarget) return '#F59E0B'; // amber-500
+      return '#3B82F6'; // blue-600
+    };
+
+    return (
+      <div id="playlist-fill" className="flex items-center gap-3 py-2 px-6">
+        <div 
+          className="relative flex-1 h-1.5 md:h-1.5 sm:h-1 rounded-full bg-gray-200 overflow-hidden" 
+          aria-labelledby="playlist-fill-label" 
+          role="progressbar" 
+          aria-valuemin={0} 
+          aria-valuemax={targetMinutes} 
+          aria-valuenow={filledMinutes}
+        >
+          {/* Base fill */}
+          <div 
+            className="absolute inset-y-0 left-0 transition-all duration-160 ease-in-out" 
+            style={{ 
+              width: `${percentFilled}%`,
+              backgroundColor: getFillColor()
+            }}
+          />
+          {/* Over-target tail */}
+          {isOverTarget && (
+            <div 
+              className="absolute inset-y-0 bg-red-500 transition-all duration-160 ease-in-out" 
+              style={{ 
+                left: '100%',
+                width: `${percentOver}%`
+              }}
+            />
+          )}
+        </div>
+        <div className="text-xs text-gray-600 flex-shrink-0" id="playlist-fill-label">
+          {getProgressLabel()}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-foreground">
@@ -1510,6 +1687,20 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         onBackToPlaylists={() => onNavigate?.('playlists')}
         rightContent={saveButton}
       />
+      
+      {/* Playlist Fill Progress */}
+      <PlaylistFillProgress />
+      
+      {/* Screen reader announcements */}
+      <div aria-live="polite" aria-atomic="true" className="sr-only">
+        {(() => {
+          const { filledMinutes, targetMinutes, isOverTarget } = calculatePlaylistFill();
+          const filledFmt = formatDuration(filledMinutes);
+          const targetFmt = formatDuration(targetMinutes);
+          const overFmt = isOverTarget ? formatDuration(filledMinutes - targetMinutes) : '';
+          return `Playlist fill updated: ${filledFmt} of ${targetFmt}${isOverTarget ? `, over by ${overFmt}` : ''}`;
+        })()}
+      </div>
       
       {/* Main Layout - Desktop: 70/30, Tablet/Mobile: Stacked */}
       <div className="flex flex-col lg:flex-row gap-6 p-6">
