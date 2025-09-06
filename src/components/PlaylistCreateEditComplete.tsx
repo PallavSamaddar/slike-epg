@@ -1530,19 +1530,19 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           <TabsList className="grid w-full grid-cols-3 bg-gray-100 border border-gray-200 rounded-t-lg">
             <TabsTrigger 
               value="basic"
-              className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:font-semibold hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg"
+              className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:font-semibold data-[state=active]:shadow-sm hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
             >
               Basic
             </TabsTrigger>
             <TabsTrigger 
               value="advanced"
-              className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:font-semibold hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg"
+              className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:font-semibold data-[state=active]:shadow-sm hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
             >
               Advance
             </TabsTrigger>
             <TabsTrigger 
               value="preview"
-              className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:font-semibold hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg"
+              className="data-[state=active]:bg-gray-700 data-[state=active]:text-white data-[state=active]:font-semibold data-[state=active]:shadow-sm hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg transition-colors"
             >
               Preview Playlist
             </TabsTrigger>

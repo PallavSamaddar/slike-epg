@@ -38,7 +38,7 @@ export default function PageHeader({
           <Button
             variant="ghost"
             onClick={onBackToPlaylists}
-            className="text-gray-500 hover:text-gray-700 hover:underline p-0 h-auto font-normal flex-shrink-0 hidden sm:flex"
+            className="text-gray-500 hover:bg-gray-700 hover:text-white hover:underline p-0 h-auto font-normal flex-shrink-0 hidden sm:flex transition-colors rounded-md"
             aria-label="Back to Playlists"
           >
             <ChevronLeft className="w-4 h-4 mr-1" />
@@ -51,7 +51,7 @@ export default function PageHeader({
           <Button
             variant="ghost"
             onClick={onBackToPlaylists}
-            className="text-gray-500 hover:text-gray-700 p-1 h-auto font-normal flex sm:hidden"
+            className="text-gray-500 hover:bg-gray-700 hover:text-white p-1 h-auto font-normal flex sm:hidden transition-colors rounded-md"
             aria-label="Back to Playlists"
           >
             <ChevronLeft className="w-4 h-4" />
