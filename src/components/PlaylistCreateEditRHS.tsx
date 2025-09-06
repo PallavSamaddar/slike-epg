@@ -388,46 +388,44 @@ const PlaylistCreateEditRHS: React.FC<PlaylistCreateEditRHSProps> = ({
     </div>
   );
 
+  // Save button component for header
+  const saveButton = (
+    <div className="flex items-center space-x-4">
+      {/* Mobile/Tablet Settings Button */}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => setIsRhsOpen(!isRhsOpen)}
+        className="lg:hidden"
+      >
+        <Settings className="w-4 h-4 mr-2" />
+        Settings
+      </Button>
+      
+      <Button 
+        onClick={handleSavePlaylist}
+        disabled={loading}
+        className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6 text-sm font-semibold"
+      >
+        <Save className="w-4 h-4 mr-2" />
+        {loading ? 'Saving...' : 'Save Playlist'}
+      </Button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-[#F7F9FC] text-foreground">
       <PageHeader 
         title={isEdit ? 'Edit Playlist' : 'Create Playlist'}
-        subtitle={isEdit ? 'Modify your playlist settings and content' : 'Create a new playlist for your content'}
+        showBackToPlaylists={true}
+        onBackToPlaylists={() => onNavigate?.('playlists')}
+        rightContent={saveButton}
       />
       
       {/* Main Layout - Desktop: 70/30, Tablet/Mobile: Stacked */}
       <div className="flex flex-col lg:flex-row gap-6 p-6">
         {/* Main Content Area */}
         <div className="flex-1 lg:max-w-[70%]">
-          {/* Header Actions */}
-          <div className="flex justify-between items-center mb-6">
-            <div className="flex items-center space-x-4">
-              <Button variant="outline" onClick={() => onNavigate?.('playlists')}>
-                ← Back to Playlists
-              </Button>
-            </div>
-            <div className="flex items-center space-x-4">
-              {/* Mobile/Tablet Settings Button */}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsRhsOpen(!isRhsOpen)}
-                className="lg:hidden"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Settings
-              </Button>
-              
-              <Button 
-                onClick={handleSavePlaylist}
-                disabled={loading}
-                className="bg-[#3B82F6] hover:bg-[#2563EB] text-white px-6"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                {loading ? 'Saving...' : 'Save Playlist'}
-              </Button>
-            </div>
-          </div>
 
           {/* Basic Info */}
           <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] mb-6">

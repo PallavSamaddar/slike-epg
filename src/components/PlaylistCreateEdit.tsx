@@ -308,39 +308,36 @@ const PlaylistCreateEdit = ({ onNavigate, playlistId, isEdit = false }: Props) =
     return Math.round(fillPercentage);
   };
 
+  // Action buttons for header
+  const actionButtons = (
+    <div className="flex items-center space-x-2">
+      <Button 
+        variant="outline" 
+        onClick={handleSaveDraft}
+        disabled={isDraft}
+      >
+        <Save className="h-4 w-4 mr-2" />
+        {isDraft ? 'Draft Saved' : 'Save Draft'}
+      </Button>
+      <Button 
+        onClick={handleActivate}
+        disabled={loading || isActivated}
+        className="bg-primary hover:bg-primary/90"
+      >
+        <Zap className="h-4 w-4 mr-2" />
+        {loading ? 'Activating...' : isActivated ? 'Activated' : 'Activate'}
+      </Button>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
       <PageHeader 
         title={isEdit ? 'Edit Playlist' : 'Create Playlist'}
-        subtitle={isEdit ? 'Modify your playlist settings and content' : 'Create a new playlist for your content'}
+        showBackToPlaylists={true}
+        onBackToPlaylists={() => onNavigate?.('playlists')}
+        rightContent={actionButtons}
       />
-      
-      {/* Header Actions */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" onClick={() => onNavigate?.('playlists')}>
-            ← Back to Playlists
-          </Button>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button 
-            variant="outline" 
-            onClick={handleSaveDraft}
-            disabled={isDraft}
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {isDraft ? 'Draft Saved' : 'Save Draft'}
-          </Button>
-          <Button 
-            onClick={handleActivate}
-            disabled={loading || isActivated}
-            className="bg-primary hover:bg-primary/90"
-          >
-            <Zap className="h-4 w-4 mr-2" />
-            {loading ? 'Activating...' : isActivated ? 'Activated' : 'Activate'}
-          </Button>
-        </div>
-      </div>
 
       {/* Basic Info */}
       <Card className="bg-card-dark border-border mb-6">
