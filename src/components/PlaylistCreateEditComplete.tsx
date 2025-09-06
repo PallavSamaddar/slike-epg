@@ -1527,10 +1527,25 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       {/* Mode Selector */}
       <div className="mb-6">
         <Tabs value={mode} onValueChange={(value) => setMode(value as 'basic' | 'advanced' | 'preview')}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="basic">Basic</TabsTrigger>
-            <TabsTrigger value="advanced">Advance</TabsTrigger>
-            <TabsTrigger value="preview">Preview Playlist</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3 bg-gray-100 border border-gray-200 rounded-t-lg">
+            <TabsTrigger 
+              value="basic"
+              className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:font-semibold hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg"
+            >
+              Basic
+            </TabsTrigger>
+            <TabsTrigger 
+              value="advanced"
+              className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:font-semibold hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg"
+            >
+              Advance
+            </TabsTrigger>
+            <TabsTrigger 
+              value="preview"
+              className="data-[state=active]:bg-gray-100 data-[state=active]:text-gray-800 data-[state=active]:font-semibold hover:bg-gray-200 focus-visible:outline-2 focus-visible:outline-blue-500 focus-visible:outline-offset-2 rounded-t-lg"
+            >
+              Preview Playlist
+            </TabsTrigger>
           </TabsList>
             
             <TabsContent value="basic" className="mt-6">
