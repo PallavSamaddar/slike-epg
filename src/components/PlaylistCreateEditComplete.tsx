@@ -152,7 +152,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   const [duplicateChecker, setDuplicateChecker] = useState('no-duplicates');
   const [shortsPlaylist, setShortsPlaylist] = useState(false);
   const [shufflePlaylist, setShufflePlaylist] = useState(false);
-  const [podcast, setPodcast] = useState(false);
   const [hlsUrl, setHlsUrl] = useState(false);
   const [mp4Url, setMp4Url] = useState('1080p');
   const [recommendation, setRecommendation] = useState(false);
@@ -168,7 +167,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     duplicateChecker: 'no-duplicates',
     shortsPlaylist: false,
     shufflePlaylist: false,
-    podcast: false,
     hlsUrl: false,
     mp4Url: '1080p',
     recommendation: false
@@ -425,7 +423,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       duplicateChecker !== lastSavedSettings.duplicateChecker ||
       shortsPlaylist !== lastSavedSettings.shortsPlaylist ||
       shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
-      podcast !== lastSavedSettings.podcast ||
       hlsUrl !== lastSavedSettings.hlsUrl ||
       mp4Url !== lastSavedSettings.mp4Url ||
       recommendation !== lastSavedSettings.recommendation;
@@ -433,7 +430,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     setHasUnsavedSettings(hasChanges);
   }, [
     playlistName, playlistDescription, isActive, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, 
-    shufflePlaylist, podcast, hlsUrl, mp4Url, recommendation, lastSavedSettings
+    shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings
   ]);
 
   // Update relative time every 60 seconds
@@ -484,7 +481,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       duplicateChecker,
       shortsPlaylist,
       shufflePlaylist,
-      podcast,
       hlsUrl,
       mp4Url,
       recommendation
@@ -973,7 +969,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         duplicateChecker,
         shortsPlaylist,
         shufflePlaylist,
-        podcast,
         hlsUrl,
         mp4Url,
         recommendation
@@ -1014,13 +1009,12 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       duplicateChecker !== lastSavedSettings.duplicateChecker ||
       shortsPlaylist !== lastSavedSettings.shortsPlaylist ||
       shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
-      podcast !== lastSavedSettings.podcast ||
       hlsUrl !== lastSavedSettings.hlsUrl ||
       mp4Url !== lastSavedSettings.mp4Url ||
       recommendation !== lastSavedSettings.recommendation;
     
     setHasUnsavedFilters(hasFilterChanges || hasKeywordChanges || hasSettingsChanges);
-  }, [filterGroups, filterKeywordStates, lastSavedFilters, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, shufflePlaylist, podcast, hlsUrl, mp4Url, recommendation, lastSavedSettings]);
+  }, [filterGroups, filterKeywordStates, lastSavedFilters, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings]);
 
   // Keyboard support for Ctrl+Enter
   useEffect(() => {
@@ -1050,7 +1044,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       duplicateChecker !== lastSavedSettings.duplicateChecker ||
       shortsPlaylist !== lastSavedSettings.shortsPlaylist ||
       shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
-      podcast !== lastSavedSettings.podcast ||
       hlsUrl !== lastSavedSettings.hlsUrl ||
       mp4Url !== lastSavedSettings.mp4Url ||
       recommendation !== lastSavedSettings.recommendation;
@@ -1058,7 +1051,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     setHasUnsavedSettings(hasChanges);
   }, [
     playlistName, playlistDescription, isActive, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, 
-    shufflePlaylist, podcast, hlsUrl, mp4Url, recommendation, lastSavedSettings
+    shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings
   ]);
 
   // Update relative time every 60 seconds
@@ -1989,8 +1982,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             setShortsPlaylist={setShortsPlaylist}
             shufflePlaylist={shufflePlaylist}
             setShufflePlaylist={setShufflePlaylist}
-            podcast={podcast}
-            setPodcast={setPodcast}
             hlsUrl={hlsUrl}
             setHlsUrl={setHlsUrl}
             mp4Url={mp4Url}
@@ -2039,8 +2030,6 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                     setShortsPlaylist={setShortsPlaylist}
                     shufflePlaylist={shufflePlaylist}
                     setShufflePlaylist={setShufflePlaylist}
-                    podcast={podcast}
-                    setPodcast={setPodcast}
                     hlsUrl={hlsUrl}
                     setHlsUrl={setHlsUrl}
                     mp4Url={mp4Url}
@@ -2082,8 +2071,6 @@ const RHSSettingsPanel = ({
   setShortsPlaylist, 
   shufflePlaylist, 
   setShufflePlaylist, 
-  podcast, 
-  setPodcast, 
   hlsUrl, 
   setHlsUrl, 
   mp4Url, 
@@ -2113,8 +2100,6 @@ const RHSSettingsPanel = ({
   setShortsPlaylist: (value: boolean) => void;
   shufflePlaylist: boolean;
   setShufflePlaylist: (value: boolean) => void;
-  podcast: boolean;
-  setPodcast: (value: boolean) => void;
   hlsUrl: boolean;
   setHlsUrl: (value: boolean) => void;
   mp4Url: string;
@@ -2337,65 +2322,68 @@ const RHSSettingsPanel = ({
         {/* Row 3: Shorts Playlist + Shuffle Playlist */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label className="text-sm font-semibold text-[#1F2937]">Shorts Playlist</Label>
-            <div className="mt-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold text-[#1F2937]">Shorts Playlist</Label>
               <Switch
                 checked={shortsPlaylist}
                 onCheckedChange={setShortsPlaylist}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
               />
             </div>
+            <div className="mt-2 p-2 bg-[#F3F4F6] rounded-md">
+              <p className="text-xs text-[#111827] leading-relaxed">
+                When enabled, this playlist is optimized for <strong>short-form playback</strong>.
+              </p>
+            </div>
           </div>
           <div>
-            <Label className="text-sm font-semibold text-[#1F2937]">Shuffle Playlist</Label>
-            <div className="mt-2">
+            <div className="flex items-center justify-between">
+              <Label className="text-sm font-semibold text-[#1F2937]">Shuffle Playlist</Label>
               <Switch
                 checked={shufflePlaylist}
                 onCheckedChange={setShufflePlaylist}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
               />
             </div>
-            <p className="text-xs text-[#6B7280] mt-1">Applies only to the unlocked tail of ordered lists</p>
+            <div className="mt-2 p-2 bg-[#F3F4F6] rounded-md">
+              <p className="text-xs text-[#111827] leading-relaxed">
+                Randomizes the <strong>order of unpinned items</strong> each time the playlist refreshes. Pinned items stay fixed at the top.
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* Row 4: Podcast + Delivery */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <Label className="text-sm font-semibold text-[#1F2937]">Podcast</Label>
-            <div className="mt-2">
+        {/* Row 4: Delivery - Independent HLS and MP4 */}
+        <div className="delivery-group grid grid-cols-2 gap-4 md:grid-cols-2 sm:grid-cols-1">
+          {/* HLS URL */}
+          <div className="field field--hls">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="hlsUrl" className="text-sm font-semibold text-[#1F2937]">HLS URL</Label>
               <Switch
-                checked={podcast}
-                onCheckedChange={setPodcast}
+                id="hlsUrl"
+                checked={hlsUrl}
+                onCheckedChange={setHlsUrl}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
               />
             </div>
           </div>
-          <div>
-            <Label className="text-sm font-semibold text-[#1F2937]">Delivery</Label>
-            <div className="mt-2 space-y-2">
-              <div className="flex items-center space-x-2">
-                <Switch
-                  checked={hlsUrl}
-                  onCheckedChange={setHlsUrl}
-                  className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-                />
-                <Label className="text-sm text-[#1F2937]">HLS URL</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Select value={mp4Url} onValueChange={setMp4Url} disabled={!hlsUrl}>
-                  <SelectTrigger className="bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-                    <SelectValue placeholder="Select quality" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="480p">480p</SelectItem>
-                    <SelectItem value="720p">720p</SelectItem>
-                    <SelectItem value="1080p">1080p</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Label className="text-sm text-[#1F2937]">MP4 URL</Label>
-              </div>
-            </div>
+          
+          {/* MP4 URL */}
+          <div className="field field--mp4">
+            <Label htmlFor="mp4Url" className="block text-sm font-semibold text-[#1F2937] mb-2">MP4 URL</Label>
+            <Select value={mp4Url} onValueChange={setMp4Url}>
+              <SelectTrigger 
+                id="mp4Url"
+                className="w-full bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
+              >
+                <SelectValue placeholder="Select quality" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="480p">480p</SelectItem>
+                <SelectItem value="720p">720p</SelectItem>
+                <SelectItem value="1080p">1080p</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
       </div>
