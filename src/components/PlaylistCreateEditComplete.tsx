@@ -868,7 +868,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     return (
       <div className="flex items-center gap-3 p-3 rounded-lg hover:bg-[#F3F6FB] transition-colors group">
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-[#1F2937] truncate" title={asset.title}>
+          <h4 className="font-normal text-sm text-[#1F2937] truncate" title={asset.title}>
             {asset.title}
           </h4>
           <p className="text-sm text-[#6B7280]">
@@ -910,7 +910,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           {index + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <h4 className="font-semibold text-[#1F2937] truncate" title={item.asset.title}>
+          <h4 className="font-normal text-sm text-[#1F2937] truncate" title={item.asset.title}>
             {item.asset.title}
           </h4>
           <p className="text-sm text-[#6B7280]">
@@ -1237,7 +1237,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-[#1F2937] truncate" title={item.asset.title}>
+            <h4 className="font-normal text-sm text-[#1F2937] truncate" title={item.asset.title}>
               {item.asset.title}
             </h4>
             {isPinned && (
@@ -1257,19 +1257,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           <Button
             size="sm"
             variant="ghost"
-            onClick={onPin}
-            className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#3B82F6]"
-            title={isPinned ? "Unpin" : "Pin"}
-          >
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
             onClick={() => onRemove(item.id)}
-            className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#DC2626]"
+            className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#6B7280] hover:bg-[#F3F4F6]"
             title="Remove from Results"
           >
             <X className="h-3 w-3" />
@@ -1326,7 +1315,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <h4 className="font-semibold text-[#1F2937] truncate" title={item.asset.title}>
+            <h4 className="font-normal text-sm text-[#1F2937] truncate" title={item.asset.title}>
               {item.asset.title}
             </h4>
             {isPinned && (
@@ -1349,19 +1338,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           <Button
             size="sm"
             variant="ghost"
-            onClick={onPin}
-            className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#3B82F6]"
-            title={isPinned ? "Unpin" : "Pin"}
-          >
-            <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
-            </svg>
-          </Button>
-          <Button
-            size="sm"
-            variant="ghost"
             onClick={() => onRemove(item.id)}
-            className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#DC2626]"
+            className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#6B7280] hover:bg-[#F3F4F6]"
             title="Remove"
           >
             <X className="h-3 w-3" />
@@ -1874,7 +1852,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                           onClick={resolveFilters}
                           disabled={!hasUnsavedFilters || isApplyingFilters}
                           size="sm"
-                          className="bg-[#3B82F6] hover:bg-[#2563EB] text-white focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
+                          className="bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
                         >
                           {isApplyingFilters ? (
                             <>
@@ -1999,7 +1977,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
                       <div className="flex items-center justify-between text-xs text-[#6B7280]">
                         <span>Updated {lastUpdated.toLocaleTimeString()}</span>
-                        <Button size="sm" variant="outline" className="h-6 text-xs">
+                        <Button size="sm" variant="outline" className="h-6 text-xs bg-[#F2F4F8] border border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors">
                           Refresh
                         </Button>
                       </div>

@@ -659,7 +659,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                   onClick={handleClearFilters}
                   variant="outline" 
                   size="sm"
-                  className="h-8 text-xs"
+                  className="h-8 text-xs bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
                   aria-label="Clear all filters"
                 >
                   Clear
@@ -673,7 +673,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                 variant="outline" 
                 size="sm"
                 onClick={() => setColumnChooserOpen(true)}
-                className="h-8 text-xs"
+                className="h-8 text-xs bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
               >
                 <Settings className="h-3 w-3 mr-1" />
                 Columns ▾
