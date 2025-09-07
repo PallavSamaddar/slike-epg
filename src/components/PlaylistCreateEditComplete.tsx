@@ -63,7 +63,8 @@ import {
   HelpCircle,
   Settings,
   Star,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import PageHeader from '@/components/PageHeader';
 import { toast } from 'sonner';
@@ -174,7 +175,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   const [hlsUrl, setHlsUrl] = useState(false);
   const [mp4Url, setMp4Url] = useState('1080p');
   const [recommendation, setRecommendation] = useState(false);
-  
+
   // RHS Settings tracking
   const [lastSavedSettings, setLastSavedSettings] = useState({
     playlistName: '',
@@ -199,17 +200,17 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   // Initialize lastSavedSettings with current state on mount
   useEffect(() => {
     setLastSavedSettings({
-      playlistName,
-      playlistDescription,
-      isActive,
-      sortBy,
+    playlistName,
+    playlistDescription,
+    isActive,
+    sortBy,
       duration,
-      refreshFrequency,
+    refreshFrequency,
       duplicateChecker,
-      shortsPlaylist,
-      shufflePlaylist,
-      hlsUrl,
-      mp4Url,
+    shortsPlaylist,
+    shufflePlaylist,
+    hlsUrl,
+    mp4Url,
       recommendation,
       playlistItems: [...playlistItems],
       previewResults: [...previewResults],
@@ -1324,7 +1325,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           </SelectTrigger>
           <SelectContent>
             {options.map((option: any) => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1339,7 +1340,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           </SelectTrigger>
           <SelectContent>
             {options.map((option: any) => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1406,8 +1407,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Product" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1421,8 +1422,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Asset Type" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1436,8 +1437,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Destination" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1451,8 +1452,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Priority" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -1781,8 +1782,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.key === 'Enter') {
         if (mode === 'advanced' && hasUnsavedFilters && !isApplyingFilters) {
-          event.preventDefault();
-          resolveFilters();
+        event.preventDefault();
+        resolveFilters();
         } else if (mode === 'basic' && basicHasUnsavedFilters && !basicIsApplyingFilters) {
           event.preventDefault();
           handleBasicApplyFilters();
@@ -2042,7 +2043,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           </SelectTrigger>
           <SelectContent>
             {options.map((option: any) => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2057,7 +2058,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
           </SelectTrigger>
           <SelectContent>
             {options.map((option: any) => (
-              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2124,8 +2125,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Product" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2139,8 +2140,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Asset Type" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2154,8 +2155,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Destination" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2169,8 +2170,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             <SelectValue placeholder="Select Priority" />
           </SelectTrigger>
           <SelectContent>
-            {options.map((option: string) => (
-              <SelectItem key={option} value={option}>{option}</SelectItem>
+            {options.map((option: any) => (
+              <SelectItem key={option.value || option} value={option.value || option}>{option.label || option}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -2201,31 +2202,31 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
   // Save button component for header
   const saveButton = (
-    <div className="flex items-center space-x-4">
-      {/* Mobile/Tablet Settings Button */}
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setIsRhsOpen(!isRhsOpen)}
-        className="lg:hidden"
-      >
-        <Settings className="w-4 h-4 mr-2" />
-        Settings
-      </Button>
-      
-      <Button 
-        onClick={handleSavePlaylist}
+            <div className="flex items-center space-x-4">
+              {/* Mobile/Tablet Settings Button */}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsRhsOpen(!isRhsOpen)}
+                className="lg:hidden"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Settings
+              </Button>
+              
+              <Button 
+                onClick={handleSavePlaylist}
         disabled={loading || !hasUnsavedSettings}
         className={`px-6 text-sm font-semibold ${
           hasUnsavedSettings 
             ? 'bg-[#3B82F6] hover:bg-[#2563EB] text-white' 
             : 'bg-gray-300 text-gray-500 cursor-not-allowed'
         }`}
-      >
-        <Save className="w-4 h-4 mr-2" />
-        {loading ? 'Saving...' : 'Save Playlist'}
-      </Button>
-    </div>
+              >
+                <Save className="w-4 h-4 mr-2" />
+                {loading ? 'Saving...' : 'Save Playlist'}
+              </Button>
+            </div>
   );
 
   // Playlist Fill Progress Component
@@ -2266,7 +2267,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
               }}
             />
           )}
-        </div>
+          </div>
         <div className="text-xs text-gray-600 flex-shrink-0" id="playlist-fill-label">
           {getProgressLabel()}
         </div>
@@ -2305,7 +2306,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
       {/* Mode Selector */}
       <div className="mb-6">
-        <Tabs value={mode} onValueChange={(value) => setMode(value as 'basic' | 'advanced' | 'preview')}>
+          <Tabs value={mode} onValueChange={(value) => setMode(value as 'basic' | 'advanced' | 'preview')}>
           <TabsList className="grid w-full grid-cols-3 bg-white border-b border-gray-200 rounded-t-lg">
             <TabsTrigger 
               value="basic"
@@ -2325,13 +2326,13 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             >
               Preview Playlist
             </TabsTrigger>
-          </TabsList>
+            </TabsList>
             
             <TabsContent value="basic" className="mt-6">
-              {/* Responsive 3-column grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Search Assets - 25% (3 columns) */}
-                <div className="lg:col-span-3">
+              {/* Vertical stacked layout */}
+              <div className="space-y-6">
+                {/* Search Assets - Full width at top */}
+                <div>
                   <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
                     <div className="space-y-4">
                       {/* Card Header */}
@@ -2357,19 +2358,13 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                             onClick={handleBasicResetFilters}
                             variant="ghost"
                             size="sm"
-                            className="text-[#6B7280] hover:text-[#374151] hover:underline"
+                            className="text-[#6B7280] hover:bg-[#6B7280] hover:text-white hover:underline"
                           >
                             Reset
                           </Button>
                         </div>
                       </div>
                       
-                      {/* Hint */}
-                      {basicHasUnsavedFilters && (
-                        <p className="text-xs text-[#6B7280]">
-                          You have unsaved filters. Press Apply to refresh results.
-                        </p>
-                      )}
 
                       {/* Filter Groups */}
                       <div className="space-y-4">
@@ -2387,7 +2382,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                     onClick={() => updateBasicFilterGroupType(group.id, 'include')}
                                     className={`px-3 py-1 text-xs font-medium transition-colors ${
                                       group.type === 'include'
-                                        ? 'bg-[#F3F4F6] text-[#374151] border-[#D1D5DB]'
+                                        ? 'bg-[#6B7280] text-white border-[#6B7280]'
                                         : 'bg-transparent text-[#6B7280] hover:bg-[#E5E7EB]'
                                     }`}
                                     aria-pressed={group.type === 'include'}
@@ -2399,7 +2394,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                     onClick={() => updateBasicFilterGroupType(group.id, 'exclude')}
                                     className={`px-3 py-1 text-xs font-medium transition-colors ${
                                       group.type === 'exclude'
-                                        ? 'bg-[#F3F4F6] text-[#374151] border-[#D1D5DB]'
+                                        ? 'bg-[#6B7280] text-white border-[#6B7280]'
                                         : 'bg-transparent text-[#6B7280] hover:bg-[#E5E7EB]'
                                     }`}
                                     aria-pressed={group.type === 'exclude'}
@@ -2407,8 +2402,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                   >
                                     Exclude
                                   </button>
-                                </div>
-                              </div>
+                          </div>
+                        </div>
                               <div className="flex items-center gap-1">
                                 {basicFilterGroups.length > 1 && (
                                   <Button
@@ -2439,8 +2434,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                   >
                                     <SelectTrigger className="w-32 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
                                       <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
+                            </SelectTrigger>
+                            <SelectContent>
                                       <SelectItem value="keywords">Keywords</SelectItem>
                                       <SelectItem value="vendor">Vendor</SelectItem>
                                       <SelectItem value="category">Category</SelectItem>
@@ -2452,11 +2447,11 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                       <SelectItem value="publishedTo">Published To</SelectItem>
                                       <SelectItem value="videoId">Video ID</SelectItem>
                                       <SelectItem value="priority">Priority</SelectItem>
-                                    </SelectContent>
-                                  </Select>
+                            </SelectContent>
+                          </Select>
                                   <div className="flex-1">
                                     {renderBasicFilterField(filter, group.id)}
-                                  </div>
+                        </div>
                                   <Button
                                     variant="ghost"
                                     size="sm"
@@ -2469,27 +2464,43 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                               ))}
                               
                               {/* Add Filter Button */}
-                              <Button
-                                variant="ghost"
-                                size="sm"
+                              <button
                                 onClick={() => addBasicFilter(group.id)}
-                                className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF]"
+                                className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF] rounded-md transition-colors"
+                                style={{
+                                  backgroundColor: '#FFFFFF',
+                                  border: '1px dashed #E6E8EF',
+                                  color: '#6B7280',
+                                  fontSize: '12px',
+                                  height: '32px',
+                                  width: '100%',
+                                  padding: '4px 8px',
+                                  cursor: 'pointer'
+                                }}
                               >
                                 + Add filter
-                              </Button>
-                            </div>
+                              </button>
+                        </div>
                           </div>
                         ))}
                         
                         {/* Add Filter Group Button */}
-                        <Button
-                          variant="ghost"
-                          size="sm"
+                        <button
                           onClick={addBasicFilterGroup}
-                          className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF]"
+                          className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF] rounded-md transition-colors"
+                          style={{
+                            backgroundColor: '#FFFFFF',
+                            border: '1px dashed #E6E8EF',
+                            color: '#6B7280',
+                            fontSize: '12px',
+                            height: '32px',
+                            width: '100%',
+                            padding: '4px 8px',
+                            cursor: 'pointer'
+                          }}
                         >
                           + Add filter group
-                        </Button>
+                        </button>
                       </div>
 
                       {/* Logic Legend */}
@@ -2500,8 +2511,10 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                   </Card>
                 </div>
 
-                {/* Search Results - 40% (5 columns) */}
-                <div className="lg:col-span-5">
+                {/* Search Results and Playlist Order - 2-column layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {/* Search Results - Left column */}
+                  <div>
                   <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
                     <div className="space-y-4">
                       <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Search Results</h3>
@@ -2527,8 +2540,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                   </Card>
                 </div>
 
-                {/* Playlist Order - 35% (4 columns) */}
-                <div className="lg:col-span-4">
+                  {/* Playlist Order - Right column */}
+                  <div>
                   <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
                     <div className="space-y-4">
                       <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Playlist Order</h3>
@@ -2569,6 +2582,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                       )}
                     </div>
                   </Card>
+                  </div>
                 </div>
               </div>
             </TabsContent>
@@ -2672,28 +2686,45 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                   </Button>
                                 </div>
                               ))}
-                              <Button
-                                variant="outline"
-                                size="sm"
+                              
+                              {/* Add Filter Button */}
+                              <button
                                 onClick={() => addFilter(group.id, 'keywords')}
-                                className="w-full h-8 text-xs"
+                                className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF] rounded-md transition-colors"
+                                style={{
+                                  backgroundColor: '#FFFFFF',
+                                  border: '1px dashed #E6E8EF',
+                                  color: '#6B7280',
+                                  fontSize: '12px',
+                                  height: '32px',
+                                  width: '100%',
+                                  padding: '4px 8px',
+                                  cursor: 'pointer'
+                                }}
                               >
-                                <Plus className="h-3 w-3 mr-1" />
-                                Add Filter
-                              </Button>
+                                + Add filter
+                              </button>
                             </div>
                           </div>
                         </Card>
                       ))}
                       
-                      <Button
-                        variant="outline"
+                      <button
                         onClick={addFilterGroup}
-                        className="w-full h-8 text-xs"
+                        className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF] rounded-md transition-colors"
+                        style={{
+                          backgroundColor: '#FFFFFF',
+                          border: '1px dashed #E6E8EF',
+                          color: '#6B7280',
+                          fontSize: '12px',
+                          height: '32px',
+                          width: '100%',
+                          padding: '4px 8px',
+                          cursor: 'pointer'
+                        }}
                       >
-                        <Plus className="h-3 w-3 mr-1" />
-                        Add Filter Group
-                      </Button>
+                        + Add filter group
+                      </button>
                     </div>
                   </Card>
 
@@ -3112,16 +3143,16 @@ const RHSSettingsPanel = ({
               <Label htmlFor="active-toggle" className="text-sm font-medium text-[#1F2937]">
                 {isActive ? 'Active' : 'Inactive'}
               </Label>
-              <Switch
+            <Switch
                 id="active-toggle"
-                checked={isActive}
-                onCheckedChange={setIsActive}
+              checked={isActive}
+              onCheckedChange={setIsActive}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-              />
+            />
             </div>
           </div>
+          </div>
         </div>
-      </div>
 
       {/* Settings Content */}
       <div className="p-4 space-y-4">
@@ -3131,22 +3162,22 @@ const RHSSettingsPanel = ({
             <Label htmlFor="sort-by" className="text-sm font-semibold text-[#1F2937]">
               Sort By
             </Label>
-            <Select value={sortBy} onValueChange={setSortBy}>
+          <Select value={sortBy} onValueChange={setSortBy}>
               <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
                 <SelectValue placeholder="Select sort order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="newest">Newest First</SelectItem>
-                <SelectItem value="oldest">Oldest First</SelectItem>
-                <SelectItem value="recently-updated">Recently Updated</SelectItem>
-                <SelectItem value="a-z">A→Z</SelectItem>
-                <SelectItem value="z-a">Z→A</SelectItem>
-                <SelectItem value="longest">Longest First</SelectItem>
-                <SelectItem value="shortest">Shortest First</SelectItem>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="newest">Newest First</SelectItem>
+              <SelectItem value="oldest">Oldest First</SelectItem>
+              <SelectItem value="recently-updated">Recently Updated</SelectItem>
+              <SelectItem value="a-z">A→Z</SelectItem>
+              <SelectItem value="z-a">Z→A</SelectItem>
+              <SelectItem value="longest">Longest First</SelectItem>
+              <SelectItem value="shortest">Shortest First</SelectItem>
                 <SelectItem value="live-rec-first">Live Rec First</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            </SelectContent>
+          </Select>
+        </div>
           <div>
             <div className="flex items-center space-x-1">
               <Label htmlFor="duration" className="text-sm font-semibold text-[#1F2937]">
@@ -3191,18 +3222,18 @@ const RHSSettingsPanel = ({
             <Label htmlFor="refresh-frequency" className="text-sm font-semibold text-[#1F2937]">
               Refresh Frequency
             </Label>
-            <Select value={refreshFrequency} onValueChange={setRefreshFrequency}>
+          <Select value={refreshFrequency} onValueChange={setRefreshFrequency}>
               <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
                 <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="manual">Manual</SelectItem>
-                <SelectItem value="hourly">Hourly</SelectItem>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="manual">Manual</SelectItem>
+              <SelectItem value="hourly">Hourly</SelectItem>
                 <SelectItem value="6-hours">6 hours</SelectItem>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-              </SelectContent>
-            </Select>
+              <SelectItem value="daily">Daily</SelectItem>
+              <SelectItem value="weekly">Weekly</SelectItem>
+            </SelectContent>
+          </Select>
           </div>
           <div>
             <Label htmlFor="duplicate-checker" className="text-sm font-semibold text-[#1F2937]">
@@ -3227,33 +3258,33 @@ const RHSSettingsPanel = ({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold text-[#1F2937]">Shorts Playlist</Label>
-              <Switch
-                checked={shortsPlaylist}
-                onCheckedChange={setShortsPlaylist}
+          <Label className="text-sm font-semibold text-[#1F2937]">Shorts Playlist</Label>
+            <Switch
+              checked={shortsPlaylist}
+              onCheckedChange={setShortsPlaylist}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-              />
-            </div>
+            />
+          </div>
             <div className="mt-2 p-2 bg-[#F3F4F6] rounded-md">
               <p className="text-xs text-[#111827] leading-relaxed">
                 When enabled, this playlist is optimized for <strong>short-form playback</strong>.
               </p>
-            </div>
+        </div>
           </div>
           <div>
             <div className="flex items-center justify-between">
-              <Label className="text-sm font-semibold text-[#1F2937]">Shuffle Playlist</Label>
-              <Switch
-                checked={shufflePlaylist}
-                onCheckedChange={setShufflePlaylist}
+          <Label className="text-sm font-semibold text-[#1F2937]">Shuffle Playlist</Label>
+            <Switch
+              checked={shufflePlaylist}
+              onCheckedChange={setShufflePlaylist}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-              />
-            </div>
+            />
+          </div>
             <div className="mt-2 p-2 bg-[#F3F4F6] rounded-md">
               <p className="text-xs text-[#111827] leading-relaxed">
                 Randomizes the order of unpinned items each time the playlist refreshes.
               </p>
-            </div>
+        </div>
           </div>
         </div>
 
@@ -3263,31 +3294,31 @@ const RHSSettingsPanel = ({
           <div className="field field--hls">
             <div className="flex items-center justify-between">
               <Label htmlFor="hlsUrl" className="text-sm font-semibold text-[#1F2937]">HLS URL</Label>
-              <Switch
+            <Switch
                 id="hlsUrl"
-                checked={hlsUrl}
-                onCheckedChange={setHlsUrl}
+              checked={hlsUrl}
+              onCheckedChange={setHlsUrl}
                 className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
-              />
+            />
             </div>
           </div>
-          
+
           {/* MP4 URL */}
           <div className="field field--mp4">
             <Label htmlFor="mp4Url" className="block text-sm font-semibold text-[#1F2937] mb-2">MP4 URL</Label>
-            <Select value={mp4Url} onValueChange={setMp4Url}>
+              <Select value={mp4Url} onValueChange={setMp4Url}>
               <SelectTrigger 
                 id="mp4Url"
                 className="w-full bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
               >
                 <SelectValue placeholder="Select quality" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="480p">480p</SelectItem>
-                <SelectItem value="720p">720p</SelectItem>
-                <SelectItem value="1080p">1080p</SelectItem>
-              </SelectContent>
-            </Select>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="480p">480p</SelectItem>
+                  <SelectItem value="720p">720p</SelectItem>
+                  <SelectItem value="1080p">1080p</SelectItem>
+                </SelectContent>
+              </Select>
           </div>
         </div>
       </div>
