@@ -144,6 +144,25 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     }
   ]);
 
+  // Basic tab filter composer state
+  const [basicFilterGroups, setBasicFilterGroups] = useState<FilterGroup[]>([
+    {
+      id: 'basic-group-1',
+      type: 'include',
+      filters: []
+    }
+  ]);
+  const [basicFilterKeywordStates, setBasicFilterKeywordStates] = useState<Record<string, {
+    suggestions: string[];
+    showSuggestions: boolean;
+    selectedKeywords: string[];
+    highlightedIndex: number;
+    inputValue: string;
+  }>>({});
+  const [basicHasUnsavedFilters, setBasicHasUnsavedFilters] = useState(false);
+  const [basicIsApplyingFilters, setBasicIsApplyingFilters] = useState(false);
+  const [basicLastSavedFilters, setBasicLastSavedFilters] = useState(JSON.stringify([]));
+
   // RHS Settings state
   const [isActive, setIsActive] = useState(true);
   const [sortBy, setSortBy] = useState('newest');
@@ -386,12 +405,101 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     setMode('basic');
   };
 
-  const filteredAssets = availableAssets.filter(asset => {
-    const matchesQuery = !searchQuery || asset.title.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesVendor = !searchVendor || searchVendor === 'all' || asset.vendor === searchVendor;
-    const matchesType = !searchType || searchType === 'all' || asset.type === searchType;
-    return matchesQuery && matchesVendor && matchesType;
-  });
+  // Basic tab filter logic
+  const applyBasicFilters = () => {
+    if (basicFilterGroups.length === 0) return availableAssets;
+    
+    let includeResults: Asset[] = [];
+    let excludeResults: Asset[] = [];
+    
+    // Process each group
+    for (const group of basicFilterGroups) {
+      if (group.filters.length === 0) continue;
+      
+      const groupResults = availableAssets.filter(asset => {
+        // Check if asset is excluded
+        if (excludedAssets.includes(asset.id)) return false;
+        
+        // Apply all filters in the group (AND logic)
+        for (const filter of group.filters) {
+          let filterMatches = false;
+          
+          switch (filter.field) {
+            case 'keywords':
+              const keywords = basicFilterKeywordStates[filter.id]?.selectedKeywords || [];
+              filterMatches = keywords.length === 0 || keywords.some(keyword => 
+                asset.title.toLowerCase().includes(keyword.toLowerCase())
+              );
+              break;
+            case 'vendor':
+              filterMatches = !filter.value || asset.vendor === filter.value;
+              break;
+            case 'category':
+              filterMatches = !filter.value || asset.category === filter.value;
+              break;
+            case 'product':
+              filterMatches = !filter.value || asset.product === filter.value;
+              break;
+            case 'language':
+              filterMatches = !filter.value || asset.language === filter.value;
+              break;
+            case 'duration':
+              filterMatches = !filter.value || asset.duration >= parseInt(filter.value);
+              break;
+            case 'assetType':
+              filterMatches = !filter.value || asset.type === filter.value;
+              break;
+            case 'createdOn':
+              filterMatches = !filter.value || asset.createdAt >= filter.value;
+              break;
+            case 'publishedTo':
+              filterMatches = !filter.value || asset.publishedTo === filter.value;
+              break;
+            case 'videoId':
+              filterMatches = !filter.value || asset.videoId === filter.value;
+              break;
+            case 'priority':
+              filterMatches = !filter.value || asset.priority === filter.value;
+              break;
+            default:
+              filterMatches = true;
+          }
+          
+          if (!filterMatches) return false;
+        }
+        
+        return true;
+      });
+      
+      if (group.type === 'include') {
+        includeResults = [...includeResults, ...groupResults];
+      } else {
+        excludeResults = [...excludeResults, ...groupResults];
+      }
+    }
+    
+    // If no include groups or all include groups empty, treat as all content
+    if (includeResults.length === 0) {
+      includeResults = availableAssets;
+    }
+    
+    // Remove duplicates from include results
+    const uniqueIncludeResults = includeResults.filter((asset, index, self) => 
+      index === self.findIndex(a => a.id === asset.id)
+    );
+    
+    // Remove duplicates from exclude results
+    const uniqueExcludeResults = excludeResults.filter((asset, index, self) => 
+      index === self.findIndex(a => a.id === asset.id)
+    );
+    
+    // Final result: includeResults \ excludeResults
+    return uniqueIncludeResults.filter(asset => 
+      !uniqueExcludeResults.some(excludedAsset => excludedAsset.id === asset.id)
+    );
+  };
+
+  const filteredAssets = applyBasicFilters();
 
   const handleAddAsset = (asset: Asset) => {
     if (!playlistItems.find(item => item.asset.id === asset.id)) {
@@ -598,6 +706,44 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     } catch (err) {
       toast.error('Failed to copy Playlist ID');
     }
+  };
+
+  // Basic tab Apply and Reset functions
+  const handleBasicApplyFilters = async () => {
+    setBasicIsApplyingFilters(true);
+    
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Update last saved state
+      setBasicLastSavedFilters(JSON.stringify(basicFilterGroups));
+      setBasicHasUnsavedFilters(false);
+      
+      // Announce results
+      const resultCount = filteredAssets.length;
+      toast.success(`Basic filters applied. ${resultCount} items found.`);
+      
+    } catch (error) {
+      toast.error('Failed to apply filters');
+    } finally {
+      setBasicIsApplyingFilters(false);
+    }
+  };
+
+  const handleBasicResetFilters = () => {
+    setBasicFilterGroups([
+      {
+        id: 'basic-group-1',
+        type: 'include',
+        filters: []
+      }
+    ]);
+    setBasicFilterKeywordStates({});
+    setBasicHasUnsavedFilters(false);
+    setBasicLastSavedFilters(JSON.stringify([]));
+    
+    toast.success('Basic filters cleared. Showing all results.');
   };
 
   const handleSavePlaylist = () => {
@@ -861,6 +1007,459 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         }
       }));
     }
+  };
+
+  // Basic tab keyword handling functions
+  const handleBasicKeywordInput = (filterId: string, value: string) => {
+    const currentState = basicFilterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (value.length > 0) {
+      const suggestions = keywordLibrary.filter(keyword => 
+        keyword.toLowerCase().includes(value.toLowerCase()) && 
+        !currentState.selectedKeywords.includes(keyword)
+      ).slice(0, 5);
+      
+      setBasicFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          inputValue: value,
+          suggestions,
+          showSuggestions: true,
+          highlightedIndex: -1
+        }
+      }));
+    } else {
+      setBasicFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          inputValue: value,
+          suggestions: [],
+          showSuggestions: false,
+          highlightedIndex: -1
+        }
+      }));
+    }
+  };
+
+  const addBasicKeywordChip = (filterId: string, keyword: string) => {
+    const currentState = basicFilterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (!currentState.selectedKeywords.includes(keyword)) {
+      setBasicFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          selectedKeywords: [...currentState.selectedKeywords, keyword],
+          inputValue: '',
+          suggestions: [],
+          showSuggestions: false,
+          highlightedIndex: -1
+        }
+      }));
+    }
+  };
+
+  const removeBasicKeywordChip = (filterId: string, keyword: string) => {
+    const currentState = basicFilterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    setBasicFilterKeywordStates(prev => ({
+      ...prev,
+      [filterId]: {
+        ...currentState,
+        selectedKeywords: currentState.selectedKeywords.filter(k => k !== keyword)
+      }
+    }));
+  };
+
+  const handleBasicKeywordKeyDown = (filterId: string, e: React.KeyboardEvent) => {
+    const currentState = basicFilterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (!currentState.showSuggestions || currentState.suggestions.length === 0) {
+      if (e.key === 'Enter' && currentState.inputValue.trim()) {
+        addBasicKeywordChip(filterId, currentState.inputValue.trim());
+        e.preventDefault();
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setBasicFilterKeywordStates(prev => ({
+          ...prev,
+          [filterId]: {
+            ...currentState,
+            highlightedIndex: currentState.highlightedIndex < currentState.suggestions.length - 1 
+              ? currentState.highlightedIndex + 1 : 0
+          }
+        }));
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setBasicFilterKeywordStates(prev => ({
+          ...prev,
+          [filterId]: {
+            ...currentState,
+            highlightedIndex: currentState.highlightedIndex > 0 
+              ? currentState.highlightedIndex - 1 : currentState.suggestions.length - 1
+          }
+        }));
+        break;
+      case 'Enter':
+      case 'Tab':
+        e.preventDefault();
+        if (currentState.highlightedIndex >= 0 && currentState.highlightedIndex < currentState.suggestions.length) {
+          addBasicKeywordChip(filterId, currentState.suggestions[currentState.highlightedIndex]);
+        } else if (currentState.inputValue.trim()) {
+          addBasicKeywordChip(filterId, currentState.inputValue.trim());
+        }
+        break;
+      case 'Escape':
+        setBasicFilterKeywordStates(prev => ({
+          ...prev,
+          [filterId]: {
+            ...currentState,
+            showSuggestions: false,
+            highlightedIndex: -1
+          }
+        }));
+        break;
+    }
+  };
+
+  const handleBasicKeywordFocus = (filterId: string) => {
+    const currentState = basicFilterKeywordStates[filterId] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (currentState.inputValue.length > 0) {
+      const suggestions = keywordLibrary.filter(keyword => 
+        keyword.toLowerCase().includes(currentState.inputValue.toLowerCase()) && 
+        !currentState.selectedKeywords.includes(keyword)
+      ).slice(0, 5);
+      
+      setBasicFilterKeywordStates(prev => ({
+        ...prev,
+        [filterId]: {
+          ...currentState,
+          suggestions,
+          showSuggestions: true,
+          highlightedIndex: -1
+        }
+      }));
+    }
+  };
+
+  // Basic tab filter management functions
+  const addBasicFilter = (groupId: string) => {
+    const newFilter: Filter = {
+      id: `basic-filter-${Date.now()}`,
+      field: 'keywords',
+      operator: 'contains',
+      value: '',
+      label: 'keywords contains'
+    };
+    
+    setBasicFilterGroups(prev => prev.map(group => 
+      group.id === groupId 
+        ? { ...group, filters: [...group.filters, newFilter] }
+        : group
+    ));
+  };
+
+  const removeBasicFilter = (groupId: string, filterId: string) => {
+    setBasicFilterGroups(prev => prev.map(group => 
+      group.id === groupId 
+        ? { ...group, filters: group.filters.filter(f => f.id !== filterId) }
+        : group
+    ));
+    
+    // Clean up keyword state
+    setBasicFilterKeywordStates(prev => {
+      const newState = { ...prev };
+      delete newState[filterId];
+      return newState;
+    });
+  };
+
+  const updateBasicFilter = (groupId: string, filterId: string, updates: Partial<Filter>) => {
+    setBasicFilterGroups(prev => prev.map(group => 
+      group.id === groupId 
+        ? { 
+            ...group, 
+            filters: group.filters.map(f => 
+              f.id === filterId ? { ...f, ...updates } : f
+            )
+          }
+        : group
+    ));
+  };
+
+  const addBasicFilterGroup = () => {
+    const newGroup: FilterGroup = {
+      id: `basic-group-${Date.now()}`,
+      type: 'include',
+      filters: []
+    };
+    
+    setBasicFilterGroups(prev => [...prev, newGroup]);
+  };
+
+  const removeBasicFilterGroup = (groupId: string) => {
+    if (basicFilterGroups.length <= 1) return; // Keep at least one group
+    
+    setBasicFilterGroups(prev => prev.filter(group => group.id !== groupId));
+  };
+
+  const updateBasicFilterGroupType = (groupId: string, type: 'include' | 'exclude') => {
+    setBasicFilterGroups(prev => prev.map(group => 
+      group.id === groupId ? { ...group, type } : group
+    ));
+  };
+
+  // Basic tab filter rendering function
+  const renderBasicFilterField = (filter: Filter, groupId: string) => {
+    const options = getFieldOptions(filter.field);
+    const keywordState = basicFilterKeywordStates[filter.id] || {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    };
+    
+    if (filter.field === 'keywords') {
+      return (
+        <div className="flex-1 relative">
+          <div className="min-h-[32px] p-2 border border-[#E6E8EF] rounded-md bg-white flex flex-wrap gap-1 items-center focus-within:ring-2 focus-within:ring-[#3B82F6] focus-within:ring-offset-2">
+            {keywordState.selectedKeywords.map((keyword, index) => (
+              <div
+                key={index}
+                className="inline-flex items-center px-2 py-1 rounded-full bg-[#EAF1FF] text-[#1F2937] text-xs"
+              >
+                {keyword}
+                <button
+                  type="button"
+                  onClick={() => removeBasicKeywordChip(filter.id, keyword)}
+                  className="ml-1 text-[#6B7280] hover:text-[#1F2937]"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+            <Input
+              placeholder="Type keywords..."
+              value={keywordState.inputValue}
+              onChange={(e) => handleBasicKeywordInput(filter.id, e.target.value)}
+              onKeyDown={(e) => handleBasicKeywordKeyDown(filter.id, e)}
+              onFocus={() => handleBasicKeywordFocus(filter.id)}
+              className="flex-1 min-w-[120px] border-0 bg-transparent focus:ring-0 focus:outline-none text-xs"
+            />
+          </div>
+          {keywordState.showSuggestions && keywordState.suggestions.length > 0 && (
+            <div className="absolute z-10 w-full mt-1 bg-white border border-[#E6E8EF] rounded-md shadow-lg max-h-40 overflow-y-auto">
+              {keywordState.suggestions.map((suggestion, index) => (
+                <div
+                  key={index}
+                  className={`px-3 py-2 cursor-pointer text-xs ${
+                    index === keywordState.highlightedIndex ? 'bg-[#F3F6FB]' : 'hover:bg-[#F3F6FB]'
+                  }`}
+                  onClick={() => addBasicKeywordChip(filter.id, suggestion)}
+                >
+                  {suggestion}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    if (filter.field === 'videoId') {
+      return (
+        <Input
+          placeholder="Type Video ID here"
+          value={filter.value}
+          onChange={(e) => updateBasicFilter(groupId, filter.id, { value: e.target.value })}
+          className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
+        />
+      );
+    }
+    
+    if (filter.field === 'duration') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+            <SelectValue placeholder="Select Duration" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: any) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'createdOn') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+            <SelectValue placeholder="Select Creation Day" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: any) => (
+              <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    // Multi-select for vendor, category, language
+    if (filter.field === 'vendor') {
+      return (
+        <div className="flex-1">
+          <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+            <SelectTrigger className="h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+              <SelectValue placeholder="Select Vendor" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option: any) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    if (filter.field === 'category') {
+      return (
+        <div className="flex-1">
+          <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+            <SelectTrigger className="h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+              <SelectValue placeholder="Select Category" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option: any) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    if (filter.field === 'language') {
+      return (
+        <div className="flex-1">
+          <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+            <SelectTrigger className="h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+              <SelectValue placeholder="Select Language" />
+            </SelectTrigger>
+            <SelectContent>
+              {options.map((option: any) => (
+                <SelectItem key={option} value={option}>{option}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      );
+    }
+    
+    // Single-select for product, assetType, publishedTo, priority
+    if (filter.field === 'product') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+            <SelectValue placeholder="Select Product" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'assetType') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+            <SelectValue placeholder="Select Asset Type" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'publishedTo') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+            <SelectValue placeholder="Select Destination" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    if (filter.field === 'priority') {
+      return (
+        <Select value={filter.value} onValueChange={(value) => updateBasicFilter(groupId, filter.id, { value })}>
+          <SelectTrigger className="flex-1 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+            <SelectValue placeholder="Select Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            {options.map((option: string) => (
+              <SelectItem key={option} value={option}>{option}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      );
+    }
+    
+    return null;
   };
 
   // Asset List Item Component
@@ -1164,12 +1763,30 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     setHasUnsavedFilters(hasFilterChanges || hasKeywordChanges || hasSettingsChanges);
   }, [filterGroups, filterKeywordStates, lastSavedFilters, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings]);
 
+  // Track Basic tab filter changes
+  useEffect(() => {
+    const hasFilterChanges = JSON.stringify(basicFilterGroups) !== basicLastSavedFilters;
+    
+    // Check if keyword states have been modified
+    const hasKeywordChanges = Object.keys(basicFilterKeywordStates).some(filterId => {
+      const keywordState = basicFilterKeywordStates[filterId];
+      return keywordState && keywordState.selectedKeywords.length > 0;
+    });
+    
+    setBasicHasUnsavedFilters(hasFilterChanges || hasKeywordChanges);
+  }, [basicFilterGroups, basicFilterKeywordStates, basicLastSavedFilters]);
+
   // Keyboard support for Ctrl+Enter
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === 'Enter' && mode === 'advanced' && hasUnsavedFilters && !isApplyingFilters) {
-        event.preventDefault();
-        resolveFilters();
+      if (event.ctrlKey && event.key === 'Enter') {
+        if (mode === 'advanced' && hasUnsavedFilters && !isApplyingFilters) {
+          event.preventDefault();
+          resolveFilters();
+        } else if (mode === 'basic' && basicHasUnsavedFilters && !basicIsApplyingFilters) {
+          event.preventDefault();
+          handleBasicApplyFilters();
+        }
       }
       if (event.key === 'Escape' && isRhsOpen) {
         setIsRhsOpen(false);
@@ -1178,7 +1795,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [mode, hasUnsavedFilters, isApplyingFilters, isRhsOpen]);
+  }, [mode, hasUnsavedFilters, isApplyingFilters, basicHasUnsavedFilters, basicIsApplyingFilters, isRhsOpen]);
 
 
   // Update relative time every 60 seconds
@@ -1717,49 +2334,167 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                 <div className="lg:col-span-3">
                   <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
                     <div className="space-y-4">
-                      <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Search Assets</h3>
+                      {/* Card Header */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-[#1F2937]">Search Assets</h3>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            onClick={handleBasicApplyFilters}
+                            disabled={!basicHasUnsavedFilters || basicIsApplyingFilters}
+                            size="sm"
+                            className="bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                          >
+                            {basicIsApplyingFilters ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Applying...
+                              </>
+                            ) : (
+                              'Apply'
+                            )}
+                          </Button>
+                          <Button
+                            onClick={handleBasicResetFilters}
+                            variant="ghost"
+                            size="sm"
+                            className="text-[#6B7280] hover:text-[#374151] hover:underline"
+                          >
+                            Reset
+                          </Button>
+                        </div>
+                      </div>
+                      
+                      {/* Hint */}
+                      {basicHasUnsavedFilters && (
+                        <p className="text-xs text-[#6B7280]">
+                          You have unsaved filters. Press Apply to refresh results.
+                        </p>
+                      )}
+
+                      {/* Filter Groups */}
                       <div className="space-y-4">
-                        <div>
-                          <Label htmlFor="search" className="text-sm font-medium text-[#1F2937]">Search</Label>
-                          <div className="relative mt-1">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7280]" />
-                            <Input
-                              id="search"
-                              placeholder="Search assets..."
-                              value={searchQuery}
-                              onChange={(e) => setSearchQuery(e.target.value)}
-                              className="pl-10 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
-                            />
+                        {basicFilterGroups.map((group, groupIndex) => (
+                          <div key={group.id} className="border border-[#E6E8EF] rounded-lg">
+                            {/* Group Header */}
+                            <div className="flex items-center justify-between p-3 border-b border-[#E6E8EF] bg-[#F9FAFB]">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-medium text-[#1F2937]">
+                                  Group {groupIndex + 1}
+                                </span>
+                                {/* Include/Exclude Toggle */}
+                                <div className="flex items-center bg-white border border-[#E5E7EB] rounded-md">
+                                  <button
+                                    onClick={() => updateBasicFilterGroupType(group.id, 'include')}
+                                    className={`px-3 py-1 text-xs font-medium transition-colors ${
+                                      group.type === 'include'
+                                        ? 'bg-[#F3F4F6] text-[#374151] border-[#D1D5DB]'
+                                        : 'bg-transparent text-[#6B7280] hover:bg-[#E5E7EB]'
+                                    }`}
+                                    aria-pressed={group.type === 'include'}
+                                    aria-label="Include group"
+                                  >
+                                    Include
+                                  </button>
+                                  <button
+                                    onClick={() => updateBasicFilterGroupType(group.id, 'exclude')}
+                                    className={`px-3 py-1 text-xs font-medium transition-colors ${
+                                      group.type === 'exclude'
+                                        ? 'bg-[#F3F4F6] text-[#374151] border-[#D1D5DB]'
+                                        : 'bg-transparent text-[#6B7280] hover:bg-[#E5E7EB]'
+                                    }`}
+                                    aria-pressed={group.type === 'exclude'}
+                                    aria-label="Exclude group"
+                                  >
+                                    Exclude
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {basicFilterGroups.length > 1 && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeBasicFilterGroup(group.id)}
+                                    className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#DC2626]"
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Group Body */}
+                            <div className="p-3 space-y-3">
+                              {group.filters.map((filter) => (
+                                <div key={filter.id} className="flex items-center gap-2">
+                                  <Select
+                                    value={filter.field}
+                                    onValueChange={(value) => {
+                                      updateBasicFilter(group.id, filter.id, { 
+                                        field: value, 
+                                        value: '',
+                                        label: `${value} contains`
+                                      });
+                                    }}
+                                  >
+                                    <SelectTrigger className="w-32 h-8 text-xs bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="keywords">Keywords</SelectItem>
+                                      <SelectItem value="vendor">Vendor</SelectItem>
+                                      <SelectItem value="category">Category</SelectItem>
+                                      <SelectItem value="product">Product</SelectItem>
+                                      <SelectItem value="language">Language</SelectItem>
+                                      <SelectItem value="duration">Duration</SelectItem>
+                                      <SelectItem value="assetType">Asset Type</SelectItem>
+                                      <SelectItem value="createdOn">Created On</SelectItem>
+                                      <SelectItem value="publishedTo">Published To</SelectItem>
+                                      <SelectItem value="videoId">Video ID</SelectItem>
+                                      <SelectItem value="priority">Priority</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                  <div className="flex-1">
+                                    {renderBasicFilterField(filter, group.id)}
+                                  </div>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeBasicFilter(group.id, filter.id)}
+                                    className="h-6 w-6 p-0 text-[#6B7280] hover:text-[#1F2937]"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                              
+                              {/* Add Filter Button */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => addBasicFilter(group.id)}
+                                className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF]"
+                              >
+                                + Add filter
+                              </Button>
+                            </div>
                           </div>
-                        </div>
-                        <div className="border-t border-[#EEF1F6] pt-4">
-                          <Label htmlFor="vendor" className="text-sm font-medium text-[#1F2937]">Vendor</Label>
-                          <Select value={searchVendor} onValueChange={setSearchVendor}>
-                            <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-                              <SelectValue placeholder="All vendors" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All vendors</SelectItem>
-                              {vendors.map(vendor => (
-                                <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="border-t border-[#EEF1F6] pt-4">
-                          <Label htmlFor="type" className="text-sm font-medium text-[#1F2937]">Type</Label>
-                          <Select value={searchType} onValueChange={setSearchType}>
-                            <SelectTrigger className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2">
-                              <SelectValue placeholder="All types" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="all">All types</SelectItem>
-                              {assetTypes.map(type => (
-                                <SelectItem key={type} value={type}>{type}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
+                        ))}
+                        
+                        {/* Add Filter Group Button */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={addBasicFilterGroup}
+                          className="w-full h-8 text-xs text-[#6B7280] hover:text-[#374151] hover:bg-[#F3F6FB] border border-dashed border-[#E6E8EF]"
+                        >
+                          + Add filter group
+                        </Button>
+                      </div>
+
+                      {/* Logic Legend */}
+                      <div className="text-xs text-[#6B7280] pt-2 border-t border-[#EEF1F6]">
+                        Within a group: <strong>AND</strong> • Across <strong>Include</strong> groups: <strong>OR</strong> • <strong>Exclude</strong> groups apply last
                       </div>
                     </div>
                   </Card>
