@@ -255,6 +255,21 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
     return date.toLocaleDateString();
   };
 
+  // Screen reader announcements
+  const announceToScreenReader = (message: string) => {
+    const announcement = document.createElement('div');
+    announcement.setAttribute('aria-live', 'polite');
+    announcement.setAttribute('aria-atomic', 'true');
+    announcement.className = 'sr-only';
+    announcement.textContent = message;
+    document.body.appendChild(announcement);
+    
+    // Remove after announcement
+    setTimeout(() => {
+      document.body.removeChild(announcement);
+    }, 1000);
+  };
+
   // URL management
   const updateURL = useCallback((params: Record<string, string>) => {
     const url = new URL(window.location.href);
@@ -432,9 +447,21 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
     if (type === 'status') {
       const newStatus = filters.status === value ? 'all' : value;
       handleFilterChange('status', newStatus);
+      
+      // Announce filter change for screen readers
+      const announcement = newStatus === 'all' 
+        ? `Filter Status: ${value} cleared` 
+        : `Filter Status: ${value} applied`;
+      announceToScreenReader(announcement);
     } else {
       const newType = filters.type === value ? 'all' : value;
       handleFilterChange('type', newType);
+      
+      // Announce filter change for screen readers
+      const announcement = newType === 'all' 
+        ? `Filter Type: ${value} cleared` 
+        : `Filter Type: ${value} applied`;
+      announceToScreenReader(announcement);
     }
   };
 
@@ -688,52 +715,71 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       </Card>
 
       {/* Quick Counts */}
-      <div className="flex items-center gap-4 mb-4">
+      <div className="flex flex-wrap items-center gap-6 mb-4 py-2">
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-[#6B7280]">Status:</span>
-          <Button
-            variant={filters.status === 'enabled' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleQuickCountClick('status', 'enabled')}
-            className="h-6 text-xs"
-          >
-            Enabled ({quickCounts.enabled})
-          </Button>
-          <Button
-            variant={filters.status === 'disabled' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleQuickCountClick('status', 'disabled')}
-            className="h-6 text-xs"
-          >
-            Disabled ({quickCounts.disabled})
-          </Button>
-          <Button
-            variant={filters.status === 'draft' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleQuickCountClick('status', 'draft')}
-            className="h-6 text-xs"
-          >
-            Draft ({quickCounts.draft})
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleQuickCountClick('status', 'enabled')}
+              aria-pressed={filters.status === 'enabled'}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] ${
+                filters.status === 'enabled'
+                  ? 'bg-slate-600 border-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue'
+                  : 'bg-transparent border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#374151]'
+              }`}
+            >
+              Enabled ({quickCounts.enabled})
+            </button>
+            <button
+              onClick={() => handleQuickCountClick('status', 'disabled')}
+              aria-pressed={filters.status === 'disabled'}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] ${
+                filters.status === 'disabled'
+                  ? 'bg-slate-600 border-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue'
+                  : 'bg-transparent border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#374151]'
+              }`}
+            >
+              Disabled ({quickCounts.disabled})
+            </button>
+            <button
+              onClick={() => handleQuickCountClick('status', 'draft')}
+              aria-pressed={filters.status === 'draft'}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] ${
+                filters.status === 'draft'
+                  ? 'bg-slate-600 border-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue'
+                  : 'bg-transparent border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#374151]'
+              }`}
+            >
+              Draft ({quickCounts.draft})
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-xs font-medium text-[#6B7280]">Type:</span>
-          <Button
-            variant={filters.type === 'basic' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleQuickCountClick('type', 'basic')}
-            className="h-6 text-xs"
-          >
-            Basic ({quickCounts.basic})
-          </Button>
-          <Button
-            variant={filters.type === 'advanced' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => handleQuickCountClick('type', 'advanced')}
-            className="h-6 text-xs"
-          >
-            Advanced ({quickCounts.advanced})
-          </Button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleQuickCountClick('type', 'basic')}
+              aria-pressed={filters.type === 'basic'}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] ${
+                filters.type === 'basic'
+                  ? 'bg-slate-600 border-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue'
+                  : 'bg-transparent border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#374151]'
+              }`}
+            >
+              Basic ({quickCounts.basic})
+            </button>
+            <button
+              onClick={() => handleQuickCountClick('type', 'advanced')}
+              aria-pressed={filters.type === 'advanced'}
+              className={`px-2.5 py-1 text-xs font-semibold rounded-full border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#3B82F6] ${
+                filters.type === 'advanced'
+                  ? 'bg-slate-600 border-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue'
+                  : 'bg-transparent border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB] hover:text-[#374151]'
+              }`}
+            >
+              Advanced ({quickCounts.advanced})
+            </button>
+          </div>
         </div>
       </div>
 
