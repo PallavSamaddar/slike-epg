@@ -107,7 +107,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
   
   // Column chooser
   const [visibleColumns, setVisibleColumns] = useState<string[]>([
-    'title', 'duration', 'videoCount', 'type', 'programBindings', 'status', 'actions'
+    'title', 'playlistId', 'duration', 'videoCount', 'type', 'programBindings', 'status', 'actions'
   ]);
   const [columnChooserOpen, setColumnChooserOpen] = useState(false);
   
@@ -130,7 +130,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
   // Mock data
   const mockPlaylists: Playlist[] = [
     {
-      id: '1',
+      id: '1xvtqat9zg',
       title: 'Sports Highlights',
       duration: 180, // 3 hours
       videoCount: 45,
@@ -141,7 +141,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-20T14:30:00Z'
     },
     {
-      id: '2',
+      id: '1x8k2m7n4p',
       title: 'Music Mix',
       duration: 240, // 4 hours
       videoCount: 60,
@@ -152,7 +152,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-18T16:45:00Z'
     },
     {
-      id: '3',
+      id: '1x5q9w3e1r',
       title: 'Tech Reviews',
       duration: 120, // 2 hours
       videoCount: 30,
@@ -163,7 +163,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-15T12:20:00Z'
     },
     {
-      id: '4',
+      id: '1x2a6s8d4f',
       title: 'News Roundup',
       duration: null, // Dynamic playlist
       videoCount: null, // Dynamic playlist
@@ -174,7 +174,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-22T10:15:00Z'
     },
     {
-      id: '5',
+      id: '1x7g3h9j5k',
       title: 'Entertainment Mix',
       duration: 300, // 5 hours
       videoCount: 75,
@@ -185,7 +185,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-19T09:30:00Z'
     },
     {
-      id: '6',
+      id: '1x4l8z1x6c',
       title: 'Draft Playlist',
       duration: 90, // 1.5 hours
       videoCount: 20,
@@ -196,7 +196,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-25T14:00:00Z'
     },
     {
-      id: '7',
+      id: '1x9v2b7n3m',
       title: 'Short Clips',
       duration: 30, // 30 minutes
       videoCount: 15,
@@ -207,7 +207,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
       updatedAt: '2024-01-23T09:15:00Z'
     },
     {
-      id: '8',
+      id: '1x6y5u8i0o',
       title: 'Long Form Content',
       duration: 480, // 8 hours
       videoCount: 12,
@@ -493,6 +493,22 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
         ? prev.filter(c => c !== column)
         : [...prev, column]
     );
+  };
+
+  const handleCopyPlaylistId = async (playlistId: string) => {
+    try {
+      await navigator.clipboard.writeText(playlistId);
+      toast({
+        title: 'Copied to clipboard',
+        description: `Playlist ID "${playlistId}" copied successfully`,
+      });
+    } catch (err) {
+      toast({
+        title: 'Copy failed',
+        description: 'Failed to copy Playlist ID to clipboard',
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleSelectAll = (checked: boolean) => {
@@ -810,7 +826,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                     <Checkbox
                       checked={selectedPlaylists.length === playlists.length && playlists.length > 0}
                       onCheckedChange={handleSelectAll}
-                      className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                      className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#9CA3AF] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
                     />
                   </th>
                   {visibleColumns.includes('title') && (
@@ -819,6 +835,14 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                       onClick={() => handleSort('title')}
                     >
                       Title {sortColumn === 'title' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                  )}
+                  {visibleColumns.includes('playlistId') && (
+                    <th 
+                      className="text-left p-4 font-medium text-foreground cursor-pointer hover:bg-gray-50"
+                      onClick={() => handleSort('playlistId')}
+                    >
+                      Playlist ID {sortColumn === 'playlistId' && (sortDirection === 'asc' ? '↑' : '↓')}
                     </th>
                   )}
                   {visibleColumns.includes('duration') && (
@@ -886,7 +910,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                         <Checkbox
                           checked={selectedPlaylists.includes(playlist.id)}
                           onCheckedChange={(checked) => handleSelectPlaylist(playlist.id, checked as boolean)}
-                          className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                          className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#9CA3AF] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
                         />
                       </td>
                       {visibleColumns.includes('title') && (
@@ -896,6 +920,22 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                             <div className="text-sm text-muted-foreground">
                               Created {new Date(playlist.createdAt).toLocaleDateString()}
                             </div>
+                          </div>
+                        </td>
+                      )}
+                      {visibleColumns.includes('playlistId') && (
+                        <td className="p-4 text-foreground">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm">{playlist.id}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCopyPlaylistId(playlist.id)}
+                              className="h-6 w-6 p-0 bg-[#F2F4F8] border-[#9CA3AF] text-[#6B7280] hover:bg-[#E5E7EB] hover:text-[#374151] hover:border-[#9CA3AF] transition-colors"
+                              aria-label={`Copy playlist ID ${playlist.id}`}
+                            >
+                              <Copy className="h-3 w-3" />
+                            </Button>
                           </div>
                         </td>
                       )}
@@ -930,7 +970,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                             <Switch
                               checked={playlist.status === 'enabled'}
                               onCheckedChange={() => handleStatusToggle(playlist.id)}
-                              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                              className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#9CA3AF] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
                             />
                             <Badge 
                               variant="secondary"
@@ -949,29 +989,36 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                       )}
                       {visibleColumns.includes('actions') && (
                         <td className="p-4">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => onNavigate?.(`playlists/${playlist.id}/edit`)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem 
-                                onClick={() => {
-                                  setPlaylistToDelete(playlist);
-                                  setDeleteDialogOpen(true);
-                                }}
-                                className="text-red-600"
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => onNavigate?.(`playlists/${playlist.id}/edit`)}
+                              className="h-8 px-3 bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                            >
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem 
+                                  onClick={() => {
+                                    setPlaylistToDelete(playlist);
+                                    setDeleteDialogOpen(true);
+                                  }}
+                                  className="text-red-600"
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </td>
                       )}
                     </tr>
@@ -1034,6 +1081,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
           <div className="py-4 space-y-3">
             {[
               { key: 'title', label: 'Title' },
+              { key: 'playlistId', label: 'Playlist ID' },
               { key: 'duration', label: 'Duration' },
               { key: 'videoCount', label: 'Videos' },
               { key: 'type', label: 'Type' },
