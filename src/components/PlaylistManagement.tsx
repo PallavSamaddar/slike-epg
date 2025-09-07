@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Search, Filter, MoreVertical, X, Download, Settings, Star, Copy, Trash, Eye, EyeOff } from 'lucide-react';
+import { Plus, Edit, Trash2, ChevronLeft, ChevronRight, Search, Filter, MoreVertical, X, Settings, Star, Copy, Trash, Eye, EyeOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -540,44 +540,6 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
     });
   };
 
-  const handleExportCSV = () => {
-    const visiblePlaylists = playlists.filter(p => selectedPlaylists.length === 0 || selectedPlaylists.includes(p.id));
-    
-    const headers = [];
-    if (visibleColumns.includes('title')) headers.push('Title');
-    if (visibleColumns.includes('duration')) headers.push('Duration');
-    if (visibleColumns.includes('videoCount')) headers.push('Videos');
-    if (visibleColumns.includes('type')) headers.push('Type');
-    if (visibleColumns.includes('programBindings')) headers.push('Program Bindings');
-    if (visibleColumns.includes('status')) headers.push('Status');
-    
-    const csvContent = [
-      headers.join(','),
-      ...visiblePlaylists.map(playlist => {
-        const row = [];
-        if (visibleColumns.includes('title')) row.push(`"${playlist.title}"`);
-        if (visibleColumns.includes('duration')) row.push(formatDuration(playlist.duration));
-        if (visibleColumns.includes('videoCount')) row.push(formatVideoCount(playlist.videoCount));
-        if (visibleColumns.includes('type')) row.push(playlist.type);
-        if (visibleColumns.includes('programBindings')) row.push(playlist.programBindings);
-        if (visibleColumns.includes('status')) row.push(playlist.status);
-        return row.join(',');
-      })
-    ].join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `playlists_${new Date().toISOString().slice(0, 16).replace('T', '_')}_view-${currentView?.slug || 'default'}.csv`;
-    link.click();
-    window.URL.revokeObjectURL(url);
-    
-    toast({
-      title: 'Export completed',
-      description: 'CSV file has been downloaded successfully.',
-    });
-  };
 
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
   const endIndex = Math.min(currentPage * itemsPerPage, mockPlaylists.length);
@@ -689,17 +651,8 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
               </div>
             </div>
             
-            {/* Right segment - Export + Columns */}
+            {/* Right segment - Columns */}
             <div className="flex items-center gap-2 justify-end sm:justify-start">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleExportCSV}
-                className="h-8 text-xs"
-              >
-                <Download className="h-3 w-3 mr-1" />
-                Export CSV
-              </Button>
               <Button 
                 variant="outline" 
                 size="sm"
