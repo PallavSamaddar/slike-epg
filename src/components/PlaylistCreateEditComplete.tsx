@@ -2377,32 +2377,18 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                                   Group {groupIndex + 1}
                                 </span>
                                 {/* Include/Exclude Toggle */}
-                                <div className="flex items-center bg-white border border-[#E5E7EB] rounded-md">
-                                  <button
-                                    onClick={() => updateBasicFilterGroupType(group.id, 'include')}
-                                    className={`px-3 py-1 text-xs font-medium transition-colors ${
-                                      group.type === 'include'
-                                        ? 'bg-[#6B7280] text-white border-[#6B7280]'
-                                        : 'bg-transparent text-[#6B7280] hover:bg-[#E5E7EB]'
-                                    }`}
-                                    aria-pressed={group.type === 'include'}
-                                    aria-label="Include group"
-                                  >
-                                    Include
-                                  </button>
-                                  <button
-                                    onClick={() => updateBasicFilterGroupType(group.id, 'exclude')}
-                                    className={`px-3 py-1 text-xs font-medium transition-colors ${
-                                      group.type === 'exclude'
-                                        ? 'bg-[#6B7280] text-white border-[#6B7280]'
-                                        : 'bg-transparent text-[#6B7280] hover:bg-[#E5E7EB]'
-                                    }`}
-                                    aria-pressed={group.type === 'exclude'}
-                                    aria-label="Exclude group"
-                                  >
-                                    Exclude
-                                  </button>
-                          </div>
+                                <div className="flex items-center space-x-2">
+                                  <Switch
+                                    checked={group.type === 'include'}
+                                    onCheckedChange={(checked) => 
+                                      updateBasicFilterGroupType(group.id, checked ? 'include' : 'exclude')
+                                    }
+                                    className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+                                  />
+                                  <span className="text-sm font-medium text-[#1F2937]">
+                                    {group.type === 'include' ? 'Include' : 'Exclude'}
+                                  </span>
+                                </div>
                         </div>
                               <div className="flex items-center gap-1">
                                 {basicFilterGroups.length > 1 && (
