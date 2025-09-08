@@ -153,7 +153,15 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     {
       id: 'basic-group-1',
       type: 'include',
-      filters: []
+      filters: [
+        {
+          id: 'basic-default-filter-1',
+          field: 'keywords',
+          operator: 'contains',
+          value: '',
+          label: 'keywords contains'
+        }
+      ]
     }
   ]);
   const [basicFilterKeywordStates, setBasicFilterKeywordStates] = useState<Record<string, {
@@ -162,7 +170,15 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     selectedKeywords: string[];
     highlightedIndex: number;
     inputValue: string;
-  }>>({});
+  }>>({
+    'basic-default-filter-1': {
+      suggestions: [],
+      showSuggestions: false,
+      selectedKeywords: [],
+      highlightedIndex: -1,
+      inputValue: ''
+    }
+  });
   const [basicHasUnsavedFilters, setBasicHasUnsavedFilters] = useState(false);
   const [basicIsApplyingFilters, setBasicIsApplyingFilters] = useState(false);
   const [basicLastSavedFilters, setBasicLastSavedFilters] = useState(JSON.stringify([]));
@@ -538,11 +554,33 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
   // Advanced mode filter functions
   const addFilterGroup = () => {
+    const filterId = `filter-${Date.now()}`;
     const newGroup: FilterGroup = {
       id: `group-${Date.now()}`,
       type: 'include',
-      filters: []
+      filters: [
+        {
+          id: filterId,
+          field: 'keywords',
+          operator: 'contains',
+          value: '',
+          label: 'keywords contains'
+        }
+      ]
     };
+    
+    // Initialize keyword state for this filter
+    setFilterKeywordStates(prev => ({
+      ...prev,
+      [filterId]: {
+        suggestions: [],
+        showSuggestions: false,
+        selectedKeywords: [],
+        highlightedIndex: -1,
+        inputValue: ''
+      }
+    }));
+    
     setFilterGroups(prev => [...prev, newGroup]);
   };
 
@@ -1243,11 +1281,32 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   };
 
   const addBasicFilterGroup = () => {
+    const filterId = `basic-filter-${Date.now()}`;
     const newGroup: FilterGroup = {
       id: `basic-group-${Date.now()}`,
       type: 'include',
-      filters: []
+      filters: [
+        {
+          id: filterId,
+          field: 'keywords',
+          operator: 'contains',
+          value: '',
+          label: 'keywords contains'
+        }
+      ]
     };
+    
+    // Initialize keyword state for this filter
+    setBasicFilterKeywordStates(prev => ({
+      ...prev,
+      [filterId]: {
+        suggestions: [],
+        showSuggestions: false,
+        selectedKeywords: [],
+        highlightedIndex: -1,
+        inputValue: ''
+      }
+    }));
     
     setBasicFilterGroups(prev => [...prev, newGroup]);
   };
@@ -1300,7 +1359,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
               onChange={(e) => handleBasicKeywordInput(filter.id, e.target.value)}
               onKeyDown={(e) => handleBasicKeywordKeyDown(filter.id, e)}
               onFocus={() => handleBasicKeywordFocus(filter.id)}
-              className="flex-1 min-w-[120px] border-0 bg-transparent focus:ring-0 focus:outline-none text-xs"
+              className="flex-1 min-w-[120px] border-0 border-none bg-transparent focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs"
             />
           </div>
           {keywordState.showSuggestions && keywordState.suggestions.length > 0 && (
@@ -2020,7 +2079,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
               onChange={(e) => handleKeywordInput(filter.id, e.target.value)}
               onKeyDown={(e) => handleKeywordKeyDown(filter.id, e)}
               onFocus={() => handleKeywordFocus(filter.id)}
-              className="flex-1 min-w-[120px] border-0 bg-transparent focus:ring-0 focus:outline-none text-xs"
+              className="flex-1 min-w-[120px] border-0 border-none bg-transparent focus:ring-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 text-xs"
             />
           </div>
           {keywordState.showSuggestions && keywordState.suggestions.length > 0 && (
