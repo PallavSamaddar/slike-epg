@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -120,6 +120,9 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   const [dedupeWindow, setDedupeWindow] = useState('none');
   const [fallbackStrategy, setFallbackStrategy] = useState('loop');
   const [ordering, setOrdering] = useState('manual');
+  
+  // Refs
+  const searchResultsRef = useRef<HTMLDivElement>(null);
   
   // Basic mode state
   const [searchQuery, setSearchQuery] = useState('');
@@ -724,6 +727,14 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       // Announce results
       const resultCount = filteredAssets.length;
       toast.success(`Basic filters applied. ${resultCount} items found.`);
+      
+      // Scroll to Search Results section
+      if (searchResultsRef.current) {
+        searchResultsRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'start' 
+        });
+      }
       
     } catch (error) {
       toast.error('Failed to apply filters');
@@ -2500,7 +2511,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                 {/* Search Results and Playlist Order - 2-column layout */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Search Results - Left column */}
-                  <div>
+                  <div ref={searchResultsRef}>
                   <Card className="bg-white border border-[#E6E8EF] rounded-[14px] shadow-[0_2px_8px_rgba(0,0,0,0.04)] p-4 md:p-5">
                     <div className="space-y-4">
                       <h3 className="text-sm font-semibold text-[#1F2937] mb-3">Search Results</h3>
