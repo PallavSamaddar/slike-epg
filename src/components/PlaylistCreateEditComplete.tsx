@@ -177,6 +177,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
   const [shufflePlaylist, setShufflePlaylist] = useState(false);
   const [hlsUrl, setHlsUrl] = useState(false);
   const [mp4Url, setMp4Url] = useState('1080p');
+  const [recoFeed, setRecoFeed] = useState(false);
   const [recommendation, setRecommendation] = useState(false);
 
   // RHS Settings tracking
@@ -192,6 +193,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     shufflePlaylist: false,
     hlsUrl: false,
     mp4Url: '1080p',
+    recoFeed: false,
     recommendation: false,
     playlistItems: [] as PlaylistItem[],
     previewResults: [] as PlaylistItem[],
@@ -214,6 +216,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     shufflePlaylist,
     hlsUrl,
     mp4Url,
+    recoFeed,
       recommendation,
       playlistItems: [...playlistItems],
       previewResults: [...previewResults],
@@ -664,6 +667,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
       hlsUrl !== lastSavedSettings.hlsUrl ||
       mp4Url !== lastSavedSettings.mp4Url ||
+      recoFeed !== lastSavedSettings.recoFeed ||
       recommendation !== lastSavedSettings.recommendation ||
       !arraysEqual(playlistItems, lastSavedSettings.playlistItems, 'id') ||
       !arraysEqual(previewResults, lastSavedSettings.previewResults, 'id') ||
@@ -672,7 +676,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
     setHasUnsavedSettings(hasChanges);
   }, [
     playlistName, playlistDescription, isActive, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, 
-    shufflePlaylist, hlsUrl, mp4Url, recommendation, playlistItems, previewResults, pinnedAssets, lastSavedSettings
+    shufflePlaylist, hlsUrl, mp4Url, recoFeed, recommendation, playlistItems, previewResults, pinnedAssets, lastSavedSettings
   ]);
 
   // Update relative time every 60 seconds
@@ -789,6 +793,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       shufflePlaylist,
       hlsUrl,
       mp4Url,
+      recoFeed,
       recommendation,
       playlistItems: [...playlistItems],
       previewResults: [...previewResults],
@@ -1727,6 +1732,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
         shufflePlaylist,
         hlsUrl,
         mp4Url,
+        recoFeed,
         recommendation,
         playlistItems: [...playlistItems],
         previewResults: [...previewResults],
@@ -1770,10 +1776,11 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
       shufflePlaylist !== lastSavedSettings.shufflePlaylist ||
       hlsUrl !== lastSavedSettings.hlsUrl ||
       mp4Url !== lastSavedSettings.mp4Url ||
+      recoFeed !== lastSavedSettings.recoFeed ||
       recommendation !== lastSavedSettings.recommendation;
     
     setHasUnsavedFilters(hasFilterChanges || hasKeywordChanges || hasSettingsChanges);
-  }, [filterGroups, filterKeywordStates, lastSavedFilters, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, shufflePlaylist, hlsUrl, mp4Url, recommendation, lastSavedSettings]);
+  }, [filterGroups, filterKeywordStates, lastSavedFilters, sortBy, duration, refreshFrequency, duplicateChecker, shortsPlaylist, shufflePlaylist, hlsUrl, mp4Url, recoFeed, recommendation, lastSavedSettings]);
 
   // Track Basic tab filter changes
   useEffect(() => {
@@ -2918,6 +2925,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
             setHlsUrl={setHlsUrl}
             mp4Url={mp4Url}
             setMp4Url={setMp4Url}
+            recoFeed={recoFeed}
+            setRecoFeed={setRecoFeed}
             recommendation={recommendation}
             setRecommendation={setRecommendation}
             hasUnsavedSettings={hasUnsavedSettings}
@@ -2966,6 +2975,8 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                     setHlsUrl={setHlsUrl}
                     mp4Url={mp4Url}
                     setMp4Url={setMp4Url}
+                    recoFeed={recoFeed}
+                    setRecoFeed={setRecoFeed}
                     recommendation={recommendation}
                     setRecommendation={setRecommendation}
                     hasUnsavedSettings={hasUnsavedSettings}
@@ -3007,6 +3018,8 @@ const RHSSettingsPanel = ({
   setHlsUrl, 
   mp4Url, 
   setMp4Url, 
+  recoFeed, 
+  setRecoFeed, 
   recommendation, 
   setRecommendation, 
   hasUnsavedSettings, 
@@ -3036,6 +3049,8 @@ const RHSSettingsPanel = ({
   setHlsUrl: (value: boolean) => void;
   mp4Url: string;
   setMp4Url: (value: string) => void;
+  recoFeed: boolean;
+  setRecoFeed: (value: boolean) => void;
   recommendation: boolean;
   setRecommendation: (value: boolean) => void;
   hasUnsavedSettings: boolean;
@@ -3285,7 +3300,7 @@ const RHSSettingsPanel = ({
           </div>
         </div>
 
-        {/* Row 4: Delivery - Independent HLS and MP4 */}
+        {/* Row 4: Delivery - HLS URL and Reco Feed */}
         <div className="delivery-group grid grid-cols-2 gap-4 md:grid-cols-2 sm:grid-cols-1">
           {/* HLS URL */}
           <div className="field field--hls">
@@ -3300,13 +3315,29 @@ const RHSSettingsPanel = ({
             </div>
           </div>
 
+          {/* Reco Feed */}
+          <div className="field field--reco-feed">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="recoFeed" className="text-sm font-semibold text-[#1F2937]">Reco Feed</Label>
+            <Switch
+                id="recoFeed"
+              checked={recoFeed}
+              onCheckedChange={setRecoFeed}
+                className="data-[state=checked]:bg-[#3B82F6] data-[state=unchecked]:bg-[#F2F4F8] data-[state=unchecked]:border-[#D7DDE8] data-[state=unchecked]:shadow-[0_1px_2px_rgba(0,0,0,0.06)]"
+            />
+            </div>
+          </div>
+        </div>
+
+        {/* Row 5: MP4 URL - Same width as Sort By */}
+        <div className="grid grid-cols-2 gap-4">
           {/* MP4 URL */}
           <div className="field field--mp4">
-            <Label htmlFor="mp4Url" className="block text-sm font-semibold text-[#1F2937] mb-2">MP4 URL</Label>
+            <Label htmlFor="mp4Url" className="text-sm font-semibold text-[#1F2937]">MP4 URL</Label>
               <Select value={mp4Url} onValueChange={setMp4Url}>
               <SelectTrigger 
                 id="mp4Url"
-                className="w-full bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
+                className="mt-1 bg-white border-[#E6E8EF] text-[#1F2937] focus:ring-2 focus:ring-[#3B82F6] focus:ring-offset-2"
               >
                 <SelectValue placeholder="Select quality" />
                 </SelectTrigger>
@@ -3317,6 +3348,8 @@ const RHSSettingsPanel = ({
                 </SelectContent>
               </Select>
           </div>
+          {/* Empty column to maintain grid layout */}
+          <div></div>
         </div>
       </div>
     </div>
