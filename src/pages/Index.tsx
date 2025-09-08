@@ -63,15 +63,6 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <div style={{ padding: '10px', background: '#e8f5e8', border: '2px solid green', margin: '10px' }}>
-        <h3>Navigation Test</h3>
-        <a href="/test" style={{ marginRight: '10px', color: 'blue' }}>Test Route</a>
-        <a href="/simple" style={{ marginRight: '10px', color: 'blue' }}>Simple Test</a>
-        <a href="/playlists" style={{ marginRight: '10px', color: 'blue' }}>Playlists</a>
-        <a href="/playlists/new" style={{ marginRight: '10px', color: 'blue' }}>Create Playlist (/playlists/new)</a>
-        <a href="/playlist-create" style={{ marginRight: '10px', color: 'blue' }}>Create Playlist (/playlist-create)</a>
-        <a href="/playlists/123/edit" style={{ marginRight: '10px', color: 'blue' }}>Edit Playlist</a>
-      </div>
       <div className="overflow-auto">
         <Suspense fallback={<div className="p-6 text-sm text-muted-foreground">Loading…</div>}>
           {renderActiveView()}
