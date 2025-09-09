@@ -374,7 +374,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="page-heading text-slate-800 font-semibold">Fast Channels</h1>
-            <p className="text-muted-foreground">Real-time monitoring and control of live streaming channels</p>
+            <p className="text-muted-foreground">Real-time Fast Channel Monitoring control</p>
           </div>
           <div>
             <Button variant="broadcast" onClick={() => setIsCreateOpen(true)}>
