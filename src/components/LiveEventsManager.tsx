@@ -523,8 +523,8 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                             <p className="text-xs text-muted-foreground">Last heartbeat: {source.lastHeartbeat}</p>
                             {/* Action buttons */}
                             <div className="space-y-2">
-                              {/* Details and EPG - Same row */}
-                              <div className="flex gap-2">
+                              {/* Details, EPG, and Channel EPG - Same row */}
+                              <div className="flex gap-1">
                                 <Button
                                   variant="control"
                                   size="sm"
@@ -556,6 +556,22 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                 >
                                   <Calendar className="h-3 w-3 mr-1" />
                                   EPG
+                                </Button>
+                                <Button
+                                  variant="control"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    try {
+                                      localStorage.setItem('activeChannelName', source.name);
+                                      localStorage.setItem('activeChannelStudioId', source.studioId);
+                                    } catch {}
+                                    window.location.href = '/channel-epg';
+                                  }}
+                                  className="flex-1 text-xs"
+                                >
+                                  <Calendar className="h-3 w-3 mr-1" />
+                                  Channel EPG
                                 </Button>
                               </div>
                             </div>
@@ -655,8 +671,8 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
 
                         {/* Action buttons */}
                         <div className="space-y-2">
-                          {/* Details and EPG - Same row */}
-                          <div className="flex gap-2">
+                          {/* Details, EPG, and Channel EPG - Same row */}
+                          <div className="flex gap-1">
                             <Button
                               variant="control"
                               size="sm"
@@ -688,6 +704,22 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                             >
                               <Calendar className="h-3 w-3 mr-1" />
                               EPG
+                            </Button>
+                            <Button
+                              variant="control"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                try {
+                                  localStorage.setItem('activeChannelName', source.name);
+                                  localStorage.setItem('activeChannelStudioId', source.studioId);
+                                } catch {}
+                                window.location.href = '/channel-epg';
+                              }}
+                              className="flex-1 text-xs"
+                            >
+                              <Calendar className="h-3 w-3 mr-1" />
+                              Channel EPG
                             </Button>
                           </div>
                         </div>
