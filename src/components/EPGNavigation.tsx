@@ -30,11 +30,11 @@ export const EPGNavigation = ({ activeView, onViewChange }: NavigationProps) => 
       description: 'Program scheduling grid'
     },
     {
-      id: 'preview',
-      label: 'EPG Preview',
+      id: 'epg-preview',
+      label: 'EPG Management',
       icon: FileText,
       badge: null,
-      description: 'Preview and export'
+      description: 'Schedule, preview and export'
     }
   ];
 

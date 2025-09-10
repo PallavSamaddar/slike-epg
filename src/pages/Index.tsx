@@ -2,7 +2,6 @@ import { useEffect, useState, Suspense, lazy } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 const EPGScheduler = lazy(() => import('@/components/EPGScheduler').then(m => ({ default: m.EPGScheduler })));
 const LiveEventsManager = lazy(() => import('@/components/LiveEventsManager').then(m => ({ default: m.LiveEventsManager })));
-const EPGPreview = lazy(() => import('@/components/EPGPreview').then(m => ({ default: m.EPGPreview })));
 
 const Index = () => {
   const [activeView, setActiveView] = useState('dashboard');
@@ -32,6 +31,12 @@ const Index = () => {
       return;
     }
     
+    // Handle EPG Preview navigation
+    if (nextView === 'epg-preview') {
+      navigate('/epg-preview');
+      return;
+    }
+    
     setActiveView(nextView);
   };
 
@@ -53,9 +58,7 @@ const Index = () => {
         return <LiveEventsManager onNavigate={handleViewChange} />;
       case 'scheduler':
         return <EPGScheduler onNavigate={handleViewChange} />;
-      case 'preview':
-        return <EPGPreview onNavigate={handleViewChange} />;
-      // removed obsolete routes
+      // EPG Preview is now a separate route
       default:
         return <LiveEventsManager onNavigate={handleViewChange} />;
     }
