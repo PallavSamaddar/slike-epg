@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, FC, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye, AlertTriangle } from 'lucide-react';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
@@ -113,6 +114,8 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSelectDateCalendarOpen, setIsSelectDateCalendarOpen] = useState(false);
+  const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 });
+  const calendarButtonRef = useRef<HTMLButtonElement>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [draftChannel, setDraftChannel] = useState<null | { id: string; name: string; description?: string; posterDataUrl?: string; resolution?: string; primaryGenre?: string | null; language?: string | null }>(null);
   const isDraftMode = !!draftChannel;
@@ -153,6 +156,32 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
     };
   }, [isSelectDateCalendarOpen]);
 
+  // Update calendar position on scroll or resize
+  useEffect(() => {
+    const updatePosition = () => {
+      if (isSelectDateCalendarOpen) {
+        const tabElement = document.querySelector('[data-tab-id="select-date"]');
+        if (tabElement) {
+          const rect = tabElement.getBoundingClientRect();
+          setCalendarPosition({
+            top: rect.bottom + window.scrollY + 4,
+            left: rect.left + window.scrollX
+          });
+        }
+      }
+    };
+
+    if (isSelectDateCalendarOpen) {
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
+  }, [isSelectDateCalendarOpen]);
+
   // Handle tab switching
   const handleTabChange = (tabId: string) => {
     setActiveTabId(tabId);
@@ -178,6 +207,19 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
         break;
       case 'select-date':
         // Toggle the calendar dropdown when "Select Date" tab is clicked
+        if (!isSelectDateCalendarOpen) {
+          // Calculate position when opening
+          setTimeout(() => {
+            const tabElement = document.querySelector('[data-tab-id="select-date"]');
+            if (tabElement) {
+              const rect = tabElement.getBoundingClientRect();
+              setCalendarPosition({
+                top: rect.bottom + window.scrollY + 4,
+                left: rect.left + window.scrollX
+              });
+            }
+          }, 0);
+        }
         setIsSelectDateCalendarOpen(!isSelectDateCalendarOpen);
         // Set the view to schedule-view with daily mode for the selected date
         setActiveTab('schedule-view');
@@ -574,9 +616,78 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
     <div className="min-h-screen bg-background text-foreground p-6">
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         <div className="lg:col-span-3">
-          <PageHeader title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - Channel EPG`} fullWidth />
-          <div className="mb-2 border-b border-gray-200">
-              <div className="flex items-center justify-between">
+          <PageHeader 
+            title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - Channel EPG`} 
+            fullWidth 
+            rightContent={
+              <div className="flex items-center gap-2">
+                {/* Add Program Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  onClick={() =>
+                    setEditingProgram({
+                      id: `new-${Date.now()}`,
+                      time: `${new Date().toISOString().split("T")[0]}T12:00`,
+                      title: "",
+                      type: "VOD",
+                      duration: 60,
+                      geoZone: "Global",
+                      status: "scheduled",
+                      genre: "",
+                      playlist: "Default Playlist",
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Program
+                </Button>
+
+                {/* Export Settings Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsPreviewModalOpen(true)}
+                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Export Settings
+                </Button>
+
+                {/* Generate 14 days EPG Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSaveEpg}
+                          disabled={isSaving || !isSaveEpgEnabled()}
+                          className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                        >
+                          {isSaving ? (
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Database className="h-4 w-4 mr-2" />
+                          )}
+                          Generate 14 days EPG
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!isSaveEpgEnabled() && getSaveEpgTooltipMessage() && (
+                      <TooltipContent>
+                        <p>{getSaveEpgTooltipMessage()}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            }
+          />
+          <div className="mb-2 border-b border-gray-200 relative">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-1 overflow-x-auto">
                 {tabs.map((tab) => (
                   <div
@@ -596,28 +707,37 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
                   </div>
                 ))}
               </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Button variant="control" size="sm" onClick={handleSaveEpg} disabled={isSaving || !isSaveEpgEnabled()} className="shrink-0">
-                        {isSaving ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Database className="h-4 w-4 mr-2" />
-                        )}
-                        Save EPG
-                      </Button>
-                    </span>
-                  </TooltipTrigger>
-                  {(!isSaveEpgEnabled() && getSaveEpgTooltipMessage()) && (
-                    <TooltipContent>
-                      <p>{getSaveEpgTooltipMessage()}</p>
-                    </TooltipContent>
-                  )}
-                </Tooltip>
-              </TooltipProvider>
             </div>
+            
+            {/* Calendar Dropdown for Date Selection */}
+            {isSelectDateCalendarOpen && createPortal(
+              <div 
+                className="fixed z-[9999] p-3 bg-white rounded-lg border border-gray-200 shadow-lg calendar-dropdown w-80" 
+                style={{ 
+                  pointerEvents: 'auto',
+                  top: `${calendarPosition.top}px`,
+                  left: `${calendarPosition.left}px`
+                }}
+              >
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(date) => {
+                    if (date) {
+                      setSelectedDate(date);
+                      setIsSelectDateCalendarOpen(false);
+                    }
+                  }}
+                  className="rounded-md border"
+                  classNames={{
+                    day_selected:
+                      "bg-broadcast-blue text-white hover:bg-broadcast-blue hover:text-white",
+                    day_today: "bg-slate-600 text-white",
+                  }}
+                />
+              </div>,
+              document.body
+            )}
           </div>
           <div className="h-[calc(100vh-100px)] overflow-y-auto">
             <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">

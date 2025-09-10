@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, FC, useMemo, useCallback } from "react";
+import { createPortal } from "react-dom";
 import {
   Download,
   FileText,
@@ -224,6 +225,8 @@ export const EPGPreview = ({
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSelectDateCalendarOpen, setIsSelectDateCalendarOpen] =
     useState(false);
+  const [calendarPosition, setCalendarPosition] = useState({ top: 0, left: 0 });
+  const calendarButtonRef = useRef<HTMLButtonElement>(null);
   const [isExportSettingsModalOpen, setIsExportSettingsModalOpen] =
     useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -259,7 +262,8 @@ export const EPGPreview = ({
         // Check if click is outside the calendar dropdown
         if (
           !target.closest(".calendar-dropdown") &&
-          !target.closest('[data-tab-id="select-date"]')
+          !target.closest('[data-tab-id="select-date"]') &&
+          !target.closest('button[data-calendar-trigger]')
         ) {
           setIsSelectDateCalendarOpen(false);
         }
@@ -270,6 +274,29 @@ export const EPGPreview = ({
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, [isSelectDateCalendarOpen]);
+
+  // Update calendar position on scroll or resize
+  useEffect(() => {
+    const updatePosition = () => {
+      if (isSelectDateCalendarOpen && calendarButtonRef.current) {
+        const rect = calendarButtonRef.current.getBoundingClientRect();
+        setCalendarPosition({
+          top: rect.bottom + window.scrollY + 4,
+          left: rect.left + window.scrollX
+        });
+      }
+    };
+
+    if (isSelectDateCalendarOpen) {
+      window.addEventListener('scroll', updatePosition);
+      window.addEventListener('resize', updatePosition);
+      
+      return () => {
+        window.removeEventListener('scroll', updatePosition);
+        window.removeEventListener('resize', updatePosition);
+      };
+    }
   }, [isSelectDateCalendarOpen]);
 
   // Handle tab switching
@@ -1389,9 +1416,10 @@ export const EPGPreview = ({
             Cancel
           </Button>
           <Button
-            variant="broadcast"
+            variant="outline"
             onClick={handleAdd}
             disabled={!isFormValid}
+            className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
           >
             {programToEdit ? "Save Changes" : "Add to Schedule"}
           </Button>
@@ -1657,14 +1685,23 @@ export const EPGPreview = ({
             {/* Sub-navigation for Preview Tab */}
             <div className="mb-4 border-b border-gray-200">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 relative">
                   <Button
+                    ref={calendarButtonRef}
                     variant="ghost"
                     size="sm"
-                    onClick={() =>
-                      setIsSelectDateCalendarOpen(!isSelectDateCalendarOpen)
-                    }
+                    onClick={() => {
+                      if (calendarButtonRef.current) {
+                        const rect = calendarButtonRef.current.getBoundingClientRect();
+                        setCalendarPosition({
+                          top: rect.bottom + window.scrollY + 4,
+                          left: rect.left + window.scrollX
+                        });
+                      }
+                      setIsSelectDateCalendarOpen(!isSelectDateCalendarOpen);
+                    }}
                     className="flex items-center gap-2"
+                    data-calendar-trigger
                   >
                     <CalendarIcon className="h-4 w-4" />
                     {selectedDate.toLocaleDateString("en-US", {
@@ -1678,10 +1715,11 @@ export const EPGPreview = ({
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
-                    variant="control"
+                    variant="outline"
                     size="sm"
                     onClick={handleSaveEpg}
                     disabled={isSaving || !isSaveEpgEnabled()}
+                    className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
                   >
                     {isSaving ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -1695,8 +1733,15 @@ export const EPGPreview = ({
             </div>
 
             {/* Calendar Dropdown for Date Selection */}
-            {isSelectDateCalendarOpen && (
-              <div className="mb-4 p-3 bg-white rounded-lg border border-gray-200 shadow-lg">
+            {isSelectDateCalendarOpen && createPortal(
+              <div 
+                className="fixed z-[9999] p-3 bg-white rounded-lg border border-gray-200 shadow-lg calendar-dropdown w-80" 
+                style={{ 
+                  pointerEvents: 'auto',
+                  top: `${calendarPosition.top}px`,
+                  left: `${calendarPosition.left}px`
+                }}
+              >
                 <Calendar
                   mode="single"
                   selected={selectedDate}
@@ -1713,7 +1758,8 @@ export const EPGPreview = ({
                     day_today: "bg-slate-600 text-white",
                   }}
                 />
-              </div>
+              </div>,
+              document.body
             )}
 
             {/* EPG Content */}
@@ -1871,6 +1917,72 @@ export const EPGPreview = ({
                 localStorage.getItem("activeChannelName")) ||
               "TOI Global"
             } - EPG Management`}
+            rightContent={
+              <div className="flex items-center gap-2">
+                {/* Add Program Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  onClick={() =>
+                    setEditingProgram({
+                      id: `new-${Date.now()}`,
+                      time: `${new Date().toISOString().split("T")[0]}T12:00`,
+                      title: "",
+                      type: "VOD",
+                      duration: 60,
+                      geoZone: "Global",
+                      status: "scheduled",
+                      genre: "",
+                      playlist: "Default Playlist",
+                    })
+                  }
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Program
+                </Button>
+
+                {/* Export Settings Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsExportSettingsModalOpen(true)}
+                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Export Settings
+                </Button>
+
+                {/* Generate 14 days EPG Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleSaveEpg}
+                          disabled={isSaving || !isSaveEpgEnabled()}
+                          className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                        >
+                          {isSaving ? (
+                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                          ) : (
+                            <Database className="h-4 w-4 mr-2" />
+                          )}
+                          Generate 14 days EPG
+                        </Button>
+                      </span>
+                    </TooltipTrigger>
+                    {!isSaveEpgEnabled() && getSaveEpgTooltipMessage() && (
+                      <TooltipContent>
+                        <p>{getSaveEpgTooltipMessage()}</p>
+                      </TooltipContent>
+                    )}
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            }
             fullWidth
           />
           {/* Draft Banner */}
@@ -1905,70 +2017,6 @@ export const EPGPreview = ({
                     )}
                   </div>
                 ))}
-              </div>
-              <div className="flex items-center gap-2">
-                {/* Add Program Button */}
-                <Button
-                  variant="playlist"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={() =>
-                    setEditingProgram({
-                      id: `new-${Date.now()}`,
-                      time: `${new Date().toISOString().split("T")[0]}T12:00`,
-                      title: "",
-                      type: "VOD",
-                      duration: 60,
-                      geoZone: "Global",
-                      status: "scheduled",
-                      genre: "",
-                      playlist: "Default Playlist",
-                    })
-                  }
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Program
-                </Button>
-
-                {/* Export Settings Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setIsExportSettingsModalOpen(true)}
-                  className="shrink-0"
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Export Settings
-                </Button>
-
-                {/* Save EPG Button - Extreme right with validations */}
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span>
-                        <Button
-                          variant="control"
-                          size="sm"
-                          onClick={handleSaveEpg}
-                          disabled={isSaving || !isSaveEpgEnabled()}
-                          className="shrink-0"
-                        >
-                          {isSaving ? (
-                            <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                          ) : (
-                            <Database className="h-4 w-4 mr-2" />
-                          )}
-                          Save EPG
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    {!isSaveEpgEnabled() && getSaveEpgTooltipMessage() && (
-                      <TooltipContent>
-                        <p>{getSaveEpgTooltipMessage()}</p>
-                      </TooltipContent>
-                    )}
-                  </Tooltip>
-                </TooltipProvider>
               </div>
             </div>
           </div>
