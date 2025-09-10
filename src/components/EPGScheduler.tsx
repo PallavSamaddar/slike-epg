@@ -5,7 +5,6 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { Button } from '@/components/ui/button';
-import PageHeader from '@/components/PageHeader';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -311,6 +310,65 @@ const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId, 
   );
 });
 
+// Sortable Video Item Component for Program Settings Modal
+const SortableVideoItem = ({ video, index }: { video: Video; index: number }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: video.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 p-3 bg-control-surface border border-border rounded-lg hover:bg-control-surface/80 transition-colors"
+    >
+      <div className="flex items-center gap-2">
+        <div className="w-6 h-6 bg-broadcast-blue text-white rounded-full flex items-center justify-center text-xs font-medium">
+          {index}
+        </div>
+        <div
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing p-1 hover:bg-black/10 rounded"
+        >
+          <GripVertical className="h-4 w-4 text-muted-foreground" />
+        </div>
+      </div>
+      
+      <div className="flex-1 min-w-0">
+        <div className="font-medium text-sm text-foreground truncate">
+          {video.name}
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Duration: {video.duration}m
+        </div>
+      </div>
+      
+      <div className="flex items-center gap-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          onClick={() => {/* Preview functionality */}}
+        >
+          <Eye className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
+
 export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
   const { toast } = useToast();
   const formatLocalDateKey = (d: Date) => {
@@ -338,6 +396,12 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   const [hasScheduleChanges, setHasScheduleChanges] = useState(false);
   // Map of ISO date -> array of ad markers for that date
   const [adMarkersByDate, setAdMarkersByDate] = useState<Record<string, Array<{ time: string; campaign: string; duration: string; type?: string }>>>({});
+  // Program settings modal state
+  const [isProgramSettingsOpen, setIsProgramSettingsOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<ScheduleBlock | null>(null);
+  const [programVideos, setProgramVideos] = useState<Video[]>([]);
+  const [originalProgramVideos, setOriginalProgramVideos] = useState<Video[]>([]);
+  const [hasProgramChanges, setHasProgramChanges] = useState(false);
   
   const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
@@ -674,7 +738,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           // Add video to target block
           const targetBlock = newBlocks.find(b => b.id === targetBlockId);
           if (targetBlock) {
-            targetBlock.videos = [...targetBlock.videos, video];
+            targetBlock.videos = [...targetBlock.videos, { ...video, id: `${video.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }];
           }
           
           return newBlocks;
@@ -741,6 +805,56 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           : block
       )
     );
+  };
+
+  // Program settings modal functions
+  const openProgramSettings = (block: ScheduleBlock) => {
+    setSelectedProgram(block);
+    const videos = [...block.videos];
+    setProgramVideos(videos);
+    setOriginalProgramVideos(videos);
+    setHasProgramChanges(false);
+    setIsProgramSettingsOpen(true);
+  };
+
+  const closeProgramSettings = () => {
+    setIsProgramSettingsOpen(false);
+    setSelectedProgram(null);
+    setProgramVideos([]);
+    setOriginalProgramVideos([]);
+    setHasProgramChanges(false);
+  };
+
+  const saveProgramVideos = () => {
+    if (selectedProgram) {
+      setScheduleBlocks(prev => 
+        prev.map(block => 
+          block.id === selectedProgram.id 
+            ? { ...block, videos: programVideos }
+            : block
+        )
+      );
+      setHasScheduleChanges(true);
+    }
+    closeProgramSettings();
+  };
+
+  const handleVideoReorder = (activeId: string, overId: string) => {
+    if (activeId !== overId) {
+      setProgramVideos(prev => {
+        const oldIndex = prev.findIndex(v => v.id === activeId);
+        const newIndex = prev.findIndex(v => v.id === overId);
+        const newVideos = arrayMove(prev, oldIndex, newIndex);
+        
+        // Check if the order has changed
+        const hasChanged = newVideos.some((video, index) => 
+          originalProgramVideos[index]?.id !== video.id
+        );
+        setHasProgramChanges(hasChanged);
+        
+        return newVideos;
+      });
+    }
   };
 
   const addGenreToBlock = (blockId: string, genre: string) => {
@@ -984,7 +1098,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
   return (
     <div className="min-h-screen bg-background text-foreground p-6">
-      <PageHeader title={`${(typeof window !== 'undefined' && localStorage.getItem('activeChannelName')) || 'TOI Global'} - Channel Detail`} />
       <div className="grid grid-cols-10 gap-6 mb-6">
         <div className="col-span-10">
           <div>
@@ -1019,23 +1132,16 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                   className="bg-control-surface border-border text-foreground w-40"
                 />
                 <Button
-                  variant="control"
+                  variant="outline"
                   size="sm"
                   onClick={() => setIsManageAdsModalOpen(true)}
+                  className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Ads
                 </Button>
                 <Button
-                  variant="control"
-                  size="sm"
-                  onClick={handleNavigateToEPGPreview}
-                >
-                  <Calendar className="h-4 w-4 mr-2" />
-                  EPG
-                </Button>
-                <Button
-                  variant="control"
+                  variant="outline"
                   size="sm"
                   disabled={!hasScheduleChanges}
                   onClick={() => {
@@ -1045,6 +1151,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                     });
                     setHasScheduleChanges(false);
                   }}
+                  className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save
@@ -1121,7 +1228,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                         setScheduleBlocks(prev =>
                                           prev.map(block =>
                                             block.id === targetBlock.id
-                                              ? { ...block, videos: [...block.videos, draggedData.video] }
+                                              ? { ...block, videos: [...block.videos, { ...draggedData.video, id: `${draggedData.video.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }] }
                                               : block
                                           )
                                         );
@@ -1153,7 +1260,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                           setScheduleBlocks(prev =>
                                             prev.map(block =>
                                               block.id === targetBlock.id
-                                                ? { ...block, videos: [...block.videos, draggedData.video] }
+                                                ? { ...block, videos: [...block.videos, { ...draggedData.video, id: `${draggedData.video.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}` }] }
                                                 : block
                                             )
                                           );
@@ -1173,7 +1280,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                     <div
                                       key={`${day.key}-${block.id}`}
                                       className={`p-3 rounded cursor-pointer transition-colors duration-200 hover:shadow-lg hover:scale-[1.02] relative z-10 ${getBlockColorForDay(day.key, block.id)} ${(highlightedKey === day.key && bi === 0) ? 'ring-2 ring-broadcast-blue' : ''}`}
-                                      style={{ minHeight: `${Math.max(120, 80 + (block.videos.length * 32))}px` }}
+                                      style={{ minHeight: `${Math.max(120, block.duration * 2)}px` }}
                                       data-block-id={block.id}
                                     >
                                     <div className="flex items-center justify-between mb-2">
@@ -1247,6 +1354,13 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                       </div>
                                       <div className="flex items-center gap-1">
                                         <Badge className={`text-xs ${isCurrentBlock(day.key, block.id) ? 'bg-white/20 text-white' : 'bg-black/10 text-black'}`}>{block.type}</Badge>
+                                        <button
+                                          onClick={() => openProgramSettings(block)}
+                                          className={`p-1 rounded hover:bg-black/20 transition-colors ${isCurrentBlock(day.key, block.id) ? 'text-white' : 'text-black'}`}
+                                          title="Program Settings"
+                                        >
+                                          <Settings className="h-3 w-3" />
+                                        </button>
                                         {block.status === 'live' && (
                                           <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
                                         )}
@@ -1256,7 +1370,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                     <div className="flex gap-3">
                                       <div className="flex-1">
                                         <SortableContext items={block.videos.map(v => `${day.key}-${block.id}-${v.id}`)} strategy={verticalListSortingStrategy}>
-                                          <div className="space-y-1">
+                                          <div className="space-y-1 max-h-32 overflow-y-auto">
                                             {block.videos.map(video => (
                                               <DraggableVideo
                                                 key={video.id}
@@ -1298,8 +1412,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           </Card>
         </div>
         
-        <div className="col-span-2">
-          <div className="fixed right-8 top-0 w-[279px] max-h-screen overflow-y-auto space-y-4 z-40">
+        <div className="col-span-2 self-start mt-2">
           {/* Channel Preview moved into floating sidebar */}
           <Card className="bg-card-dark border-border w-full">
             <CardContent className="pt-4">
@@ -1532,7 +1645,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
           {/* Actions card removed per request */}
         </div>
-        </div>
       </div>
       <Toaster />
 
@@ -1542,6 +1654,64 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         onClose={() => setIsManageAdsModalOpen(false)}
         onSave={handleManageAdsSave}
       />
+
+      {/* Program Settings Modal */}
+      <Dialog open={isProgramSettingsOpen} onOpenChange={setIsProgramSettingsOpen}>
+        <DialogContent className="bg-card-dark border-border max-w-2xl h-[80vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
+            <DialogTitle className="text-foreground text-lg">
+              {selectedProgram?.title} - Program Settings
+            </DialogTitle>
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <span>Total Videos: {programVideos.length}</span>
+              <span>Total Duration: {programVideos.reduce((total, video) => total + video.duration, 0)}m</span>
+              <span>Playlist: Default Playlist</span>
+            </div>
+          </DialogHeader>
+          
+          <div className="flex-1 overflow-y-auto min-h-0">
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => {
+                const { active, over } = event;
+                if (active && over && active.id !== over.id) {
+                  handleVideoReorder(active.id as string, over.id as string);
+                }
+              }}
+            >
+              <SortableContext items={programVideos.map(v => v.id)} strategy={verticalListSortingStrategy}>
+                <div className="space-y-2 p-1">
+                  {programVideos.map((video, index) => (
+                    <SortableVideoItem
+                      key={video.id}
+                      video={video}
+                      index={index + 1}
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
+          </div>
+
+          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t border-border bg-card-dark">
+            <Button
+              variant="ghost"
+              onClick={closeProgramSettings}
+              className="text-gray-700 hover:bg-gray-100 hover:text-gray-700"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={saveProgramVideos}
+              disabled={!hasProgramChanges}
+              className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+            >
+              Save Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
