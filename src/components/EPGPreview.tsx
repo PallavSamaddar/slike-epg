@@ -552,6 +552,8 @@ export const EPGPreview = ({
     const dayItems = mockEPGData.filter((p) => p.time.startsWith(dayStr));
     try {
       localStorage.setItem(key, JSON.stringify(dayItems));
+      // Dispatch custom event to notify Scheduler tab of the update
+      window.dispatchEvent(new CustomEvent('previewDataUpdated'));
     } catch {
       // Error persisting to localStorage
     }
@@ -601,9 +603,59 @@ export const EPGPreview = ({
           return items;
         }
 
-        return arrayMove(items, oldIndex, newIndex);
+        // Reorder the items
+        const reorderedItems = arrayMove(items, oldIndex, newIndex);
+        
+        // Auto-update times based on new positions for scheduled items
+        const updatedItems = reorderedItems.map((item, index) => {
+          if (item.status === "scheduled") {
+            // Calculate new time based on position in the daily programs list
+            // We need to find the position among all programs for this day
+            const dayStr = item.time.split('T')[0];
+            const dailyPrograms = reorderedItems.filter(p => p.time.startsWith(dayStr));
+            const dailyIndex = dailyPrograms.findIndex(dailyItem => dailyItem.id === item.id);
+            
+            if (dailyIndex !== -1) {
+              // Calculate time based on position (each program is 60 minutes)
+              // Start from 00:00 and add 60 minutes for each program
+              const totalMinutes = dailyIndex * 60;
+              const newHour = Math.floor(totalMinutes / 60);
+              const newMinute = totalMinutes % 60;
+              const timeString = `${newHour.toString().padStart(2, '0')}:${newMinute.toString().padStart(2, '0')}`;
+              
+              // Update the time in the format "YYYY-MM-DDTHH:MM"
+              const updatedItem = {
+                ...item,
+                time: `${dayStr}T${timeString}`
+              };
+              
+              // Debug log to verify time updates
+              console.log(`Updated program "${item.title}" time from ${item.time.split('T')[1]} to ${timeString}`);
+              
+              return updatedItem;
+            }
+          }
+          return item;
+        });
+
+        return updatedItems;
       });
       setHasUnsavedChanges(true);
+      
+      // Immediately sync to Scheduler tab by saving to localStorage
+      // Use setTimeout to ensure state is updated before saving
+      setTimeout(() => {
+        const today = new Date();
+        const todayStr = today.toISOString().split("T")[0];
+        const dayItems = mockEPGData.filter((p) => p.time.startsWith(todayStr));
+        try {
+          localStorage.setItem(`epg:preview:day:${todayStr}`, JSON.stringify(dayItems));
+          // Dispatch custom event to notify Scheduler tab of the update
+          window.dispatchEvent(new CustomEvent('previewDataUpdated'));
+        } catch {
+          // Error persisting to localStorage
+        }
+      }, 0);
     }
   };
 

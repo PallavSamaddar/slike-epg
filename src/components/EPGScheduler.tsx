@@ -17,6 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ManageAdsModal } from '@/components/ManageAdsModal';
+import { ProgramSettingsModal } from '@/components/ProgramSettingsModal';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Video {
@@ -310,64 +311,6 @@ const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId, 
   );
 });
 
-// Sortable Video Item Component for Program Settings Modal
-const SortableVideoItem = ({ video, index }: { video: Video; index: number }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: video.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className="flex items-center gap-3 p-3 bg-control-surface border border-border rounded-lg hover:bg-control-surface/80 transition-colors"
-    >
-      <div className="flex items-center gap-2">
-        <div className="w-6 h-6 bg-broadcast-blue text-white rounded-full flex items-center justify-center text-xs font-medium">
-          {index}
-        </div>
-        <div
-          {...attributes}
-          {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1 hover:bg-black/10 rounded"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </div>
-      </div>
-      
-      <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm text-foreground truncate">
-          {video.name}
-        </div>
-        <div className="text-xs text-muted-foreground">
-          Duration: {video.duration}m
-        </div>
-      </div>
-      
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="h-8 w-8 p-0"
-          onClick={() => {/* Preview functionality */}}
-        >
-          <Eye className="h-4 w-4" />
-        </Button>
-      </div>
-    </div>
-  );
-};
 
 export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => void }) => {
   const { toast } = useToast();
@@ -399,9 +342,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   // Program settings modal state
   const [isProgramSettingsOpen, setIsProgramSettingsOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<ScheduleBlock | null>(null);
-  const [programVideos, setProgramVideos] = useState<Video[]>([]);
-  const [originalProgramVideos, setOriginalProgramVideos] = useState<Video[]>([]);
   const [hasProgramChanges, setHasProgramChanges] = useState(false);
+  const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
   
   const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
   const [scheduleBlocks, setScheduleBlocks] = useState<ScheduleBlock[]>([
@@ -531,28 +473,58 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
   // Load saved day schedule from Preview, if present
   useEffect(() => {
-    try {
-      const key = `epg:preview:day:${selectedDate}`;
-      const raw = localStorage.getItem(key);
-      if (raw) {
-        const items: { id: string; time: string; title: string; type: 'VOD' | 'Event'; duration: number; status: string; genre: string; }[] = JSON.parse(raw);
-        // Map preview items to schedule blocks for the times that exist
-        setScheduleBlocks(prev => {
-          const byTime = new Map(prev.map(b => [b.time, b]));
-          items.forEach(item => {
-            const time = item.time.split('T')[1].slice(0,5);
-            const block = byTime.get(time);
-            if (block) {
-              block.title = item.title;
-              block.type = item.type;
-              block.status = item.status as any;
-              block.tags = [item.genre];
-            }
+    const loadPreviewData = () => {
+      try {
+        const key = `epg:preview:day:${selectedDate}`;
+        const raw = localStorage.getItem(key);
+        if (raw) {
+          const items: { id: string; time: string; title: string; type: 'VOD' | 'Event'; duration: number; status: string; genre: string; }[] = JSON.parse(raw);
+          console.log('Scheduler: Loading preview data:', items);
+          // Map preview items to schedule blocks for the times that exist
+          setScheduleBlocks(prev => {
+            const byTime = new Map(prev.map(b => [b.time, b]));
+            items.forEach(item => {
+              const time = item.time.split('T')[1].slice(0,5);
+              const block = byTime.get(time);
+              if (block) {
+                console.log(`Scheduler: Updating block at ${time} with title "${item.title}"`);
+                block.title = item.title;
+                block.type = item.type;
+                block.status = item.status as any;
+                block.tags = [item.genre];
+              }
+            });
+            return [...byTime.values()];
           });
-          return [...byTime.values()];
-        });
+        }
+      } catch (error) {
+        console.error('Error loading preview data:', error);
       }
-    } catch {}
+    };
+
+    // Load data on component mount and when selectedDate changes
+    loadPreviewData();
+
+    // Listen for localStorage changes to sync with Preview tab
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === `epg:preview:day:${selectedDate}` && e.newValue) {
+        loadPreviewData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+
+    // Also listen for custom events for same-tab updates
+    const handlePreviewUpdate = () => {
+      loadPreviewData();
+    };
+
+    window.addEventListener('previewDataUpdated', handlePreviewUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('previewDataUpdated', handlePreviewUpdate);
+    };
   }, [selectedDate]);
 
   const sensors = useSensors(
@@ -810,51 +782,47 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   // Program settings modal functions
   const openProgramSettings = (block: ScheduleBlock) => {
     setSelectedProgram(block);
-    const videos = [...block.videos];
-    setProgramVideos(videos);
-    setOriginalProgramVideos(videos);
     setHasProgramChanges(false);
     setIsProgramSettingsOpen(true);
   };
 
   const closeProgramSettings = () => {
+    if (hasProgramChanges) {
+      setShowUnsavedConfirm(true);
+    } else {
+      setIsProgramSettingsOpen(false);
+      setSelectedProgram(null);
+      setHasProgramChanges(false);
+    }
+  };
+
+  const handleUnsavedClose = () => {
+    setShowUnsavedConfirm(true);
+  };
+
+  const confirmDiscard = () => {
     setIsProgramSettingsOpen(false);
     setSelectedProgram(null);
-    setProgramVideos([]);
-    setOriginalProgramVideos([]);
     setHasProgramChanges(false);
+    setShowUnsavedConfirm(false);
   };
 
-  const saveProgramVideos = () => {
-    if (selectedProgram) {
-      setScheduleBlocks(prev => 
-        prev.map(block => 
-          block.id === selectedProgram.id 
-            ? { ...block, videos: programVideos }
-            : block
-        )
-      );
-      setHasScheduleChanges(true);
-    }
-    closeProgramSettings();
+  const cancelDiscard = () => {
+    setShowUnsavedConfirm(false);
   };
 
-  const handleVideoReorder = (activeId: string, overId: string) => {
-    if (activeId !== overId) {
-      setProgramVideos(prev => {
-        const oldIndex = prev.findIndex(v => v.id === activeId);
-        const newIndex = prev.findIndex(v => v.id === overId);
-        const newVideos = arrayMove(prev, oldIndex, newIndex);
-        
-        // Check if the order has changed
-        const hasChanged = newVideos.some((video, index) => 
-          originalProgramVideos[index]?.id !== video.id
-        );
-        setHasProgramChanges(hasChanged);
-        
-        return newVideos;
-      });
-    }
+  const saveProgramSettings = (program: ScheduleBlock, videos: Video[]) => {
+    setScheduleBlocks(prev => 
+      prev.map(block => 
+        block.id === program.id 
+          ? { ...program, videos }
+          : block
+      )
+    );
+    setHasScheduleChanges(true);
+    setIsProgramSettingsOpen(false);
+    setSelectedProgram(null);
+    setHasProgramChanges(false);
   };
 
   const addGenreToBlock = (blockId: string, genre: string) => {
@@ -1164,8 +1132,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
       
 
-      <div className="grid grid-cols-10 gap-8 items-start">
-        <div className="col-span-8 overflow-x-auto">
+      <div className="w-full">
+        <div className="overflow-x-auto">
           {/* Continuous 15-day stacked view (progressive load) */}
           <Card className="bg-card-dark border-border mt-6 w-[95%] mx-auto relative">
             <CardContent className="p-0">
@@ -1411,240 +1379,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
             </CardContent>
           </Card>
         </div>
-        
-        <div className="col-span-2 self-start mt-2">
-          {/* Channel Preview moved into floating sidebar */}
-          <Card className="bg-card-dark border-border w-full">
-            <CardContent className="pt-4">
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg group">
-                <img 
-                  src="/toi_global_poster.png" 
-                  alt="TOI Global Channel" 
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                  <button className="w-10 h-10 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors duration-200">
-                    <div className="w-0 h-0 border-l-[6px] border-l-black border-y-[4px] border-y-transparent ml-0.5"></div>
-                  </button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="bg-card-dark border-border w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-foreground">Add Content</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {/* Content Accordion */}
-              <Accordion type="single" defaultValue="slike-video" className="w-full">
-                 <AccordionItem value="slike-video" className="border-border">
-                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
-                     <div className="flex items-center justify-between w-full">
-                       Slike Video
-                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                     </div>
-                   </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pt-2">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Search by title or video ID..." 
-                        className="pl-8 bg-control-surface border-border text-foreground text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {[
-                        { id: 'sv1', name: 'Action Movie Trailer', duration: 3 },
-                        { id: 'sv2', name: 'Comedy Special', duration: 25 },
-                        { id: 'sv3', name: 'Documentary Clip', duration: 15 }
-                       ].map(video => (
-                          <div 
-                            key={video.id} 
-                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                            draggable
-                            onDragStart={(e) => {
-                              const payload = JSON.stringify({ type: 'content-video', video });
-                              e.dataTransfer.setData('application/json', payload);
-                              e.dataTransfer.setData('text/plain', payload);
-                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
-                            }}
-                          >
-                           <span className="flex-1 text-foreground">{video.name}</span>
-                           <div className="flex items-center gap-2">
-                             <span className="text-muted-foreground">{video.duration}m</span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 w-6 p-0"
-                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
-                             >
-                               <Eye className="h-3 w-3" />
-                             </Button>
-                           </div>
-                         </div>
-                       ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                 <AccordionItem value="event-recording" className="border-border">
-                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
-                     <div className="flex items-center justify-between w-full">
-                       Event Recording
-                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                     </div>
-                   </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pt-2">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Search by title or event ID..." 
-                        className="pl-8 bg-control-surface border-border text-foreground text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {[
-                        { id: 'er1', name: 'Sports Match Recording', duration: 90 },
-                        { id: 'er2', name: 'Concert Performance', duration: 45 },
-                        { id: 'er3', name: 'Conference Highlights', duration: 30 }
-                       ].map(recording => (
-                          <div 
-                            key={recording.id} 
-                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                            draggable
-                            onDragStart={(e) => {
-                              const payload = JSON.stringify({ type: 'content-video', video: recording });
-                              e.dataTransfer.setData('application/json', payload);
-                              e.dataTransfer.setData('text/plain', payload);
-                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
-                            }}
-                          >
-                           <span className="flex-1 text-foreground">{recording.name}</span>
-                           <div className="flex items-center gap-2">
-                             <span className="text-muted-foreground">{recording.duration}m</span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 w-6 p-0"
-                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
-                             >
-                               <Eye className="h-3 w-3" />
-                             </Button>
-                           </div>
-                         </div>
-                       ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                 <AccordionItem value="live-event" className="border-border">
-                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
-                     <div className="flex items-center justify-between w-full">
-                       Live Event
-                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                     </div>
-                   </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pt-2">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                      <Input 
-                        placeholder="Search by title or live event ID..." 
-                        className="pl-8 bg-control-surface border-border text-foreground text-sm"
-                      />
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {[
-                        { id: 'le1', name: 'Morning News Live', duration: 60 },
-                        { id: 'le2', name: 'Talk Show Live', duration: 45 },
-                        { id: 'le3', name: 'Breaking News', duration: 15 }
-                       ].map(liveEvent => (
-                          <div 
-                            key={liveEvent.id} 
-                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                            draggable
-                            onDragStart={(e) => {
-                              const payload = JSON.stringify({ type: 'content-video', video: liveEvent });
-                              e.dataTransfer.setData('application/json', payload);
-                              e.dataTransfer.setData('text/plain', payload);
-                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
-                            }}
-                          >
-                           <span className="flex-1 text-foreground">{liveEvent.name}</span>
-                           <div className="flex items-center gap-2">
-                             <span className="text-muted-foreground">{liveEvent.duration}m</span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 w-6 p-0"
-                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
-                             >
-                               <Eye className="h-3 w-3" />
-                             </Button>
-                           </div>
-                         </div>
-                       ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                 <AccordionItem value="youtube-url" className="border-border">
-                   <AccordionTrigger className="text-sm text-foreground hover:text-foreground/80 [&>svg]:hidden">
-                     <div className="flex items-center justify-between w-full">
-                       YouTube URL
-                       <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                     </div>
-                   </AccordionTrigger>
-                  <AccordionContent className="space-y-3 pt-2">
-                    <div className="flex gap-2">
-                      <Input 
-                        placeholder="Enter YouTube URL..." 
-                        className="flex-1 bg-control-surface border-border text-foreground text-sm"
-                      />
-                      <Button variant="outline" size="sm">
-                        GO
-                      </Button>
-                    </div>
-                    <div className="space-y-2 max-h-32 overflow-y-auto">
-                      {[
-                        { id: 'yt1', name: 'Music Video - Artist Name', duration: 4 },
-                        { id: 'yt2', name: 'Tutorial Video', duration: 12 },
-                        { id: 'yt3', name: 'Comedy Sketch', duration: 8 }
-                       ].map(youtubeVideo => (
-                          <div 
-                            key={youtubeVideo.id} 
-                            className="flex items-center justify-between p-2 bg-black/10 rounded text-xs cursor-grab active:cursor-grabbing"
-                            draggable
-                            onDragStart={(e) => {
-                              const payload = JSON.stringify({ type: 'content-video', video: youtubeVideo });
-                              e.dataTransfer.setData('application/json', payload);
-                              e.dataTransfer.setData('text/plain', payload);
-                              try { e.dataTransfer.effectAllowed = 'copy'; } catch {}
-                            }}
-                          >
-                           <span className="flex-1 text-foreground">{youtubeVideo.name}</span>
-                           <div className="flex items-center gap-2">
-                             <span className="text-muted-foreground">{youtubeVideo.duration}m</span>
-                             <Button
-                               variant="ghost"
-                               size="sm"
-                               className="h-6 w-6 p-0"
-                               onClick={() => {/* Preview functionality - opens VideoPreviewDialog */}}
-                             >
-                               <Eye className="h-3 w-3" />
-                             </Button>
-                           </div>
-                         </div>
-                       ))}
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-              
-            </CardContent>
-          </Card>
-
-          {/* Actions card removed per request */}
-        </div>
       </div>
       <Toaster />
 
@@ -1656,58 +1390,39 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       />
 
       {/* Program Settings Modal */}
-      <Dialog open={isProgramSettingsOpen} onOpenChange={setIsProgramSettingsOpen}>
-        <DialogContent className="bg-card-dark border-border max-w-2xl h-[80vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-foreground text-lg">
-              {selectedProgram?.title} - Program Settings
-            </DialogTitle>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <span>Total Videos: {programVideos.length}</span>
-              <span>Total Duration: {programVideos.reduce((total, video) => total + video.duration, 0)}m</span>
-              <span>Playlist: Default Playlist</span>
-            </div>
-          </DialogHeader>
-          
-          <div className="flex-1 overflow-y-auto min-h-0">
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={(event) => {
-                const { active, over } = event;
-                if (active && over && active.id !== over.id) {
-                  handleVideoReorder(active.id as string, over.id as string);
-                }
-              }}
-            >
-              <SortableContext items={programVideos.map(v => v.id)} strategy={verticalListSortingStrategy}>
-                <div className="space-y-2 p-1">
-                  {programVideos.map((video, index) => (
-                    <SortableVideoItem
-                      key={video.id}
-                      video={video}
-                      index={index + 1}
-                    />
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          </div>
+      <ProgramSettingsModal
+        isOpen={isProgramSettingsOpen}
+        onClose={closeProgramSettings}
+        onSave={saveProgramSettings}
+        program={selectedProgram}
+        hasUnsavedChanges={hasProgramChanges}
+        onUnsavedClose={handleUnsavedClose}
+      />
 
-          <div className="flex-shrink-0 flex justify-end gap-2 pt-4 border-t border-border bg-card-dark">
+      {/* Unsaved Changes Confirmation Dialog */}
+      <Dialog open={showUnsavedConfirm} onOpenChange={setShowUnsavedConfirm}>
+        <DialogContent className="bg-card-dark border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Discard Unsaved Changes?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              You have unsaved changes to the program settings. Are you sure you want to discard them?
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
             <Button
-              variant="ghost"
-              onClick={closeProgramSettings}
-              className="text-gray-700 hover:bg-gray-100 hover:text-gray-700"
+              variant="outline"
+              onClick={cancelDiscard}
+              className="text-gray-700 hover:bg-gray-100"
             >
               Cancel
             </Button>
             <Button
-              onClick={saveProgramVideos}
-              disabled={!hasProgramChanges}
-              className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+              onClick={confirmDiscard}
+              className="bg-red-600 hover:bg-red-700 text-white"
             >
-              Save Changes
+              Discard Changes
             </Button>
           </div>
         </DialogContent>
