@@ -505,7 +505,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
     // Load data on component mount and when selectedDate changes
     loadPreviewData();
 
-    // Listen for localStorage changes to sync with Preview tab
+    // Listen for localStorage changes to sync with EPG Preview tab
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === `epg:preview:day:${selectedDate}` && e.newValue) {
         loadPreviewData();

@@ -213,7 +213,7 @@ export const EPGPreview = ({
 
   // Tab management state
   const [tabs, setTabs] = useState([
-    { id: "preview", label: "Preview", isStatic: true, isClosable: false },
+    { id: "preview", label: "EPG Preview", isStatic: true, isClosable: false },
     { id: "scheduler", label: "Scheduler", isStatic: true, isClosable: false },
     { id: "calendar", label: "Calendar", isStatic: true, isClosable: false },
   ]);
@@ -907,7 +907,7 @@ export const EPGPreview = ({
     // Calendar and Scheduler tabs don't use this save function
     toast({
       title: "Save not available",
-      description: "Switch to Preview tab to save EPG changes.",
+      description: "Switch to EPG Preview tab to save EPG changes.",
       variant: "destructive",
     });
   };

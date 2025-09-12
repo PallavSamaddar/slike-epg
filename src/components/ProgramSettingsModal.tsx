@@ -34,6 +34,8 @@ interface Video {
   name: string;
   duration: number;
   type?: 'VOD' | 'Event' | 'Live' | 'YouTube';
+  playlistName?: string;
+  source?: 'playlist' | 'custom';
 }
 
 interface ScheduleBlock {
@@ -178,10 +180,12 @@ const DirtyStateBadge = ({ isDirty, lastSaved }: { isDirty: boolean; lastSaved: 
 };
 
 // Sortable Video Item Component
-const SortableVideoItem = ({ video, index, onDelete }: { 
+const SortableVideoItem = ({ video, index, onDelete, group, isInvalidTarget }: { 
   video: Video; 
   index: number;
   onDelete: (videoId: string) => void;
+  group: 'custom' | 'playlist';
+  isInvalidTarget?: boolean;
 }) => {
   const {
     attributes,
@@ -218,11 +222,31 @@ const SortableVideoItem = ({ video, index, onDelete }: {
     }
   };
 
+  const getBatchText = (video: Video) => {
+    if (video.source === 'playlist' && video.playlistName) {
+      return `${video.type || 'VOD'} - Playlist: ${video.playlistName}`;
+    } else if (video.source === 'custom') {
+      switch (video.type) {
+        case 'VOD': return 'VOD - Custom';
+        case 'Event': return 'LiveRec - Custom';
+        case 'Live': return 'Live Event - Custom';
+        case 'YouTube': return 'YouTube - Custom';
+        default: return 'VOD - Custom';
+      }
+    } else {
+      return video.type || 'VOD';
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+      className={`flex items-center gap-3 p-3 bg-white border rounded-lg transition-colors ${
+        isInvalidTarget 
+          ? 'border-red-300 bg-red-50 hover:bg-red-100' 
+          : 'border-gray-200 hover:bg-gray-50'
+      }`}
     >
       <div className="flex items-center gap-2">
         <div className="w-6 h-6 bg-blue-600 text-white rounded-full flex items-center justify-center text-xs font-medium">
@@ -244,7 +268,7 @@ const SortableVideoItem = ({ video, index, onDelete }: {
             {video.name}
           </div>
           <Badge className={`text-xs ${getTypeBadgeColor(video.type)}`}>
-            {video.type || 'VOD'}
+            {getBatchText(video)}
           </Badge>
         </div>
         <div className="text-xs text-gray-500">
@@ -515,6 +539,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [initialSnapshot, setInitialSnapshot] = useState<any>(null);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isDirty, setIsDirty] = useState(false);
+  const [invalidDragTarget, setInvalidDragTarget] = useState<string | null>(null);
   const ariaLiveRef = useRef<HTMLSpanElement>(null);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -522,11 +547,19 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   React.useEffect(() => {
     if (program) {
       setLocalProgram({ ...program });
-      setLocalVideos([...program.videos]);
+      
+      // Initialize videos with proper source and playlist information
+      const videosWithSource = program.videos.map(video => ({
+        ...video,
+        source: video.source || 'playlist', // Default to playlist if not specified
+        playlistName: video.playlistName || program.playlistId // Use program's playlist if not specified
+      }));
+      
+      setLocalVideos(videosWithSource);
       setLocalHasChanges(false);
       
       // Create initial snapshot for dirty state tracking
-      const snapshot = createStateSnapshot(program, program.videos);
+      const snapshot = createStateSnapshot(program, videosWithSource);
       setInitialSnapshot(snapshot);
       setIsDirty(false);
       setLastSaved(null);
@@ -582,7 +615,27 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
       setLocalVideos(prev => {
         const oldIndex = prev.findIndex(v => v.id === activeId);
         const newIndex = prev.findIndex(v => v.id === overId);
-        return arrayMove(prev, oldIndex, newIndex);
+        
+        if (oldIndex !== -1 && newIndex !== -1) {
+          const activeVideo = prev[oldIndex];
+          const overVideo = prev[newIndex];
+          
+          // Only allow reordering within the same group
+          if (activeVideo.source === overVideo.source) {
+            const newVideos = arrayMove(prev, oldIndex, newIndex);
+            
+            // TODO: If reordering playlist videos, update the global playlist order
+            // This would require a global state management system to sync across all programs
+            // that use the same playlist. For now, changes are local to this program.
+            if (activeVideo.source === 'playlist') {
+              // Future implementation: Update global playlist order
+              // updateGlobalPlaylistOrder(activeVideo.playlistName, newVideos);
+            }
+            
+            return newVideos;
+          }
+        }
+        return prev;
       });
     }
   }, []);
@@ -590,9 +643,12 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const handleAddContent = useCallback((content: Video) => {
     const newVideo: Video = {
       ...content,
-      id: `${content.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      id: `${content.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      source: 'custom', // All content from RHS is custom
+      playlistName: undefined // Custom content doesn't have playlist
     };
-    setLocalVideos(prev => [...prev, newVideo]);
+    // Insert at index 0 (very top of the list)
+    setLocalVideos(prev => [newVideo, ...prev]);
     toast({
       title: 'Content added',
       description: `${content.name} has been added to the program.`,
@@ -791,39 +847,6 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                           />
                         </div>
                         <div>
-                          <Label htmlFor="type">Program Type</Label>
-                          <Select
-                            value={localProgram.type}
-                            onValueChange={(value) => {
-                              setLocalProgram(prev => prev ? { ...prev, type: value as 'VOD' | 'Event' } : null);
-                            }}
-                          >
-                            <SelectTrigger className="bg-white border-gray-200 text-gray-900">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="VOD">VOD</SelectItem>
-                              <SelectItem value="Event">Event</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          value={localProgram.description || ''}
-                          onChange={(e) => {
-                            setLocalProgram(prev => prev ? { ...prev, description: e.target.value } : null);
-                          }}
-                          placeholder="Enter program description..."
-                          className="bg-white border-gray-200 text-gray-900"
-                        />
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
                           <Label htmlFor="playlist">Playlist</Label>
                           <Select
                             value={localProgram.playlist || 'Default Playlist'}
@@ -842,25 +865,21 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                             </SelectContent>
                           </Select>
                         </div>
-                        <div>
-                          <Label htmlFor="geoZone">Geo Zone</Label>
-                          <Select
-                            value={localProgram.geoZone}
-                            onValueChange={(value) => {
-                              setLocalProgram(prev => prev ? { ...prev, geoZone: value } : null);
-                            }}
-                          >
-                            <SelectTrigger className="bg-white border-gray-200 text-gray-900">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Global">Global</SelectItem>
-                              <SelectItem value="US/EU">US/EU</SelectItem>
-                              <SelectItem value="Asia">Asia</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
                       </div>
+                      
+                      <div>
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          id="description"
+                          value={localProgram.description || ''}
+                          onChange={(e) => {
+                            setLocalProgram(prev => prev ? { ...prev, description: e.target.value } : null);
+                          }}
+                          placeholder="Enter program description..."
+                          className="bg-white border-gray-200 text-gray-900"
+                        />
+                      </div>
+
                     </CardContent>
                   </Card>
 
@@ -881,29 +900,99 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                         <DndContext
                           sensors={sensors}
                           collisionDetection={closestCenter}
+                          onDragStart={(event) => {
+                            setInvalidDragTarget(null);
+                          }}
+                          onDragOver={(event) => {
+                            const { active, over } = event;
+                            if (active && over) {
+                              const activeVideo = localVideos.find(v => v.id === active.id);
+                              const overVideo = localVideos.find(v => v.id === over.id);
+                              
+                              // Check if drag is invalid (different groups)
+                              if (activeVideo && overVideo && activeVideo.source !== overVideo.source) {
+                                setInvalidDragTarget(over.id as string);
+                              } else {
+                                setInvalidDragTarget(null);
+                              }
+                            }
+                          }}
                           onDragEnd={(event) => {
                             const { active, over } = event;
+                            setInvalidDragTarget(null);
+                            
                             if (active && over && active.id !== over.id) {
-                              handleVideoReorder(active.id as string, over.id as string);
+                              // Get the source and target video groups
+                              const activeVideo = localVideos.find(v => v.id === active.id);
+                              const overVideo = localVideos.find(v => v.id === over.id);
+                              
+                              // Only allow reordering within the same group
+                              if (activeVideo && overVideo && activeVideo.source === overVideo.source) {
+                                handleVideoReorder(active.id as string, over.id as string);
+                              } else {
+                                // Show feedback for invalid drag
+                                toast({
+                                  title: 'Invalid drag operation',
+                                  description: 'Videos can only be reordered within their own group (Custom or Playlist).',
+                                  variant: 'destructive',
+                                });
+                              }
                             }
                           }}
                         >
                           <SortableContext items={localVideos.map(v => v.id)} strategy={verticalListSortingStrategy}>
-                            <div className="space-y-2">
+                            <div className="space-y-4">
                               {localVideos.length === 0 ? (
                                 <div className="text-center py-8 text-gray-500">
                                   <Video className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                                   <p>Drag content from the right panel or click the + button to add content</p>
                                 </div>
                               ) : (
-                                localVideos.map((video, index) => (
-                                  <SortableVideoItem
-                                    key={video.id}
-                                    video={video}
-                                    index={index + 1}
-                                    onDelete={handleDeleteVideo}
-                                  />
-                                ))
+                                <>
+                                  {/* Custom Videos Group */}
+                                  {localVideos.filter(v => v.source === 'custom').length > 0 && (
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <span className="text-sm font-medium text-blue-700">Custom Content</span>
+                                      </div>
+                                      {localVideos
+                                        .filter(v => v.source === 'custom')
+                                        .map((video, index) => (
+                                          <SortableVideoItem
+                                            key={video.id}
+                                            video={video}
+                                            index={index + 1}
+                                            onDelete={handleDeleteVideo}
+                                            group="custom"
+                                            isInvalidTarget={invalidDragTarget === video.id}
+                                          />
+                                        ))}
+                                    </div>
+                                  )}
+                                  
+                                  {/* Playlist Videos Group */}
+                                  {localVideos.filter(v => v.source === 'playlist').length > 0 && (
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md">
+                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                        <span className="text-sm font-medium text-green-700">Playlist Content</span>
+                                      </div>
+                                      {localVideos
+                                        .filter(v => v.source === 'playlist')
+                                        .map((video, index) => (
+                                          <SortableVideoItem
+                                            key={video.id}
+                                            video={video}
+                                            index={localVideos.filter(v => v.source === 'custom').length + index + 1}
+                                            onDelete={handleDeleteVideo}
+                                            group="playlist"
+                                            isInvalidTarget={invalidDragTarget === video.id}
+                                          />
+                                        ))}
+                                    </div>
+                                  )}
+                                </>
                               )}
                             </div>
                           </SortableContext>
