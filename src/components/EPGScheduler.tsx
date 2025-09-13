@@ -1069,7 +1069,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       <div className="grid grid-cols-10 gap-6 mb-6">
         <div className="col-span-10">
           <div>
-            <div className="flex items-center justify-between mt-2 pr-[320px]">
+            <div className="flex items-center justify-between mt-2">
               <div className="flex items-start gap-8">
                 <div>
                   <div className="flex items-center gap-2 text-sm font-medium text-foreground">

@@ -707,6 +707,18 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   }, [handleAddContent]);
 
   const totalDuration = localVideos.reduce((total, video) => total + video.duration, 0);
+  
+  // Calculate custom vs playlist video durations
+  const customVideosDuration = localVideos
+    .filter(video => video.source === 'custom')
+    .reduce((total, video) => total + video.duration, 0);
+  
+  const playlistVideosDuration = localVideos
+    .filter(video => video.source === 'playlist')
+    .reduce((total, video) => total + video.duration, 0);
+  
+  // Program duration is already in minutes
+  const programDurationMinutes = localProgram ? localProgram.duration : 0;
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -807,6 +819,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                 const endMins = endMinutes % 60;
                 return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
               })()} IST</span>
+              <span>Program Duration: {Math.floor(localProgram.duration / 60)}h {localProgram.duration % 60}m</span>
               <span>Total Videos: {localVideos.length}</span>
               <span>Total Duration: {totalDuration}m</span>
               {lastSaved && (
@@ -823,7 +836,49 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
             <section id="program-settings-main" className="flex flex-col h-full min-h-0">
               {/* Optional sticky subheader for LHS */}
               <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-2">
-                <div className="text-sm font-semibold">Program Content</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-semibold">Program Content</div>
+                  
+                  {/* Duration Progress Bar */}
+                  {programDurationMinutes > 0 && (
+                    <div className="flex items-center gap-4">
+                      {/* Progress Bar - Shows content fill against program duration */}
+                      <div className="flex items-center gap-2">
+                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-full flex">
+                            {customVideosDuration > 0 && (
+                              <div 
+                                className="bg-blue-500 transition-all duration-300"
+                                style={{ width: `${Math.min((customVideosDuration / programDurationMinutes) * 100, 100)}%` }}
+                              />
+                            )}
+                            {playlistVideosDuration > 0 && (
+                              <div 
+                                className="bg-green-500 transition-all duration-300"
+                                style={{ width: `${Math.min((playlistVideosDuration / programDurationMinutes) * 100, 100)}%` }}
+                              />
+                            )}
+                          </div>
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">
+                          {Math.round((totalDuration / programDurationMinutes) * 100)}%
+                        </span>
+                      </div>
+                      
+                      {/* Legend */}
+                      <div className="flex items-center gap-3 text-xs text-gray-600">
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          <span>{customVideosDuration}m</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                          <span>{playlistVideosDuration}m</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
               {/* The actual scroll area for LHS */}
               <div id="program-settings-main-scroll" className="flex-1 overflow-y-auto px-4 py-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
