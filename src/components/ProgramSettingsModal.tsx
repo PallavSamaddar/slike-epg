@@ -540,6 +540,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [isDirty, setIsDirty] = useState(false);
   const [invalidDragTarget, setInvalidDragTarget] = useState<string | null>(null);
+  const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false);
   const ariaLiveRef = useRef<HTMLSpanElement>(null);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -829,61 +830,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
 
                 {/* Program Form */}
                 <div className="space-y-6 min-h-[800px]">
-                  <Card className="bg-white border border-gray-200 rounded-lg">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Program Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="title">Program Title</Label>
-                          <Input
-                            id="title"
-                            value={localProgram.title}
-                            onChange={(e) => {
-                              setLocalProgram(prev => prev ? { ...prev, title: e.target.value } : null);
-                            }}
-                            className="bg-white border-gray-200 text-gray-900"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="playlist">Playlist</Label>
-                          <Select
-                            value={localProgram.playlist || 'Default Playlist'}
-                            onValueChange={(value) => {
-                              setLocalProgram(prev => prev ? { ...prev, playlist: value } : null);
-                            }}
-                          >
-                            <SelectTrigger className="bg-white border-gray-200 text-gray-900">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Default Playlist">Default Playlist</SelectItem>
-                              <SelectItem value="Sports Highlights">Sports Highlights</SelectItem>
-                              <SelectItem value="Music Mix">Music Mix</SelectItem>
-                              <SelectItem value="Tech Reviews">Tech Reviews</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          id="description"
-                          value={localProgram.description || ''}
-                          onChange={(e) => {
-                            setLocalProgram(prev => prev ? { ...prev, description: e.target.value } : null);
-                          }}
-                          placeholder="Enter program description..."
-                          className="bg-white border-gray-200 text-gray-900"
-                        />
-                      </div>
-
-                    </CardContent>
-                  </Card>
-
-                  {/* Program Content Drop Zone */}
+                  {/* Program Content Drop Zone - Moved to top for better visibility */}
                   <Card className="bg-white border border-gray-200 rounded-lg">
                     <CardHeader>
                       <CardTitle className="text-lg">Videos</CardTitle>
@@ -1001,95 +948,171 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                     </CardContent>
                   </Card>
 
-                  {/* Additional test content to ensure scrolling */}
-                  <Card className="bg-white border border-gray-200 rounded-lg">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Additional Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label htmlFor="tags">Tags</Label>
-                        <Input
-                          id="tags"
-                          placeholder="Enter tags separated by commas"
-                          className="bg-white border-gray-200 text-gray-900"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="notes">Notes</Label>
-                        <Textarea
-                          id="notes"
-                          placeholder="Enter additional notes..."
-                          rows={4}
-                          className="bg-white border-gray-200 text-gray-900"
-                        />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="priority">Priority</Label>
-                          <Select>
-                            <SelectTrigger className="bg-white border-gray-200 text-gray-900">
-                              <SelectValue placeholder="Select priority" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="low">Low</SelectItem>
-                              <SelectItem value="medium">Medium</SelectItem>
-                              <SelectItem value="high">High</SelectItem>
-                            </SelectContent>
-                          </Select>
+                  {/* Advanced Settings - Collapsible Container */}
+                  <Accordion 
+                    type="single" 
+                    collapsible 
+                    value={isAdvancedSettingsOpen ? "advanced-settings" : ""}
+                    onValueChange={(value) => setIsAdvancedSettingsOpen(value === "advanced-settings")}
+                    className="w-full"
+                  >
+                    <AccordionItem value="advanced-settings" className="border-gray-200">
+                      <AccordionTrigger className="text-sm font-medium text-gray-700 hover:text-gray-900 [&>svg]:hidden">
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center gap-2">
+                            <Settings className="h-4 w-4 text-gray-500" />
+                            <span>Advanced Settings</span>
+                          </div>
+                          <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]:rotate-180" />
                         </div>
-                        <div>
-                          <Label htmlFor="category">Category</Label>
-                          <Select>
-                            <SelectTrigger className="bg-white border-gray-200 text-gray-900">
-                              <SelectValue placeholder="Select category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="entertainment">Entertainment</SelectItem>
-                              <SelectItem value="news">News</SelectItem>
-                              <SelectItem value="sports">Sports</SelectItem>
-                              <SelectItem value="education">Education</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </AccordionTrigger>
+                      <AccordionContent className="space-y-6 pt-4">
+                        {/* Program Details */}
+                        <Card className="bg-white border border-gray-200 rounded-lg">
+                          <CardHeader>
+                            <CardTitle className="text-lg">Program Details</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="title">Program Title</Label>
+                                <Input
+                                  id="title"
+                                  value={localProgram.title}
+                                  onChange={(e) => {
+                                    setLocalProgram(prev => prev ? { ...prev, title: e.target.value } : null);
+                                  }}
+                                  className="bg-white border-gray-200 text-gray-900"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor="playlist">Playlist</Label>
+                                <Select
+                                  value={localProgram.playlist || 'Default Playlist'}
+                                  onValueChange={(value) => {
+                                    setLocalProgram(prev => prev ? { ...prev, playlist: value } : null);
+                                  }}
+                                >
+                                  <SelectTrigger className="bg-white border-gray-200 text-gray-900">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Default Playlist">Default Playlist</SelectItem>
+                                    <SelectItem value="Sports Highlights">Sports Highlights</SelectItem>
+                                    <SelectItem value="Music Mix">Music Mix</SelectItem>
+                                    <SelectItem value="Tech Reviews">Tech Reviews</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <Label htmlFor="description">Description</Label>
+                              <Textarea
+                                id="description"
+                                value={localProgram.description || ''}
+                                onChange={(e) => {
+                                  setLocalProgram(prev => prev ? { ...prev, description: e.target.value } : null);
+                                }}
+                                placeholder="Enter program description..."
+                                className="bg-white border-gray-200 text-gray-900"
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
 
-                  {/* More test content */}
-                  <Card className="bg-white border border-gray-200 rounded-lg">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Advanced Options</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Content Restrictions</Label>
-                        <div className="space-y-2">
-                          <div className="flex items-center space-x-2">
-                            <input type="checkbox" id="age-restricted" className="rounded" />
-                            <Label htmlFor="age-restricted">Age Restricted Content</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input type="checkbox" id="geo-blocked" className="rounded" />
-                            <Label htmlFor="geo-blocked">Geographic Restrictions</Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <input type="checkbox" id="time-sensitive" className="rounded" />
-                            <Label htmlFor="time-sensitive">Time Sensitive Content</Label>
-                          </div>
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="metadata">Custom Metadata</Label>
-                        <Textarea
-                          id="metadata"
-                          placeholder="Enter custom metadata in JSON format..."
-                          rows={3}
-                          className="bg-white border-gray-200 text-gray-900 font-mono text-sm"
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
+                        {/* Additional Settings */}
+                        <Card className="bg-white border border-gray-200 rounded-lg">
+                          <CardHeader>
+                            <CardTitle className="text-lg">Additional Settings</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div>
+                              <Label htmlFor="tags">Tags</Label>
+                              <Input
+                                id="tags"
+                                placeholder="Enter tags separated by commas"
+                                className="bg-white border-gray-200 text-gray-900"
+                              />
+                            </div>
+                            <div>
+                              <Label htmlFor="notes">Notes</Label>
+                              <Textarea
+                                id="notes"
+                                placeholder="Enter additional notes..."
+                                rows={4}
+                                className="bg-white border-gray-200 text-gray-900"
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label htmlFor="priority">Priority</Label>
+                                <Select>
+                                  <SelectTrigger className="bg-white border-gray-200 text-gray-900">
+                                    <SelectValue placeholder="Select priority" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="low">Low</SelectItem>
+                                    <SelectItem value="medium">Medium</SelectItem>
+                                    <SelectItem value="high">High</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label htmlFor="category">Category</Label>
+                                <Select>
+                                  <SelectTrigger className="bg-white border-gray-200 text-gray-900">
+                                    <SelectValue placeholder="Select category" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="entertainment">Entertainment</SelectItem>
+                                    <SelectItem value="news">News</SelectItem>
+                                    <SelectItem value="sports">Sports</SelectItem>
+                                    <SelectItem value="education">Education</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+
+                        {/* Advanced Options */}
+                        <Card className="bg-white border border-gray-200 rounded-lg">
+                          <CardHeader>
+                            <CardTitle className="text-lg">Advanced Options</CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>Content Restrictions</Label>
+                              <div className="space-y-2">
+                                <div className="flex items-center space-x-2">
+                                  <input type="checkbox" id="age-restricted" className="rounded" />
+                                  <Label htmlFor="age-restricted">Age Restricted Content</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input type="checkbox" id="geo-blocked" className="rounded" />
+                                  <Label htmlFor="geo-blocked">Geographic Restrictions</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <input type="checkbox" id="time-sensitive" className="rounded" />
+                                  <Label htmlFor="time-sensitive">Time Sensitive Content</Label>
+                                </div>
+                              </div>
+                            </div>
+                            <div>
+                              <Label htmlFor="metadata">Custom Metadata</Label>
+                              <Textarea
+                                id="metadata"
+                                placeholder="Enter custom metadata in JSON format..."
+                                rows={3}
+                                className="bg-white border-gray-200 text-gray-900 font-mono text-sm"
+                              />
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
                 </div>
               </div>
             </section>
