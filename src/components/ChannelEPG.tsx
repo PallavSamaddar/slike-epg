@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, FC, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Download, FileText, Code, Database, Settings, RefreshCw, Plus, Copy, Edit, GripVertical, ClipboardCopy, FileDown, ChevronDown, Check, Eye, AlertTriangle } from 'lucide-react';
 import { Calendar as CalendarIcon } from 'lucide-react';
@@ -403,12 +403,10 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
   };
   
   const handleAdSave = (adConfig: Record<string, unknown>) => {
-      console.log('Ad config saved:', adConfig);
       setIsManageAdsModalOpen(false);
   };
 
   const handleRepeatSave = (startDate: string, endDate: string, selectedDays: number[]) => {
-      console.log('Repeat schedule saved:', { startDate, endDate, selectedDays });
       setIsRepeatModalOpen(false);
   };
 

@@ -66,7 +66,6 @@ interface Props {
 const PlaylistManagement = ({ onNavigate }: Props) => {
   const { toast } = useToast();
   
-  console.log('PlaylistManagement component loaded');
   
   // Core state
   const [playlists, setPlaylists] = useState<Playlist[]>([]);

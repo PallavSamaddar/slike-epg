@@ -479,7 +479,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         const raw = localStorage.getItem(key);
         if (raw) {
           const items: { id: string; time: string; title: string; type: 'VOD' | 'Event'; duration: number; status: string; genre: string; }[] = JSON.parse(raw);
-          console.log('Scheduler: Loading preview data:', items);
           // Map preview items to schedule blocks for the times that exist
           setScheduleBlocks(prev => {
             const byTime = new Map(prev.map(b => [b.time, b]));
@@ -487,7 +486,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
               const time = item.time.split('T')[1].slice(0,5);
               const block = byTime.get(time);
               if (block) {
-                console.log(`Scheduler: Updating block at ${time} with title "${item.title}"`);
                 block.title = item.title;
                 block.type = item.type;
                 block.status = item.status as any;
@@ -498,7 +496,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           });
         }
       } catch (error) {
-        console.error('Error loading preview data:', error);
       }
     };
 
@@ -519,11 +516,12 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       loadPreviewData();
     };
 
-    window.addEventListener('previewDataUpdated', handlePreviewUpdate);
+    // Use a more specific event name to avoid conflicts with browser extensions
+    window.addEventListener('epg-preview-data-updated', handlePreviewUpdate);
 
     return () => {
       window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('previewDataUpdated', handlePreviewUpdate);
+      window.removeEventListener('epg-preview-data-updated', handlePreviewUpdate);
     };
   }, [selectedDate]);
 
@@ -826,14 +824,12 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   };
 
   const addGenreToBlock = (blockId: string, genre: string) => {
-    console.log('Adding genre:', genre, 'to block:', blockId);
     setScheduleBlocks(prev => {
       const updated = prev.map(block => 
         block.id === blockId 
           ? { ...block, tags: [genre] }
           : block
       );
-      console.log('Updated blocks:', updated.find(b => b.id === blockId)?.tags);
       return updated;
     });
     setEditingGenres(null);
@@ -940,7 +936,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         description: `${markers.length} ad marker${markers.length === 1 ? '' : 's'} added on ${new Date(selectedDate).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}.`,
       });
     } catch (e) {
-      console.error('Error computing ad markers', e);
     }
     setIsManageAdsModalOpen(false);
   };
@@ -1204,7 +1199,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                       }
                                     }
                                   } catch (error) {
-                                    console.error('Error parsing dragged data:', error);
                                   }
                                 }
                               }}
@@ -1236,7 +1230,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                         }
                                       }
                                     } catch (error) {
-                                      console.error('Error parsing dragged data:', error);
                                     }
                                   }
                                 }}

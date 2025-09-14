@@ -1,3 +1,4 @@
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -10,6 +11,8 @@ import PlaylistCreateEditComplete from "./components/PlaylistCreateEditComplete"
 import { ChannelEPG } from "./components/ChannelEPG";
 import NotFound from "./pages/NotFound";
 import { EPGPreview } from "./components/EPGPreview";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { setupErrorHandling } from "./utils/errorHandler";
 
 const queryClient = new QueryClient();
 
@@ -50,16 +53,25 @@ const AppRoutes = () => {
   );
 };
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Initialize error handling for browser extension errors
+  React.useEffect(() => {
+    setupErrorHandling();
+  }, []);
+
+  return (
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
+  );
+};
 
 export default App;

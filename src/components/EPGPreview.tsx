@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, FC, useMemo, useCallback } from "react";
+import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import {
   Download,
@@ -97,6 +97,9 @@ interface EPGPreviewItem {
   playlist?: string;
   isEditing?: boolean;
   imageUrl?: string;
+  customContentCount?: number; // Track number of custom videos
+  customContentDuration?: number; // Track duration of custom content
+  videos?: any[]; // Store the actual videos (playlist + custom content)
 }
 
 const SortableItem = ({
@@ -203,112 +206,159 @@ export const EPGPreview = ({
   onNavigate?: (view: string) => void;
 }) => {
   // Default playlist with 100+ VOD content items
+  // Helper function to format duration
+  const formatDuration = (minutes: number) => {
+    if (minutes < 60) {
+      return `${minutes} mins`;
+    } else {
+      const hours = Math.floor(minutes / 60);
+      const remainingMinutes = minutes % 60;
+      if (remainingMinutes === 0) {
+        return `${hours} hour${hours !== 1 ? 's' : ''}`;
+      } else {
+        return `${hours}h ${remainingMinutes}m`;
+      }
+    }
+  };
+
+  // Helper function to get content counts for a program
+  const getProgramContentInfo = (program: any) => {
+    // Use saved videos if available, otherwise use default playlist
+    const videos = program.videos || defaultPlaylistContent;
+    
+    
+    // Count videos by source
+    const playlistVideos = videos.filter(video => video.source === 'playlist').length;
+    const customVideos = videos.filter(video => video.source === 'custom').length;
+    
+    // Calculate durations
+    const playlistDuration = videos
+      .filter(video => video.source === 'playlist')
+      .reduce((total, video) => total + (video.duration || 0), 0);
+    const customDuration = videos
+      .filter(video => video.source === 'custom')
+      .reduce((total, video) => total + (video.duration || 0), 0);
+    
+    const totalContentDuration = playlistDuration + customDuration;
+    const programDurationMinutes = program.duration * 60; // Convert hours to minutes
+    
+    
+    return {
+      playlistVideos,
+      customVideos,
+      playlistDuration,
+      customDuration,
+      totalContentDuration,
+      programDuration: programDurationMinutes
+    };
+  };
+
   const defaultPlaylistContent = [
-    { id: 'vod-1', name: 'Action Movie Collection', duration: 120, type: 'VOD' },
-    { id: 'vod-2', name: 'Comedy Special', duration: 90, type: 'VOD' },
-    { id: 'vod-3', name: 'Documentary Series', duration: 60, type: 'VOD' },
-    { id: 'vod-4', name: 'Romantic Drama', duration: 110, type: 'VOD' },
-    { id: 'vod-5', name: 'Thriller Night', duration: 95, type: 'VOD' },
-    { id: 'vod-6', name: 'Family Adventure', duration: 100, type: 'VOD' },
-    { id: 'vod-7', name: 'Sci-Fi Classic', duration: 130, type: 'VOD' },
-    { id: 'vod-8', name: 'Horror Showcase', duration: 85, type: 'VOD' },
-    { id: 'vod-9', name: 'Musical Extravaganza', duration: 140, type: 'VOD' },
-    { id: 'vod-10', name: 'Crime Investigation', duration: 75, type: 'VOD' },
-    { id: 'vod-11', name: 'Fantasy Quest', duration: 125, type: 'VOD' },
-    { id: 'vod-12', name: 'Sports Documentary', duration: 55, type: 'VOD' },
-    { id: 'vod-13', name: 'Historical Drama', duration: 105, type: 'VOD' },
-    { id: 'vod-14', name: 'Animation Collection', duration: 80, type: 'VOD' },
-    { id: 'vod-15', name: 'Mystery Thriller', duration: 115, type: 'VOD' },
-    { id: 'vod-16', name: 'Comedy Stand-up', duration: 65, type: 'VOD' },
-    { id: 'vod-17', name: 'Adventure Series', duration: 135, type: 'VOD' },
-    { id: 'vod-18', name: 'Drama Series', duration: 70, type: 'VOD' },
-    { id: 'vod-19', name: 'Action Thriller', duration: 95, type: 'VOD' },
-    { id: 'vod-20', name: 'Romantic Comedy', duration: 90, type: 'VOD' },
-    { id: 'vod-21', name: 'Superhero Saga', duration: 150, type: 'VOD' },
-    { id: 'vod-22', name: 'War Documentary', duration: 85, type: 'VOD' },
-    { id: 'vod-23', name: 'Nature Special', duration: 60, type: 'VOD' },
-    { id: 'vod-24', name: 'Music Concert', duration: 120, type: 'VOD' },
-    { id: 'vod-25', name: 'Comedy Movie', duration: 100, type: 'VOD' },
-    { id: 'vod-26', name: 'Drama Film', duration: 110, type: 'VOD' },
-    { id: 'vod-27', name: 'Action Blockbuster', duration: 140, type: 'VOD' },
-    { id: 'vod-28', name: 'Thriller Series', duration: 75, type: 'VOD' },
-    { id: 'vod-29', name: 'Romance Collection', duration: 95, type: 'VOD' },
-    { id: 'vod-30', name: 'Horror Classic', duration: 80, type: 'VOD' },
-    { id: 'vod-31', name: 'Sci-Fi Adventure', duration: 125, type: 'VOD' },
-    { id: 'vod-32', name: 'Family Movie', duration: 105, type: 'VOD' },
-    { id: 'vod-33', name: 'Comedy Series', duration: 65, type: 'VOD' },
-    { id: 'vod-34', name: 'Drama Special', duration: 90, type: 'VOD' },
-    { id: 'vod-35', name: 'Action Series', duration: 115, type: 'VOD' },
-    { id: 'vod-36', name: 'Documentary Film', duration: 70, type: 'VOD' },
-    { id: 'vod-37', name: 'Musical Drama', duration: 130, type: 'VOD' },
-    { id: 'vod-38', name: 'Crime Drama', duration: 85, type: 'VOD' },
-    { id: 'vod-39', name: 'Fantasy Adventure', duration: 135, type: 'VOD' },
-    { id: 'vod-40', name: 'Sports Movie', duration: 100, type: 'VOD' },
-    { id: 'vod-41', name: 'Historical Film', duration: 120, type: 'VOD' },
-    { id: 'vod-42', name: 'Animation Movie', duration: 95, type: 'VOD' },
-    { id: 'vod-43', name: 'Mystery Series', duration: 75, type: 'VOD' },
-    { id: 'vod-44', name: 'Comedy Special', duration: 60, type: 'VOD' },
-    { id: 'vod-45', name: 'Adventure Movie', duration: 110, type: 'VOD' },
-    { id: 'vod-46', name: 'Drama Series', duration: 80, type: 'VOD' },
-    { id: 'vod-47', name: 'Action Adventure', duration: 125, type: 'VOD' },
-    { id: 'vod-48', name: 'Romantic Drama', duration: 90, type: 'VOD' },
-    { id: 'vod-49', name: 'Superhero Movie', duration: 145, type: 'VOD' },
-    { id: 'vod-50', name: 'War Film', duration: 140, type: 'VOD' },
-    { id: 'vod-51', name: 'Nature Documentary', duration: 55, type: 'VOD' },
-    { id: 'vod-52', name: 'Music Video Collection', duration: 65, type: 'VOD' },
-    { id: 'vod-53', name: 'Comedy Movie Night', duration: 105, type: 'VOD' },
-    { id: 'vod-54', name: 'Drama Feature', duration: 115, type: 'VOD' },
-    { id: 'vod-55', name: 'Action Packed', duration: 95, type: 'VOD' },
-    { id: 'vod-56', name: 'Thriller Night', duration: 85, type: 'VOD' },
-    { id: 'vod-57', name: 'Romance Special', duration: 100, type: 'VOD' },
-    { id: 'vod-58', name: 'Horror Night', duration: 90, type: 'VOD' },
-    { id: 'vod-59', name: 'Sci-Fi Collection', duration: 130, type: 'VOD' },
-    { id: 'vod-60', name: 'Family Fun', duration: 80, type: 'VOD' },
-    { id: 'vod-61', name: 'Comedy Hour', duration: 70, type: 'VOD' },
-    { id: 'vod-62', name: 'Drama Night', duration: 110, type: 'VOD' },
-    { id: 'vod-63', name: 'Action Thrills', duration: 120, type: 'VOD' },
-    { id: 'vod-64', name: 'Documentary Special', duration: 75, type: 'VOD' },
-    { id: 'vod-65', name: 'Musical Night', duration: 135, type: 'VOD' },
-    { id: 'vod-66', name: 'Crime Story', duration: 95, type: 'VOD' },
-    { id: 'vod-67', name: 'Fantasy Quest', duration: 125, type: 'VOD' },
-    { id: 'vod-68', name: 'Sports Action', duration: 85, type: 'VOD' },
-    { id: 'vod-69', name: 'Historical Epic', duration: 150, type: 'VOD' },
-    { id: 'vod-70', name: 'Animation Fun', duration: 90, type: 'VOD' },
-    { id: 'vod-71', name: 'Mystery Thriller', duration: 105, type: 'VOD' },
-    { id: 'vod-72', name: 'Comedy Gold', duration: 65, type: 'VOD' },
-    { id: 'vod-73', name: 'Adventure Quest', duration: 140, type: 'VOD' },
-    { id: 'vod-74', name: 'Drama Classic', duration: 100, type: 'VOD' },
-    { id: 'vod-75', name: 'Action Hero', duration: 115, type: 'VOD' },
-    { id: 'vod-76', name: 'Documentary Insight', duration: 60, type: 'VOD' },
-    { id: 'vod-77', name: 'Musical Magic', duration: 120, type: 'VOD' },
-    { id: 'vod-78', name: 'Crime Investigation', duration: 80, type: 'VOD' },
-    { id: 'vod-79', name: 'Fantasy World', duration: 130, type: 'VOD' },
-    { id: 'vod-80', name: 'Sports Highlights', duration: 70, type: 'VOD' },
-    { id: 'vod-81', name: 'Historical Journey', duration: 110, type: 'VOD' },
-    { id: 'vod-82', name: 'Animation Adventure', duration: 95, type: 'VOD' },
-    { id: 'vod-83', name: 'Mystery Case', duration: 75, type: 'VOD' },
-    { id: 'vod-84', name: 'Comedy Show', duration: 85, type: 'VOD' },
-    { id: 'vod-85', name: 'Adventure Series', duration: 125, type: 'VOD' },
-    { id: 'vod-86', name: 'Drama Series', duration: 90, type: 'VOD' },
-    { id: 'vod-87', name: 'Action Blockbuster', duration: 145, type: 'VOD' },
-    { id: 'vod-88', name: 'Thriller Series', duration: 100, type: 'VOD' },
-    { id: 'vod-89', name: 'Romance Collection', duration: 105, type: 'VOD' },
-    { id: 'vod-90', name: 'Horror Collection', duration: 80, type: 'VOD' },
-    { id: 'vod-91', name: 'Sci-Fi Series', duration: 135, type: 'VOD' },
-    { id: 'vod-92', name: 'Family Collection', duration: 95, type: 'VOD' },
-    { id: 'vod-93', name: 'Comedy Collection', duration: 70, type: 'VOD' },
-    { id: 'vod-94', name: 'Drama Collection', duration: 115, type: 'VOD' },
-    { id: 'vod-95', name: 'Action Collection', duration: 120, type: 'VOD' },
-    { id: 'vod-96', name: 'Documentary Collection', duration: 65, type: 'VOD' },
-    { id: 'vod-97', name: 'Musical Collection', duration: 140, type: 'VOD' },
-    { id: 'vod-98', name: 'Crime Collection', duration: 85, type: 'VOD' },
-    { id: 'vod-99', name: 'Fantasy Collection', duration: 130, type: 'VOD' },
-    { id: 'vod-100', name: 'Sports Collection', duration: 75, type: 'VOD' },
-    { id: 'vod-101', name: 'Historical Collection', duration: 125, type: 'VOD' },
-    { id: 'vod-102', name: 'Animation Collection', duration: 90, type: 'VOD' },
-    { id: 'vod-103', name: 'Mystery Collection', duration: 105, type: 'VOD' },
-    { id: 'vod-104', name: 'Comedy Special Collection', duration: 60, type: 'VOD' },
-    { id: 'vod-105', name: 'Adventure Collection', duration: 135, type: 'VOD' }
+    { id: 'vod-1', name: 'Action Movie Collection', duration: 120, type: 'VOD', source: 'playlist' },
+    { id: 'vod-2', name: 'Comedy Special', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-3', name: 'Documentary Series', duration: 60, type: 'VOD', source: 'playlist' },
+    { id: 'vod-4', name: 'Romantic Drama', duration: 110, type: 'VOD', source: 'playlist' },
+    { id: 'vod-5', name: 'Thriller Night', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-6', name: 'Family Adventure', duration: 100, type: 'VOD', source: 'playlist' },
+    { id: 'vod-7', name: 'Sci-Fi Classic', duration: 130, type: 'VOD', source: 'playlist' },
+    { id: 'vod-8', name: 'Horror Showcase', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-9', name: 'Musical Extravaganza', duration: 140, type: 'VOD', source: 'playlist' },
+    { id: 'vod-10', name: 'Crime Investigation', duration: 75, type: 'VOD', source: 'playlist' },
+    { id: 'vod-11', name: 'Fantasy Quest', duration: 125, type: 'VOD', source: 'playlist' },
+    { id: 'vod-12', name: 'Sports Documentary', duration: 55, type: 'VOD', source: 'playlist' },
+    { id: 'vod-13', name: 'Historical Drama', duration: 105, type: 'VOD', source: 'playlist' },
+    { id: 'vod-14', name: 'Animation Collection', duration: 80, type: 'VOD', source: 'playlist' },
+    { id: 'vod-15', name: 'Mystery Thriller', duration: 115, type: 'VOD', source: 'playlist' },
+    { id: 'vod-16', name: 'Comedy Stand-up', duration: 65, type: 'VOD', source: 'playlist' },
+    { id: 'vod-17', name: 'Adventure Series', duration: 135, type: 'VOD', source: 'playlist' },
+    { id: 'vod-18', name: 'Drama Series', duration: 70, type: 'VOD', source: 'playlist' },
+    { id: 'vod-19', name: 'Action Thriller', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-20', name: 'Romantic Comedy', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-21', name: 'Superhero Saga', duration: 150, type: 'VOD', source: 'playlist' },
+    { id: 'vod-22', name: 'War Documentary', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-23', name: 'Nature Special', duration: 60, type: 'VOD', source: 'playlist' },
+    { id: 'vod-24', name: 'Music Concert', duration: 120, type: 'VOD', source: 'playlist' },
+    { id: 'vod-25', name: 'Comedy Movie', duration: 100, type: 'VOD', source: 'playlist' },
+    { id: 'vod-26', name: 'Drama Film', duration: 110, type: 'VOD', source: 'playlist' },
+    { id: 'vod-27', name: 'Action Blockbuster', duration: 140, type: 'VOD', source: 'playlist' },
+    { id: 'vod-28', name: 'Thriller Series', duration: 75, type: 'VOD', source: 'playlist' },
+    { id: 'vod-29', name: 'Romance Collection', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-30', name: 'Horror Classic', duration: 80, type: 'VOD', source: 'playlist' },
+    { id: 'vod-31', name: 'Sci-Fi Adventure', duration: 125, type: 'VOD', source: 'playlist' },
+    { id: 'vod-32', name: 'Family Movie', duration: 105, type: 'VOD', source: 'playlist' },
+    { id: 'vod-33', name: 'Comedy Series', duration: 65, type: 'VOD', source: 'playlist' },
+    { id: 'vod-34', name: 'Drama Special', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-35', name: 'Action Series', duration: 115, type: 'VOD', source: 'playlist' },
+    { id: 'vod-36', name: 'Documentary Film', duration: 70, type: 'VOD', source: 'playlist' },
+    { id: 'vod-37', name: 'Musical Drama', duration: 130, type: 'VOD', source: 'playlist' },
+    { id: 'vod-38', name: 'Crime Drama', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-39', name: 'Fantasy Adventure', duration: 135, type: 'VOD', source: 'playlist' },
+    { id: 'vod-40', name: 'Sports Movie', duration: 100, type: 'VOD', source: 'playlist' },
+    { id: 'vod-41', name: 'Historical Film', duration: 120, type: 'VOD', source: 'playlist' },
+    { id: 'vod-42', name: 'Animation Movie', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-43', name: 'Mystery Series', duration: 75, type: 'VOD', source: 'playlist' },
+    { id: 'vod-44', name: 'Comedy Special', duration: 60, type: 'VOD', source: 'playlist' },
+    { id: 'vod-45', name: 'Adventure Movie', duration: 110, type: 'VOD', source: 'playlist' },
+    { id: 'vod-46', name: 'Drama Series', duration: 80, type: 'VOD', source: 'playlist' },
+    { id: 'vod-47', name: 'Action Adventure', duration: 125, type: 'VOD', source: 'playlist' },
+    { id: 'vod-48', name: 'Romantic Drama', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-49', name: 'Superhero Movie', duration: 145, type: 'VOD', source: 'playlist' },
+    { id: 'vod-50', name: 'War Film', duration: 140, type: 'VOD', source: 'playlist' },
+    { id: 'vod-51', name: 'Nature Documentary', duration: 55, type: 'VOD', source: 'playlist' },
+    { id: 'vod-52', name: 'Music Video Collection', duration: 65, type: 'VOD', source: 'playlist' },
+    { id: 'vod-53', name: 'Comedy Movie Night', duration: 105, type: 'VOD', source: 'playlist' },
+    { id: 'vod-54', name: 'Drama Feature', duration: 115, type: 'VOD', source: 'playlist' },
+    { id: 'vod-55', name: 'Action Packed', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-56', name: 'Thriller Night', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-57', name: 'Romance Special', duration: 100, type: 'VOD', source: 'playlist' },
+    { id: 'vod-58', name: 'Horror Night', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-59', name: 'Sci-Fi Collection', duration: 130, type: 'VOD', source: 'playlist' },
+    { id: 'vod-60', name: 'Family Fun', duration: 80, type: 'VOD', source: 'playlist' },
+    { id: 'vod-61', name: 'Comedy Hour', duration: 70, type: 'VOD', source: 'playlist' },
+    { id: 'vod-62', name: 'Drama Night', duration: 110, type: 'VOD', source: 'playlist' },
+    { id: 'vod-63', name: 'Action Thrills', duration: 120, type: 'VOD', source: 'playlist' },
+    { id: 'vod-64', name: 'Documentary Special', duration: 75, type: 'VOD', source: 'playlist' },
+    { id: 'vod-65', name: 'Musical Night', duration: 135, type: 'VOD', source: 'playlist' },
+    { id: 'vod-66', name: 'Crime Story', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-67', name: 'Fantasy Quest', duration: 125, type: 'VOD', source: 'playlist' },
+    { id: 'vod-68', name: 'Sports Action', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-69', name: 'Historical Epic', duration: 150, type: 'VOD', source: 'playlist' },
+    { id: 'vod-70', name: 'Animation Fun', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-71', name: 'Mystery Thriller', duration: 105, type: 'VOD', source: 'playlist' },
+    { id: 'vod-72', name: 'Comedy Gold', duration: 65, type: 'VOD', source: 'playlist' },
+    { id: 'vod-73', name: 'Adventure Quest', duration: 140, type: 'VOD', source: 'playlist' },
+    { id: 'vod-74', name: 'Drama Classic', duration: 100, type: 'VOD', source: 'playlist' },
+    { id: 'vod-75', name: 'Action Hero', duration: 115, type: 'VOD', source: 'playlist' },
+    { id: 'vod-76', name: 'Documentary Insight', duration: 60, type: 'VOD', source: 'playlist' },
+    { id: 'vod-77', name: 'Musical Magic', duration: 120, type: 'VOD', source: 'playlist' },
+    { id: 'vod-78', name: 'Crime Investigation', duration: 80, type: 'VOD', source: 'playlist' },
+    { id: 'vod-79', name: 'Fantasy World', duration: 130, type: 'VOD', source: 'playlist' },
+    { id: 'vod-80', name: 'Sports Highlights', duration: 70, type: 'VOD', source: 'playlist' },
+    { id: 'vod-81', name: 'Historical Journey', duration: 110, type: 'VOD', source: 'playlist' },
+    { id: 'vod-82', name: 'Animation Adventure', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-83', name: 'Mystery Case', duration: 75, type: 'VOD', source: 'playlist' },
+    { id: 'vod-84', name: 'Comedy Show', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-85', name: 'Adventure Series', duration: 125, type: 'VOD', source: 'playlist' },
+    { id: 'vod-86', name: 'Drama Series', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-87', name: 'Action Blockbuster', duration: 145, type: 'VOD', source: 'playlist' },
+    { id: 'vod-88', name: 'Thriller Series', duration: 100, type: 'VOD', source: 'playlist' },
+    { id: 'vod-89', name: 'Romance Collection', duration: 105, type: 'VOD', source: 'playlist' },
+    { id: 'vod-90', name: 'Horror Collection', duration: 80, type: 'VOD', source: 'playlist' },
+    { id: 'vod-91', name: 'Sci-Fi Series', duration: 135, type: 'VOD', source: 'playlist' },
+    { id: 'vod-92', name: 'Family Collection', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-93', name: 'Comedy Collection', duration: 70, type: 'VOD', source: 'playlist' },
+    { id: 'vod-94', name: 'Drama Collection', duration: 115, type: 'VOD', source: 'playlist' },
+    { id: 'vod-95', name: 'Action Collection', duration: 120, type: 'VOD', source: 'playlist' },
+    { id: 'vod-96', name: 'Documentary Collection', duration: 65, type: 'VOD', source: 'playlist' },
+    { id: 'vod-97', name: 'Musical Collection', duration: 140, type: 'VOD', source: 'playlist' },
+    { id: 'vod-98', name: 'Crime Collection', duration: 85, type: 'VOD', source: 'playlist' },
+    { id: 'vod-99', name: 'Fantasy Collection', duration: 130, type: 'VOD', source: 'playlist' },
+    { id: 'vod-100', name: 'Sports Collection', duration: 75, type: 'VOD', source: 'playlist' },
+    { id: 'vod-101', name: 'Historical Collection', duration: 125, type: 'VOD', source: 'playlist' },
+    { id: 'vod-102', name: 'Animation Collection', duration: 90, type: 'VOD', source: 'playlist' },
+    { id: 'vod-103', name: 'Mystery Collection', duration: 105, type: 'VOD', source: 'playlist' },
+    { id: 'vod-104', name: 'Comedy Special Collection', duration: 60, type: 'VOD', source: 'playlist' },
+    { id: 'vod-105', name: 'Adventure Collection', duration: 135, type: 'VOD', source: 'playlist' }
   ].map(item => ({
     ...item,
     source: 'playlist' as const,
@@ -666,14 +716,13 @@ export const EPGPreview = ({
     try {
       localStorage.setItem(key, JSON.stringify(dayItems));
       // Dispatch custom event to notify Scheduler tab of the update
-      window.dispatchEvent(new CustomEvent('previewDataUpdated'));
+      window.dispatchEvent(new CustomEvent('epg-preview-data-updated'));
     } catch {
       // Error persisting to localStorage
     }
   };
 
   const handleAdSave = (adConfig: Record<string, unknown>) => {
-    console.log("Ad config saved:", adConfig);
     setIsManageAdsModalOpen(false);
   };
 
@@ -682,7 +731,6 @@ export const EPGPreview = ({
     endDate: string,
     selectedDays: number[]
   ) => {
-    console.log("Repeat schedule saved:", { startDate, endDate, selectedDays });
     setIsRepeatModalOpen(false);
   };
 
@@ -701,11 +749,27 @@ export const EPGPreview = ({
       playlistContent = defaultPlaylistContent;
     }
     
+    // Use saved videos if available, otherwise use playlist content
+    const videosToUse = program.videos && program.videos.length > 0 
+      ? program.videos 
+      : playlistContent;
+    
+    // If this is an existing program without videos, update it in mockEPGData
+    if (!program.videos && program.id && !program.id.startsWith('new-')) {
+      setMockEPGData(prev => 
+        prev.map(item => 
+          item.id === program.id 
+            ? { ...item, videos: playlistContent }
+            : item
+        )
+      );
+    }
+    
     // Transform EPGPreviewItem to ScheduleBlock format for ProgramSettingsModal
     const transformedProgram = {
       ...program,
       time: program.time.split('T')[1], // Extract time part from ISO format (e.g., "2025-09-14T01:00" -> "01:00")
-      videos: playlistContent, // Use the playlist content instead of empty array
+      videos: videosToUse, // Use saved videos or playlist content
       tags: program.genre ? [program.genre] : [], // Convert genre to tags array
       playlistId: program.playlist || "Default Playlist" // Map playlist to playlistId
     };
@@ -740,6 +804,12 @@ export const EPGPreview = ({
   };
 
   const saveProgramSettings = (program: any, videos: any[]) => {
+    // Calculate custom content statistics
+    const customVideos = videos.filter(video => video.source === 'custom');
+    const customContentCount = customVideos.length;
+    const customContentDuration = customVideos.reduce((total, video) => total + (video.duration || 0), 0);
+    
+    
     // Update the program in mockEPGData
     setMockEPGData(prev => 
       prev.map(item => 
@@ -754,11 +824,13 @@ export const EPGPreview = ({
               status: program.status,
               genre: program.tags?.[0] || item.genre, // Map tags to genre
               playlist: program.playlist,
+              customContentCount, // Track custom content count
+              customContentDuration, // Track custom content duration
+              videos, // Store the actual videos (playlist + custom content)
               // Reconstruct the ISO time format from the simple time format
               time: item.time.includes('T') ? 
                 item.time.split('T')[0] + 'T' + program.time : 
                 program.time
-              // Note: EPGPreviewItem doesn't have videos property, so we don't include it
             }
           : item
       )
@@ -767,6 +839,7 @@ export const EPGPreview = ({
     setIsProgramSettingsOpen(false);
     setSelectedProgram(null);
     setHasProgramChanges(false);
+    
     
     toast({
       title: 'Program updated',
@@ -829,7 +902,6 @@ export const EPGPreview = ({
               };
               
               // Debug log to verify time updates
-              console.log(`Updated program "${item.title}" time from ${item.time.split('T')[1]} to ${timeString}`);
               
               return updatedItem;
             }
@@ -850,7 +922,7 @@ export const EPGPreview = ({
         try {
           localStorage.setItem(`epg:preview:day:${todayStr}`, JSON.stringify(dayItems));
           // Dispatch custom event to notify Scheduler tab of the update
-          window.dispatchEvent(new CustomEvent('previewDataUpdated'));
+          window.dispatchEvent(new CustomEvent('epg-preview-data-updated'));
         } catch {
           // Error persisting to localStorage
         }
@@ -1207,9 +1279,6 @@ export const EPGPreview = ({
               {showStatus && (
                 <>
                   <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
-                  <Badge className={getStatusColor(item.status)}>
-                    {item.status}
-                  </Badge>
                   {item.status === "live" && (
                     <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
                   )}
@@ -1218,13 +1287,24 @@ export const EPGPreview = ({
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div>
+            <div className="flex-1">
               <p className="text-sm text-muted-foreground">
                 {item.description}
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Playlist: {item.playlist || "Default Playlist"}
-              </p>
+              {(() => {
+                const contentInfo = getProgramContentInfo(item);
+                return (
+                  <div className="mt-2 space-y-1">
+                    <div className="text-xs text-muted-foreground">
+                      Playlist: {item.playlist || "Default Playlist"} - {contentInfo.playlistVideos} videos
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      Custom Content: {contentInfo.customVideos} Videos
+                    </div>
+                    
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -2023,13 +2103,14 @@ export const EPGPreview = ({
                     .filter((i) => i.status === "completed")
                     .map((item) => (
                       <ProgramItem
-                        key={item.id}
+                        key={`${item.id}-${item.videos?.length || 0}-${item.customContentCount || 0}-${item.customContentDuration || 0}`}
                         item={item}
                         isDraggable={false}
                       />
                     ))}
                   {dailyPrograms.find((i) => i.status === "live") && (
                     <ProgramItem
+                      key={`${dailyPrograms.find((i) => i.status === "live")!.id}-${dailyPrograms.find((i) => i.status === "live")!.videos?.length || 0}-${dailyPrograms.find((i) => i.status === "live")!.customContentCount || 0}-${dailyPrograms.find((i) => i.status === "live")!.customContentDuration || 0}`}
                       item={dailyPrograms.find((i) => i.status === "live")!}
                       isDraggable={false}
                     />
@@ -2048,7 +2129,7 @@ export const EPGPreview = ({
                       {dailyPrograms
                         .filter((i) => i.status === "scheduled")
                         .map((item) => (
-                          <SortableItem key={item.id} id={item.id}>
+                          <SortableItem key={`${item.id}-${item.videos?.length || 0}-${item.customContentCount || 0}-${item.customContentDuration || 0}`} id={item.id}>
                             {(listeners) => (
                               <ProgramItem
                                 item={item}
@@ -2157,7 +2238,7 @@ export const EPGPreview = ({
                   size="sm"
                   className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                   onClick={() =>
-                    setEditingProgram({
+                    openProgramSettings({
                       id: `new-${Date.now()}`,
                       time: `${new Date().toISOString().split("T")[0]}T12:00`,
                       title: "",
@@ -2167,6 +2248,7 @@ export const EPGPreview = ({
                       status: "scheduled",
                       genre: "",
                       playlist: "Default Playlist",
+                      videos: defaultPlaylistContent, // Initialize with default playlist
                     })
                   }
                 >

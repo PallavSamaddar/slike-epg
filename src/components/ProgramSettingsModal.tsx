@@ -533,7 +533,6 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [localProgram, setLocalProgram] = useState<ScheduleBlock | null>(null);
   const [localVideos, setLocalVideos] = useState<Video[]>([]);
   const [localHasChanges, setLocalHasChanges] = useState(false);
-  const [isRhsCollapsed, setIsRhsCollapsed] = useState(false);
   
   // Dirty state management
   const [initialSnapshot, setInitialSnapshot] = useState<any>(null);
@@ -701,24 +700,28 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
           handleAddContent(draggedData.video);
         }
       } catch (error) {
-        console.error('Error parsing dragged data:', error);
       }
     }
   }, [handleAddContent]);
 
   const totalDuration = localVideos.reduce((total, video) => total + video.duration, 0);
   
+  // Convert program duration from hours to minutes
+  const programDurationMinutes = localProgram ? localProgram.duration * 60 : 0;
+  
   // Calculate custom vs playlist video durations
   const customVideosDuration = localVideos
     .filter(video => video.source === 'custom')
     .reduce((total, video) => total + video.duration, 0);
   
-  const playlistVideosDuration = localVideos
+  const rawPlaylistVideosDuration = localVideos
     .filter(video => video.source === 'playlist')
     .reduce((total, video) => total + video.duration, 0);
   
-  // Program duration is already in minutes
-  const programDurationMinutes = localProgram ? localProgram.duration : 0;
+  // Limit playlist duration to fit within program duration (minus custom content)
+  const availableDurationForPlaylist = Math.max(0, programDurationMinutes - customVideosDuration);
+  const playlistVideosDuration = Math.min(rawPlaylistVideosDuration, availableDurationForPlaylist);
+  
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -777,6 +780,11 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
       <DialogContent className="w-[90vw] h-[90vh] max-w-[1600px] max-h-[95vh] p-0 overflow-hidden">
         {/* Screen reader live region */}
         <span className="sr-only" aria-live="polite" ref={ariaLiveRef} id="ps-status-aria"></span>
+        
+        {/* Hidden DialogHeader for accessibility */}
+        <DialogHeader className="sr-only">
+          <DialogTitle>{localProgram.title} — Program Settings</DialogTitle>
+        </DialogHeader>
         
         <div className="h-full flex flex-col">
           {/* Sticky modal header with Save/Close */}
@@ -839,45 +847,6 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="text-sm font-semibold">Program Content</div>
                   
-                  {/* Duration Progress Bar */}
-                  {programDurationMinutes > 0 && (
-                    <div className="flex items-center gap-4">
-                      {/* Progress Bar - Shows content fill against program duration */}
-                      <div className="flex items-center gap-2">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full flex">
-                            {customVideosDuration > 0 && (
-                              <div 
-                                className="bg-blue-500 transition-all duration-300"
-                                style={{ width: `${Math.min((customVideosDuration / programDurationMinutes) * 100, 100)}%` }}
-                              />
-                            )}
-                            {playlistVideosDuration > 0 && (
-                              <div 
-                                className="bg-green-500 transition-all duration-300"
-                                style={{ width: `${Math.min((playlistVideosDuration / programDurationMinutes) * 100, 100)}%` }}
-                              />
-                            )}
-                          </div>
-                        </div>
-                        <span className="text-xs text-gray-500 font-medium">
-                          {Math.round((totalDuration / programDurationMinutes) * 100)}%
-                        </span>
-                      </div>
-                      
-                      {/* Legend */}
-                      <div className="flex items-center gap-3 text-xs text-gray-600">
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                          <span>{customVideosDuration}m</span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                          <span>{playlistVideosDuration}m</span>
-                        </div>
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
               {/* The actual scroll area for LHS */}
