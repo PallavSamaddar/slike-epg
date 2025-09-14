@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect, useCallback, useMemo, memo } from 'react';
-import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, GripVertical, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown, Save, Flag } from 'lucide-react';
+import { Plus, Calendar, Clock, MapPin, Tag, Copy, RotateCcw, Settings, Edit, Trash2, X, MoreVertical, Play, Pause, SkipBack, SkipForward, Eye, Search, ChevronDown, Save, Flag } from 'lucide-react';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { arrayMove, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { Toaster } from '@/components/ui/toaster';
@@ -24,6 +22,9 @@ interface Video {
   id: string;
   name: string;
   duration: number;
+  type?: 'VOD' | 'Event' | 'Live' | 'YouTube';
+  playlistName?: string;
+  source?: 'playlist' | 'custom';
 }
 
 interface ScheduleBlock {
@@ -207,31 +208,36 @@ const VideoPreviewDialog = ({ video, isOpen, onClose, isEditMode = false, onDele
   );
 };
 
-const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId, isInCurrentBlock }: { 
+const VideoItem = memo(({ video, blockId, blockTime, onDeleteVideo, isInCurrentBlock }: { 
   video: Video; 
   blockId: string; 
   blockTime: string;
   onDeleteVideo: (videoId: string) => void;
-  dndId?: string;
   isInCurrentBlock?: boolean;
 }) => {
   const [showPreview, setShowPreview] = useState(false);
   const [showEdit, setShowEdit] = useState(false);
-  
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
-    id: dndId ?? `${blockId}-${video.id}`,
-    data: { video, blockId }
-  });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
 
   // Determine text color based on block time
   const getTextColor = () => {
     return isInCurrentBlock ? 'text-white' : 'text-black';
+  };
+
+  // Get batch text for the video
+  const getBatchText = (video: Video) => {
+    if (video.source === 'playlist' && video.playlistName) {
+      return `${video.type || 'VOD'} - Playlist: ${video.playlistName}`;
+    } else if (video.source === 'custom') {
+      switch (video.type) {
+        case 'VOD': return 'VOD - Custom';
+        case 'Event': return 'LiveRec - Custom';
+        case 'Live': return 'Live Event - Custom';
+        case 'YouTube': return 'YouTube - Custom';
+        default: return 'VOD - Custom';
+      }
+    } else {
+      return video.type || 'VOD';
+    }
   };
 
   const handleDelete = useCallback(() => {
@@ -240,18 +246,12 @@ const DraggableVideo = memo(({ video, blockId, blockTime, onDeleteVideo, dndId, 
 
   return (
     <>
-      <div
-        ref={setNodeRef}
-        style={style}
-        className="flex items-center gap-2 p-1 bg-black/10 rounded text-xs"
-      >
-        <div
-          {...attributes}
-          {...listeners}
-          className="flex items-center gap-2 flex-1 cursor-grab active:cursor-grabbing"
-        >
-          <GripVertical className={`h-3 w-3 ${getTextColor()}`} />
+      <div className="flex items-center gap-2 p-1 bg-black/10 rounded text-xs">
+        <div className="flex items-center gap-2 flex-1">
           <span className={`flex-1 truncate ${getTextColor()}`}>{video.name}</span>
+          <span className={`text-xs px-1 py-0.5 rounded ${isInCurrentBlock ? 'bg-white/20 text-white' : 'bg-black/10 text-black'}`}>
+            {getBatchText(video)}
+          </span>
           <span className={getTextColor()}>{video.duration}m</span>
         </div>
         
@@ -1337,21 +1337,18 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
 
                                     <div className="flex gap-3">
                                       <div className="flex-1">
-                                        <SortableContext items={block.videos.map(v => `${day.key}-${block.id}-${v.id}`)} strategy={verticalListSortingStrategy}>
-                                          <div className="space-y-1 max-h-32 overflow-y-auto">
-                                            {block.videos.map(video => (
-                                              <DraggableVideo
-                                                key={video.id}
-                                                video={video}
-                                                blockId={block.id}
-                                                blockTime={block.time}
-                                                onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
-                                                dndId={`${day.key}-${block.id}-${video.id}`}
-                                                isInCurrentBlock={isCurrentBlock(day.key, block.id)}
-                                              />
-                                            ))}
-                                          </div>
-                                        </SortableContext>
+                                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                                          {block.videos.map(video => (
+                                            <VideoItem
+                                              key={video.id}
+                                              video={video}
+                                              blockId={block.id}
+                                              blockTime={block.time}
+                                              onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
+                                              isInCurrentBlock={isCurrentBlock(day.key, block.id)}
+                                            />
+                                          ))}
+                                        </div>
                                       </div>
                                       <div className="flex-shrink-0 text-right"></div>
                                     </div>

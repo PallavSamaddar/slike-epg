@@ -42,6 +42,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ManageAdsModal } from "./ManageAdsModal";
 import { RepeatScheduleModal } from "./RepeatScheduleModal";
+import { ProgramSettingsModal } from "./ProgramSettingsModal";
 import {
   Dialog,
   DialogContent,
@@ -201,6 +202,118 @@ export const EPGPreview = ({
 }: {
   onNavigate?: (view: string) => void;
 }) => {
+  // Default playlist with 100+ VOD content items
+  const defaultPlaylistContent = [
+    { id: 'vod-1', name: 'Action Movie Collection', duration: 120, type: 'VOD' },
+    { id: 'vod-2', name: 'Comedy Special', duration: 90, type: 'VOD' },
+    { id: 'vod-3', name: 'Documentary Series', duration: 60, type: 'VOD' },
+    { id: 'vod-4', name: 'Romantic Drama', duration: 110, type: 'VOD' },
+    { id: 'vod-5', name: 'Thriller Night', duration: 95, type: 'VOD' },
+    { id: 'vod-6', name: 'Family Adventure', duration: 100, type: 'VOD' },
+    { id: 'vod-7', name: 'Sci-Fi Classic', duration: 130, type: 'VOD' },
+    { id: 'vod-8', name: 'Horror Showcase', duration: 85, type: 'VOD' },
+    { id: 'vod-9', name: 'Musical Extravaganza', duration: 140, type: 'VOD' },
+    { id: 'vod-10', name: 'Crime Investigation', duration: 75, type: 'VOD' },
+    { id: 'vod-11', name: 'Fantasy Quest', duration: 125, type: 'VOD' },
+    { id: 'vod-12', name: 'Sports Documentary', duration: 55, type: 'VOD' },
+    { id: 'vod-13', name: 'Historical Drama', duration: 105, type: 'VOD' },
+    { id: 'vod-14', name: 'Animation Collection', duration: 80, type: 'VOD' },
+    { id: 'vod-15', name: 'Mystery Thriller', duration: 115, type: 'VOD' },
+    { id: 'vod-16', name: 'Comedy Stand-up', duration: 65, type: 'VOD' },
+    { id: 'vod-17', name: 'Adventure Series', duration: 135, type: 'VOD' },
+    { id: 'vod-18', name: 'Drama Series', duration: 70, type: 'VOD' },
+    { id: 'vod-19', name: 'Action Thriller', duration: 95, type: 'VOD' },
+    { id: 'vod-20', name: 'Romantic Comedy', duration: 90, type: 'VOD' },
+    { id: 'vod-21', name: 'Superhero Saga', duration: 150, type: 'VOD' },
+    { id: 'vod-22', name: 'War Documentary', duration: 85, type: 'VOD' },
+    { id: 'vod-23', name: 'Nature Special', duration: 60, type: 'VOD' },
+    { id: 'vod-24', name: 'Music Concert', duration: 120, type: 'VOD' },
+    { id: 'vod-25', name: 'Comedy Movie', duration: 100, type: 'VOD' },
+    { id: 'vod-26', name: 'Drama Film', duration: 110, type: 'VOD' },
+    { id: 'vod-27', name: 'Action Blockbuster', duration: 140, type: 'VOD' },
+    { id: 'vod-28', name: 'Thriller Series', duration: 75, type: 'VOD' },
+    { id: 'vod-29', name: 'Romance Collection', duration: 95, type: 'VOD' },
+    { id: 'vod-30', name: 'Horror Classic', duration: 80, type: 'VOD' },
+    { id: 'vod-31', name: 'Sci-Fi Adventure', duration: 125, type: 'VOD' },
+    { id: 'vod-32', name: 'Family Movie', duration: 105, type: 'VOD' },
+    { id: 'vod-33', name: 'Comedy Series', duration: 65, type: 'VOD' },
+    { id: 'vod-34', name: 'Drama Special', duration: 90, type: 'VOD' },
+    { id: 'vod-35', name: 'Action Series', duration: 115, type: 'VOD' },
+    { id: 'vod-36', name: 'Documentary Film', duration: 70, type: 'VOD' },
+    { id: 'vod-37', name: 'Musical Drama', duration: 130, type: 'VOD' },
+    { id: 'vod-38', name: 'Crime Drama', duration: 85, type: 'VOD' },
+    { id: 'vod-39', name: 'Fantasy Adventure', duration: 135, type: 'VOD' },
+    { id: 'vod-40', name: 'Sports Movie', duration: 100, type: 'VOD' },
+    { id: 'vod-41', name: 'Historical Film', duration: 120, type: 'VOD' },
+    { id: 'vod-42', name: 'Animation Movie', duration: 95, type: 'VOD' },
+    { id: 'vod-43', name: 'Mystery Series', duration: 75, type: 'VOD' },
+    { id: 'vod-44', name: 'Comedy Special', duration: 60, type: 'VOD' },
+    { id: 'vod-45', name: 'Adventure Movie', duration: 110, type: 'VOD' },
+    { id: 'vod-46', name: 'Drama Series', duration: 80, type: 'VOD' },
+    { id: 'vod-47', name: 'Action Adventure', duration: 125, type: 'VOD' },
+    { id: 'vod-48', name: 'Romantic Drama', duration: 90, type: 'VOD' },
+    { id: 'vod-49', name: 'Superhero Movie', duration: 145, type: 'VOD' },
+    { id: 'vod-50', name: 'War Film', duration: 140, type: 'VOD' },
+    { id: 'vod-51', name: 'Nature Documentary', duration: 55, type: 'VOD' },
+    { id: 'vod-52', name: 'Music Video Collection', duration: 65, type: 'VOD' },
+    { id: 'vod-53', name: 'Comedy Movie Night', duration: 105, type: 'VOD' },
+    { id: 'vod-54', name: 'Drama Feature', duration: 115, type: 'VOD' },
+    { id: 'vod-55', name: 'Action Packed', duration: 95, type: 'VOD' },
+    { id: 'vod-56', name: 'Thriller Night', duration: 85, type: 'VOD' },
+    { id: 'vod-57', name: 'Romance Special', duration: 100, type: 'VOD' },
+    { id: 'vod-58', name: 'Horror Night', duration: 90, type: 'VOD' },
+    { id: 'vod-59', name: 'Sci-Fi Collection', duration: 130, type: 'VOD' },
+    { id: 'vod-60', name: 'Family Fun', duration: 80, type: 'VOD' },
+    { id: 'vod-61', name: 'Comedy Hour', duration: 70, type: 'VOD' },
+    { id: 'vod-62', name: 'Drama Night', duration: 110, type: 'VOD' },
+    { id: 'vod-63', name: 'Action Thrills', duration: 120, type: 'VOD' },
+    { id: 'vod-64', name: 'Documentary Special', duration: 75, type: 'VOD' },
+    { id: 'vod-65', name: 'Musical Night', duration: 135, type: 'VOD' },
+    { id: 'vod-66', name: 'Crime Story', duration: 95, type: 'VOD' },
+    { id: 'vod-67', name: 'Fantasy Quest', duration: 125, type: 'VOD' },
+    { id: 'vod-68', name: 'Sports Action', duration: 85, type: 'VOD' },
+    { id: 'vod-69', name: 'Historical Epic', duration: 150, type: 'VOD' },
+    { id: 'vod-70', name: 'Animation Fun', duration: 90, type: 'VOD' },
+    { id: 'vod-71', name: 'Mystery Thriller', duration: 105, type: 'VOD' },
+    { id: 'vod-72', name: 'Comedy Gold', duration: 65, type: 'VOD' },
+    { id: 'vod-73', name: 'Adventure Quest', duration: 140, type: 'VOD' },
+    { id: 'vod-74', name: 'Drama Classic', duration: 100, type: 'VOD' },
+    { id: 'vod-75', name: 'Action Hero', duration: 115, type: 'VOD' },
+    { id: 'vod-76', name: 'Documentary Insight', duration: 60, type: 'VOD' },
+    { id: 'vod-77', name: 'Musical Magic', duration: 120, type: 'VOD' },
+    { id: 'vod-78', name: 'Crime Investigation', duration: 80, type: 'VOD' },
+    { id: 'vod-79', name: 'Fantasy World', duration: 130, type: 'VOD' },
+    { id: 'vod-80', name: 'Sports Highlights', duration: 70, type: 'VOD' },
+    { id: 'vod-81', name: 'Historical Journey', duration: 110, type: 'VOD' },
+    { id: 'vod-82', name: 'Animation Adventure', duration: 95, type: 'VOD' },
+    { id: 'vod-83', name: 'Mystery Case', duration: 75, type: 'VOD' },
+    { id: 'vod-84', name: 'Comedy Show', duration: 85, type: 'VOD' },
+    { id: 'vod-85', name: 'Adventure Series', duration: 125, type: 'VOD' },
+    { id: 'vod-86', name: 'Drama Series', duration: 90, type: 'VOD' },
+    { id: 'vod-87', name: 'Action Blockbuster', duration: 145, type: 'VOD' },
+    { id: 'vod-88', name: 'Thriller Series', duration: 100, type: 'VOD' },
+    { id: 'vod-89', name: 'Romance Collection', duration: 105, type: 'VOD' },
+    { id: 'vod-90', name: 'Horror Collection', duration: 80, type: 'VOD' },
+    { id: 'vod-91', name: 'Sci-Fi Series', duration: 135, type: 'VOD' },
+    { id: 'vod-92', name: 'Family Collection', duration: 95, type: 'VOD' },
+    { id: 'vod-93', name: 'Comedy Collection', duration: 70, type: 'VOD' },
+    { id: 'vod-94', name: 'Drama Collection', duration: 115, type: 'VOD' },
+    { id: 'vod-95', name: 'Action Collection', duration: 120, type: 'VOD' },
+    { id: 'vod-96', name: 'Documentary Collection', duration: 65, type: 'VOD' },
+    { id: 'vod-97', name: 'Musical Collection', duration: 140, type: 'VOD' },
+    { id: 'vod-98', name: 'Crime Collection', duration: 85, type: 'VOD' },
+    { id: 'vod-99', name: 'Fantasy Collection', duration: 130, type: 'VOD' },
+    { id: 'vod-100', name: 'Sports Collection', duration: 75, type: 'VOD' },
+    { id: 'vod-101', name: 'Historical Collection', duration: 125, type: 'VOD' },
+    { id: 'vod-102', name: 'Animation Collection', duration: 90, type: 'VOD' },
+    { id: 'vod-103', name: 'Mystery Collection', duration: 105, type: 'VOD' },
+    { id: 'vod-104', name: 'Comedy Special Collection', duration: 60, type: 'VOD' },
+    { id: 'vod-105', name: 'Adventure Collection', duration: 135, type: 'VOD' }
+  ].map(item => ({
+    ...item,
+    source: 'playlist' as const,
+    playlistName: 'Default Playlist'
+  }));
   const [selectedFormat, setSelectedFormat] = useState("xmltv");
   const [includeMetadata, setIncludeMetadata] = useState(true);
   const [distributor, setDistributor] = useState("Gracenote");
@@ -575,6 +688,92 @@ export const EPGPreview = ({
 
   const { toast } = useToast();
 
+  // Program Settings Modal handlers
+  const openProgramSettings = (program: any) => {
+    // Get the playlist content based on the program's playlist
+    let playlistContent = defaultPlaylistContent;
+    
+    // If program has a different playlist, you can extend this logic
+    // For now, all programs use the default playlist
+    if (program.playlist && program.playlist !== "Default Playlist") {
+      // In the future, you can add logic to load different playlists
+      // For now, we'll use the default playlist
+      playlistContent = defaultPlaylistContent;
+    }
+    
+    // Transform EPGPreviewItem to ScheduleBlock format for ProgramSettingsModal
+    const transformedProgram = {
+      ...program,
+      time: program.time.split('T')[1], // Extract time part from ISO format (e.g., "2025-09-14T01:00" -> "01:00")
+      videos: playlistContent, // Use the playlist content instead of empty array
+      tags: program.genre ? [program.genre] : [], // Convert genre to tags array
+      playlistId: program.playlist || "Default Playlist" // Map playlist to playlistId
+    };
+    setSelectedProgram(transformedProgram);
+    setHasProgramChanges(false);
+    setIsProgramSettingsOpen(true);
+  };
+
+  const closeProgramSettings = () => {
+    if (hasProgramChanges) {
+      setShowUnsavedConfirm(true);
+    } else {
+      setIsProgramSettingsOpen(false);
+      setSelectedProgram(null);
+      setHasProgramChanges(false);
+    }
+  };
+
+  const handleUnsavedClose = () => {
+    setShowUnsavedConfirm(true);
+  };
+
+  const confirmDiscard = () => {
+    setIsProgramSettingsOpen(false);
+    setSelectedProgram(null);
+    setHasProgramChanges(false);
+    setShowUnsavedConfirm(false);
+  };
+
+  const cancelDiscard = () => {
+    setShowUnsavedConfirm(false);
+  };
+
+  const saveProgramSettings = (program: any, videos: any[]) => {
+    // Update the program in mockEPGData
+    setMockEPGData(prev => 
+      prev.map(item => 
+        item.id === program.id 
+          ? { 
+              ...item, 
+              title: program.title,
+              type: program.type,
+              duration: program.duration,
+              geoZone: program.geoZone,
+              description: program.description,
+              status: program.status,
+              genre: program.tags?.[0] || item.genre, // Map tags to genre
+              playlist: program.playlist,
+              // Reconstruct the ISO time format from the simple time format
+              time: item.time.includes('T') ? 
+                item.time.split('T')[0] + 'T' + program.time : 
+                program.time
+              // Note: EPGPreviewItem doesn't have videos property, so we don't include it
+            }
+          : item
+      )
+    );
+    setHasUnsavedChanges(true);
+    setIsProgramSettingsOpen(false);
+    setSelectedProgram(null);
+    setHasProgramChanges(false);
+    
+    toast({
+      title: 'Program updated',
+      description: 'Program settings have been saved successfully.',
+    });
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
@@ -659,9 +858,12 @@ export const EPGPreview = ({
     }
   };
 
-  const [editingProgram, setEditingProgram] = useState<EPGPreviewItem | null>(
-    null
-  );
+
+  // Program Settings Modal state
+  const [isProgramSettingsOpen, setIsProgramSettingsOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState<any>(null);
+  const [hasProgramChanges, setHasProgramChanges] = useState(false);
+  const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
 
   const timeToMinutes = (time: string) => {
     const [hours, minutes] = time.split(":").map(Number);
@@ -734,28 +936,6 @@ export const EPGPreview = ({
     setHasUnsavedChanges(true);
   };
 
-  const handleSaveProgram = (item: EPGPreviewItem) => {
-    if (editingProgram) {
-      setMockEPGData((prev) => prev.map((p) => (p.id === item.id ? item : p)));
-      toast({ title: "Program updated successfully" });
-    } else {
-      setMockEPGData((prev) =>
-        [...prev, item].sort(
-          (a, b) => timeToMinutes(a.time) - timeToMinutes(b.time)
-        )
-      );
-      toast({ title: `${item.type} Block added successfully` });
-    }
-    setEditingProgram(null);
-    setHasUnsavedChanges(true);
-    try {
-      if (localStorage.getItem("fastChannelDraft")) {
-        localStorage.setItem("fastChannelDraftHasPrograms", "true");
-      }
-    } catch {
-      // Error accessing localStorage
-    }
-  };
 
   const [isSaving, setIsSaving] = useState(false);
 
@@ -1015,7 +1195,7 @@ export const EPGPreview = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={() =>
-                  setEditingProgram({
+                  openProgramSettings({
                     ...item,
                     type: activeTabId === "master-epg" ? "VOD" : item.type,
                   })
@@ -2222,22 +2402,44 @@ export const EPGPreview = ({
           </DialogContent>
         </Dialog>
       )}
-      {editingProgram && (
-        <Dialog
-          open={!!editingProgram}
-          onOpenChange={() => setEditingProgram(null)}
-        >
-          <AddBlockDialog
-            type={editingProgram.type}
-            programToEdit={editingProgram}
-            onAdd={handleSaveProgram}
-            existingPrograms={mockEPGData.filter(
-              (p) => p.id !== editingProgram.id
-            )}
-            onCancel={() => setEditingProgram(null)}
-          />
-        </Dialog>
-      )}
+      {/* Program Settings Modal */}
+      <ProgramSettingsModal
+        isOpen={isProgramSettingsOpen}
+        onClose={closeProgramSettings}
+        onSave={saveProgramSettings}
+        program={selectedProgram}
+        hasUnsavedChanges={hasProgramChanges}
+        onUnsavedClose={handleUnsavedClose}
+      />
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      <Dialog open={showUnsavedConfirm} onOpenChange={setShowUnsavedConfirm}>
+        <DialogContent className="bg-card-dark border-border max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Discard Unsaved Changes?</DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-muted-foreground">
+              You have unsaved changes to the program settings. Are you sure you want to discard them?
+            </p>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={cancelDiscard}
+              className="text-gray-700 hover:bg-gray-100"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={confirmDiscard}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Discard Changes
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <ManageAdsModal
         isOpen={isManageAdsModalOpen}
         onClose={() => setIsManageAdsModalOpen(false)}
