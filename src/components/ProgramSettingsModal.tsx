@@ -533,6 +533,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [localProgram, setLocalProgram] = useState<ScheduleBlock | null>(null);
   const [localVideos, setLocalVideos] = useState<Video[]>([]);
   const [localHasChanges, setLocalHasChanges] = useState(false);
+  const [isModalReady, setIsModalReady] = useState(false);
   
   // Dirty state management
   const [initialSnapshot, setInitialSnapshot] = useState<any>(null);
@@ -543,26 +544,34 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const ariaLiveRef = useRef<HTMLSpanElement>(null);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Initialize local state when program changes
+  // Initialize local state when program changes - with lazy loading
   React.useEffect(() => {
     if (program) {
-      setLocalProgram({ ...program });
+      setIsModalReady(false);
       
-      // Initialize videos with proper source and playlist information
-      const videosWithSource = program.videos.map(video => ({
-        ...video,
-        source: video.source || 'playlist', // Default to playlist if not specified
-        playlistName: video.playlistName || program.playlistId // Use program's playlist if not specified
-      }));
-      
-      setLocalVideos(videosWithSource);
-      setLocalHasChanges(false);
-      
-      // Create initial snapshot for dirty state tracking
-      const snapshot = createStateSnapshot(program, videosWithSource);
-      setInitialSnapshot(snapshot);
-      setIsDirty(false);
-      setLastSaved(null);
+      // Use requestAnimationFrame to defer heavy operations
+      requestAnimationFrame(() => {
+        setLocalProgram({ ...program });
+        
+        // Initialize videos with proper source and playlist information
+        const videosWithSource = program.videos.map(video => ({
+          ...video,
+          source: video.source || 'playlist', // Default to playlist if not specified
+          playlistName: video.playlistName || program.playlistId // Use program's playlist if not specified
+        }));
+        
+        setLocalVideos(videosWithSource);
+        setLocalHasChanges(false);
+        
+        // Create initial snapshot for dirty state tracking
+        const snapshot = createStateSnapshot(program, videosWithSource);
+        setInitialSnapshot(snapshot);
+        setIsDirty(false);
+        setLastSaved(null);
+        
+        // Mark modal as ready after data is processed
+        setIsModalReady(true);
+      });
     }
   }, [program]);
 
@@ -785,6 +794,19 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         <DialogHeader className="sr-only">
           <DialogTitle>{localProgram.title} — Program Settings</DialogTitle>
         </DialogHeader>
+        
+        {/* Loading State */}
+        {!isModalReady && (
+          <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center gap-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="text-sm text-gray-600">Loading program settings...</p>
+            </div>
+          </div>
+        )}
+        
+        {/* Main Content - Only render when ready */}
+        {isModalReady && (
         
         <div className="h-full flex flex-col">
           {/* Sticky modal header with Save/Close */}
@@ -1152,6 +1174,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
             </aside>
           </div>
         </div>
+        )}
       </DialogContent>
     </Dialog>
   );

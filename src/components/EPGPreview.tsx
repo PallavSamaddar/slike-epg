@@ -43,6 +43,7 @@ import { Label } from "@/components/ui/label";
 import { ManageAdsModal } from "./ManageAdsModal";
 import { RepeatScheduleModal } from "./RepeatScheduleModal";
 import { ProgramSettingsModal } from "./ProgramSettingsModal";
+import { CreateProgramModal } from "./CreateProgramModal";
 import {
   Dialog,
   DialogContent,
@@ -253,7 +254,8 @@ export const EPGPreview = ({
     };
   };
 
-  const defaultPlaylistContent = [
+  // Memoize the default playlist content to avoid recreation on every render
+  const defaultPlaylistContent = useMemo(() => [
     { id: 'vod-1', name: 'Action Movie Collection', duration: 120, type: 'VOD', source: 'playlist' },
     { id: 'vod-2', name: 'Comedy Special', duration: 90, type: 'VOD', source: 'playlist' },
     { id: 'vod-3', name: 'Documentary Series', duration: 60, type: 'VOD', source: 'playlist' },
@@ -363,7 +365,7 @@ export const EPGPreview = ({
     ...item,
     source: 'playlist' as const,
     playlistName: 'Default Playlist'
-  }));
+  })), []);
   const [selectedFormat, setSelectedFormat] = useState("xmltv");
   const [includeMetadata, setIncludeMetadata] = useState(true);
   const [distributor, setDistributor] = useState("Gracenote");
@@ -737,7 +739,7 @@ export const EPGPreview = ({
   const { toast } = useToast();
 
   // Program Settings Modal handlers
-  const openProgramSettings = (program: any) => {
+  const openProgramSettings = useCallback((program: any) => {
     // Get the playlist content based on the program's playlist
     let playlistContent = defaultPlaylistContent;
     
@@ -776,7 +778,7 @@ export const EPGPreview = ({
     setSelectedProgram(transformedProgram);
     setHasProgramChanges(false);
     setIsProgramSettingsOpen(true);
-  };
+  }, [defaultPlaylistContent, setMockEPGData]);
 
   const closeProgramSettings = () => {
     if (hasProgramChanges) {
@@ -787,6 +789,48 @@ export const EPGPreview = ({
       setHasProgramChanges(false);
     }
   };
+
+  // Create Program Modal handlers
+  const handleCreateProgram = useCallback((program: any) => {
+    // Convert the program data to match the expected format
+    const newProgram: EPGPreviewItem = {
+      id: program.id,
+      time: program.time,
+      title: program.title,
+      type: program.type,
+      duration: program.duration,
+      geoZone: program.geoZone,
+      description: program.description,
+      status: program.status,
+      genre: program.genre,
+      playlist: program.playlist,
+      imageUrl: program.imageUrl,
+    };
+
+    // Add to the mock data and sort by time
+    setMockEPGData(prev => {
+      const updated = [...prev, newProgram];
+      return updated.sort((a, b) => {
+        const timeA = new Date(a.time).getTime();
+        const timeB = new Date(b.time).getTime();
+        return timeA - timeB;
+      });
+    });
+
+    setHasUnsavedChanges(true);
+    setIsCreateProgramModalOpen(false);
+    
+    // Highlight the new program
+    setHighlightedProgramId(newProgram.id);
+    setTimeout(() => setHighlightedProgramId(null), 3000); // Remove highlight after 3 seconds
+    
+    // Mark draft as having programs
+    try {
+      if (localStorage.getItem('fastChannelDraft')) {
+        localStorage.setItem('fastChannelDraftHasPrograms', 'true');
+      }
+    } catch {}
+  }, []);
 
   const handleUnsavedClose = () => {
     setShowUnsavedConfirm(true);
@@ -935,6 +979,10 @@ export const EPGPreview = ({
   const [isProgramSettingsOpen, setIsProgramSettingsOpen] = useState(false);
   const [selectedProgram, setSelectedProgram] = useState<any>(null);
   const [hasProgramChanges, setHasProgramChanges] = useState(false);
+  
+  // Create Program Modal state
+  const [isCreateProgramModalOpen, setIsCreateProgramModalOpen] = useState(false);
+  const [highlightedProgramId, setHighlightedProgramId] = useState<string | null>(null);
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
 
   const timeToMinutes = (time: string) => {
@@ -1176,7 +1224,11 @@ export const EPGPreview = ({
     showStatus?: boolean;
   }) => {
     return (
-      <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
+      <div className={`p-3 rounded bg-background border border-border flex items-start gap-4 transition-all duration-500 ${
+        highlightedProgramId === item.id 
+          ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' 
+          : ''
+      }`}>
         <div className="flex-shrink-0 w-40 text-center">
           <div className="w-40 h-24 overflow-hidden rounded-sm">
             <img
@@ -1265,6 +1317,14 @@ export const EPGPreview = ({
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {showStatus && (
+                <>
+                  <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
+                  {item.status === "live" && (
+                    <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
+                  )}
+                </>
+              )}
               <button
                 onClick={() =>
                   openProgramSettings({
@@ -1276,14 +1336,6 @@ export const EPGPreview = ({
               >
                 <Settings className="h-4 w-4" />
               </button>
-              {showStatus && (
-                <>
-                  <Badge className={getTypeColor(item.type)}>{item.type}</Badge>
-                  {item.status === "live" && (
-                    <div className="w-2 h-2 bg-pcr-live-glow rounded-full animate-pulse-live"></div>
-                  )}
-                </>
-              )}
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -2237,20 +2289,7 @@ export const EPGPreview = ({
                   variant="outline"
                   size="sm"
                   className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
-                  onClick={() =>
-                    openProgramSettings({
-                      id: `new-${Date.now()}`,
-                      time: `${new Date().toISOString().split("T")[0]}T12:00`,
-                      title: "",
-                      type: "VOD",
-                      duration: 60,
-                      geoZone: "Global",
-                      status: "scheduled",
-                      genre: "",
-                      playlist: "Default Playlist",
-                      videos: defaultPlaylistContent, // Initialize with default playlist
-                    })
-                  }
+                  onClick={() => setIsCreateProgramModalOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Program
@@ -2492,6 +2531,14 @@ export const EPGPreview = ({
         program={selectedProgram}
         hasUnsavedChanges={hasProgramChanges}
         onUnsavedClose={handleUnsavedClose}
+      />
+      {/* Create Program Modal */}
+      <CreateProgramModal
+        isOpen={isCreateProgramModalOpen}
+        onClose={() => setIsCreateProgramModalOpen(false)}
+        onSave={handleCreateProgram}
+        existingPrograms={mockEPGData}
+        channelDate={new Date()}
       />
 
       {/* Unsaved Changes Confirmation Dialog */}

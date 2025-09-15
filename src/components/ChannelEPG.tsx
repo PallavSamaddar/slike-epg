@@ -14,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ManageAdsModal } from './ManageAdsModal';
 import { RepeatScheduleModal } from './RepeatScheduleModal';
+import { CreateProgramModal } from './CreateProgramModal';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -111,6 +112,8 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
 
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
   const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
+  const [isCreateProgramModalOpen, setIsCreateProgramModalOpen] = useState(false);
+  const [highlightedProgramId, setHighlightedProgramId] = useState<string | null>(null);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [isSelectDateCalendarOpen, setIsSelectDateCalendarOpen] = useState(false);
@@ -410,6 +413,47 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
       setIsRepeatModalOpen(false);
   };
 
+  const handleCreateProgram = (program: any) => {
+      // Convert the program data to match the expected format
+      const newProgram: EPGPreviewItem = {
+        id: program.id,
+        time: program.time,
+        title: program.title,
+        type: program.type,
+        duration: program.duration,
+        geoZone: program.geoZone,
+        description: program.description,
+        status: program.status,
+        genre: program.genre,
+        playlist: program.playlist,
+        imageUrl: program.imageUrl,
+      };
+
+      // Add to the mock data and sort by time
+      setMockEPGData(prev => {
+        const updated = [...prev, newProgram];
+        return updated.sort((a, b) => {
+          const timeA = new Date(a.time).getTime();
+          const timeB = new Date(b.time).getTime();
+          return timeA - timeB;
+        });
+      });
+
+      setHasUnsavedChanges(true);
+      setIsCreateProgramModalOpen(false);
+      
+      // Highlight the new program
+      setHighlightedProgramId(newProgram.id);
+      setTimeout(() => setHighlightedProgramId(null), 3000); // Remove highlight after 3 seconds
+      
+      // Mark draft as having programs
+      try {
+        if (localStorage.getItem('fastChannelDraft')) {
+          localStorage.setItem('fastChannelDraftHasPrograms', 'true');
+        }
+      } catch {}
+  };
+
   const { toast } = useToast();
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -624,19 +668,7 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
                   variant="outline"
                   size="sm"
                   className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
-                  onClick={() =>
-                    setEditingProgram({
-                      id: `new-${Date.now()}`,
-                      time: `${new Date().toISOString().split("T")[0]}T12:00`,
-                      title: "",
-                      type: "VOD",
-                      duration: 60,
-                      geoZone: "Global",
-                      status: "scheduled",
-                      genre: "",
-                      playlist: "Default Playlist",
-                    })
-                  }
+                  onClick={() => setIsCreateProgramModalOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Add Program
@@ -751,7 +783,11 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
                            {todayPrograms.map((item) => (
                               <SortableItem key={item.id} id={item.id}>
                                   {(listeners) => (
-                                      <div className="p-3 rounded bg-background border border-border flex items-start gap-4">
+                                      <div className={`p-3 rounded bg-background border border-border flex items-start gap-4 transition-all duration-500 ${
+                                        highlightedProgramId === item.id 
+                                          ? 'ring-2 ring-blue-500 bg-blue-50 border-blue-300' 
+                                          : ''
+                                      }`}>
                                         <div className="flex-shrink-0 w-40 text-center">
                                           <div className="w-40 h-24 overflow-hidden rounded-sm">
                                             <img loading="lazy" src={item.imageUrl || '/toi_global_poster.png'} alt={item.title} className="w-full h-full object-cover" />
@@ -899,6 +935,13 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
         isOpen={isRepeatModalOpen}
         onClose={() => setIsRepeatModalOpen(false)}
         onSave={handleRepeatSave}
+      />
+      <CreateProgramModal
+        isOpen={isCreateProgramModalOpen}
+        onClose={() => setIsCreateProgramModalOpen(false)}
+        onSave={handleCreateProgram}
+        existingPrograms={selectedDayPrograms}
+        channelDate={selectedDate}
       />
       <Toaster />
     </div>
