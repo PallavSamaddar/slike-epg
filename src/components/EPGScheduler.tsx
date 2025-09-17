@@ -1402,9 +1402,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
           </div>
           <div className="flex justify-end gap-2">
             <Button
-              variant="outline"
+              variant="secondary"
               onClick={cancelDiscard}
-              className="text-gray-700 hover:bg-gray-100"
             >
               Cancel
             </Button>

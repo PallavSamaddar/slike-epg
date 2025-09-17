@@ -16,6 +16,7 @@ import {
   Save, 
   X, 
   ChevronDown, 
+  ChevronRight,
   Search, 
   Eye, 
   GripVertical, 
@@ -25,7 +26,8 @@ import {
   Radio,
   Youtube,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -541,6 +543,9 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [isDirty, setIsDirty] = useState(false);
   const [invalidDragTarget, setInvalidDragTarget] = useState<string | null>(null);
   const [isAdvancedSettingsOpen, setIsAdvancedSettingsOpen] = useState(false);
+  const [isPlaylistContentExpanded, setIsPlaylistContentExpanded] = useState(false);
+  const [isPlaylistContentLoading, setIsPlaylistContentLoading] = useState(false);
+  const [playlistVideos, setPlaylistVideos] = useState<Video[]>([]);
   const ariaLiveRef = useRef<HTMLSpanElement>(null);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -554,17 +559,23 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         setLocalProgram({ ...program });
         
         // Initialize videos with proper source and playlist information
-        const videosWithSource = program.videos.map(video => ({
+        // Only load custom videos initially, playlist videos will be loaded on demand
+        const customVideos = program.videos.filter(video => video.source === 'custom').map(video => ({
           ...video,
-          source: video.source || 'playlist', // Default to playlist if not specified
-          playlistName: video.playlistName || program.playlistId // Use program's playlist if not specified
+          source: video.source || 'custom',
+          playlistName: video.playlistName || program.playlistId
         }));
         
-        setLocalVideos(videosWithSource);
+        setLocalVideos(customVideos);
         setLocalHasChanges(false);
         
+        // Reset playlist content state
+        setIsPlaylistContentExpanded(false);
+        setIsPlaylistContentLoading(false);
+        setPlaylistVideos([]);
+        
         // Create initial snapshot for dirty state tracking
-        const snapshot = createStateSnapshot(program, videosWithSource);
+        const snapshot = createStateSnapshot(program, customVideos);
         setInitialSnapshot(snapshot);
         setIsDirty(false);
         setLastSaved(null);
@@ -597,6 +608,29 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
       }
     }, 150); // 150ms throttle
   }, [localProgram, localVideos, initialSnapshot]);
+
+  // Handle playlist content expansion and loading
+  const handlePlaylistContentToggle = useCallback(async () => {
+    if (isPlaylistContentExpanded) {
+      // Collapse
+      setIsPlaylistContentExpanded(false);
+    } else {
+      // Expand and load playlist content
+      setIsPlaylistContentExpanded(true);
+      
+      if (playlistVideos.length === 0) {
+        setIsPlaylistContentLoading(true);
+        
+        // Simulate loading delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Load playlist videos from the program's original videos
+        const originalPlaylistVideos = program?.videos?.filter(video => video.source === 'playlist') || [];
+        setPlaylistVideos(originalPlaylistVideos);
+        setIsPlaylistContentLoading(false);
+      }
+    }
+  }, [isPlaylistContentExpanded, playlistVideos.length, program]);
 
   // Update dirty state when local state changes
   useEffect(() => {
@@ -935,57 +969,80 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                         >
                           <SortableContext items={localVideos.map(v => v.id)} strategy={verticalListSortingStrategy}>
                             <div className="space-y-4">
-                              {localVideos.length === 0 ? (
+                              {/* Custom Videos Group */}
+                              {localVideos.filter(v => v.source === 'custom').length > 0 && (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md">
+                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span className="text-sm font-medium text-blue-700">Custom Content</span>
+                                  </div>
+                                  {localVideos
+                                    .filter(v => v.source === 'custom')
+                                    .map((video, index) => (
+                                      <SortableVideoItem
+                                        key={video.id}
+                                        video={video}
+                                        index={index + 1}
+                                        onDelete={handleDeleteVideo}
+                                        group="custom"
+                                        isInvalidTarget={invalidDragTarget === video.id}
+                                      />
+                                    ))}
+                                </div>
+                              )}
+
+                              {/* Playlist Videos Group - Always visible and expandable */}
+                              <div className="space-y-2">
+                                <div 
+                                  className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md cursor-pointer hover:bg-green-100 transition-colors"
+                                  onClick={handlePlaylistContentToggle}
+                                >
+                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                  <span className="text-sm font-medium text-green-700">Playlist Content</span>
+                                  <div className="ml-auto">
+                                    {isPlaylistContentLoading ? (
+                                      <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                                    ) : isPlaylistContentExpanded ? (
+                                      <ChevronDown className="h-4 w-4 text-green-600" />
+                                    ) : (
+                                      <ChevronRight className="h-4 w-4 text-green-600" />
+                                    )}
+                                  </div>
+                                </div>
+                                
+                                {isPlaylistContentExpanded && (
+                                  <div className="space-y-2">
+                                    {isPlaylistContentLoading ? (
+                                      <div className="flex items-center justify-center py-4">
+                                        <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+                                        <span className="ml-2 text-sm text-gray-600">Loading playlist content...</span>
+                                      </div>
+                                    ) : playlistVideos.length > 0 ? (
+                                      playlistVideos.map((video, index) => (
+                                        <SortableVideoItem
+                                          key={video.id}
+                                          video={video}
+                                          index={localVideos.filter(v => v.source === 'custom').length + index + 1}
+                                          onDelete={handleDeleteVideo}
+                                          group="playlist"
+                                          isInvalidTarget={invalidDragTarget === video.id}
+                                        />
+                                      ))
+                                    ) : (
+                                      <div className="text-center py-4 text-sm text-gray-500">
+                                        No playlist content available
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Empty state message - only show when no custom videos */}
+                              {localVideos.filter(v => v.source === 'custom').length === 0 && (
                                 <div className="text-center py-8 text-gray-500">
                                   <Video className="h-12 w-12 mx-auto mb-4 text-gray-300" />
                                   <p>Drag content from the right panel or click the + button to add content</p>
                                 </div>
-                              ) : (
-                                <>
-                                  {/* Custom Videos Group */}
-                                  {localVideos.filter(v => v.source === 'custom').length > 0 && (
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md">
-                                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                        <span className="text-sm font-medium text-blue-700">Custom Content</span>
-                                      </div>
-                                      {localVideos
-                                        .filter(v => v.source === 'custom')
-                                        .map((video, index) => (
-                                          <SortableVideoItem
-                                            key={video.id}
-                                            video={video}
-                                            index={index + 1}
-                                            onDelete={handleDeleteVideo}
-                                            group="custom"
-                                            isInvalidTarget={invalidDragTarget === video.id}
-                                          />
-                                        ))}
-                                    </div>
-                                  )}
-                                  
-                                  {/* Playlist Videos Group */}
-                                  {localVideos.filter(v => v.source === 'playlist').length > 0 && (
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md">
-                                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                        <span className="text-sm font-medium text-green-700">Playlist Content</span>
-                                      </div>
-                                      {localVideos
-                                        .filter(v => v.source === 'playlist')
-                                        .map((video, index) => (
-                                          <SortableVideoItem
-                                            key={video.id}
-                                            video={video}
-                                            index={localVideos.filter(v => v.source === 'custom').length + index + 1}
-                                            onDelete={handleDeleteVideo}
-                                            group="playlist"
-                                            isInvalidTarget={invalidDragTarget === video.id}
-                                          />
-                                        ))}
-                                    </div>
-                                  )}
-                                </>
                               )}
                             </div>
                           </SortableContext>

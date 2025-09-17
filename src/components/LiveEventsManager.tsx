@@ -64,9 +64,20 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState<string>('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>('Default Playlist');
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const channelsPerPage = 8;
+
+  // Dummy campaign data
+  const campaignOptions = [
+    { id: 'campaign-1', name: 'Summer Campaign', duration: '30s' },
+    { id: 'campaign-2', name: 'Tech Launch', duration: '1m' },
+    { id: 'campaign-3', name: 'Holiday Special', duration: '1:30m' },
+    { id: 'campaign-4', name: 'Brand Awareness', duration: '2:00m' },
+    { id: 'campaign-5', name: 'Product Demo', duration: '45s' },
+    { id: 'campaign-6', name: 'Event Promo', duration: '1:15m' },
+  ];
 
   const mockSources: LiveSource[] = [
     {
@@ -360,6 +371,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     setAspectRatio('Landscape (16:9)');
     setTags([]);
     setTagInput('');
+    setSelectedCampaign('');
     onNavigate?.('preview');
   };
 
@@ -941,31 +953,64 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
         
         {/* Create Fast Channel Modal */}
         <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogContent className="bg-card-dark border-border max-w-xl">
+          <DialogContent className="bg-card-dark border-border w-[85vw] max-w-6xl">
             <DialogHeader>
               <DialogTitle className="text-foreground">Create Fast Channel</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label className="text-foreground">Channel Name *</Label>
-                <Input value={channelName} onChange={(e) => setChannelName(e.target.value)} placeholder="Enter channel name" className="bg-control-surface border-border text-foreground" />
+            <div className="space-y-6">
+              {/* Row 1: Title, Tags */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="col-span-2">
+                  <Label className="text-foreground">Channel Name *</Label>
+                  <Input value={channelName} onChange={(e) => setChannelName(e.target.value)} placeholder="Enter channel name" className="bg-control-surface border-border text-foreground" />
+                </div>
+                <div>
+                  <Label className="text-foreground">Tags</Label>
+                  <div className="mt-2 flex flex-wrap items-center gap-2 p-2 bg-control-surface border border-border rounded min-h-[40px]">
+                    {tags.map((t, idx) => (
+                      <span key={`${t}-${idx}`} className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-foreground text-xs border border-border">
+                        {t}
+                        <button
+                          aria-label={`Remove ${t}`}
+                          className="hidden group-hover:inline-flex text-muted-foreground hover:text-foreground"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setTags(prev => prev.filter((tag, i) => i !== idx));
+                          }}
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === ' ' || e.key === 'Spacebar') {
+                          const newTag = tagInput.trim();
+                          if (newTag) {
+                            e.preventDefault();
+                            setTags(prev => Array.from(new Set([...prev, newTag])));
+                            setTagInput('');
+                          }
+                        }
+                      }}
+                      placeholder="Type tag and press space"
+                      className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
+                    />
+                  </div>
+                </div>
               </div>
+
+              {/* Row 2: Description */}
               <div>
                 <Label className="text-foreground">Description</Label>
                 <Input value={channelDescription} onChange={(e) => setChannelDescription(e.target.value)} placeholder="Short description (max 200 chars)" className="bg-control-surface border-border text-foreground" />
                 <div className="text-xs text-muted-foreground mt-1">{channelDescription.length}/200</div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label className="text-foreground">Poster *</Label>
-                  <Input type="file" accept="image/*" onChange={handlePosterChange} className="bg-control-surface border-border text-foreground" />
-                  {posterWarning && <div className="text-xs text-orange-500 mt-1">{posterWarning}</div>}
-                  {posterDataUrl && (
-                    <div className="mt-2 w-64 h-36 rounded overflow-hidden border border-border">
-                      <img src={posterDataUrl} alt="Poster preview" className="w-full h-full object-cover" />
-                    </div>
-                  )}
-                </div>
+
+              {/* Row 3: Select Playlist, Campaign, Category */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-foreground">Select Playlist</Label>
                   <Select value={selectedPlaylist} onValueChange={(v) => setSelectedPlaylist(v)}>
@@ -980,9 +1025,38 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     </SelectContent>
                   </Select>
                 </div>
+                <div>
+                  <Label className="text-foreground">Campaign (optional)</Label>
+                  <Select value={selectedCampaign} onValueChange={(v) => setSelectedCampaign(v)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue placeholder="Select campaign" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {campaignOptions.map((campaign) => (
+                        <SelectItem key={campaign.id} value={campaign.id}>
+                          {campaign.name} ({campaign.duration})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-foreground">Category</Label>
+                  <Select value={primaryGenre} onValueChange={(v) => setPrimaryGenre(v)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue placeholder="Select category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {['News','Movies','Sports','Music','Comedy','Documentary','Talk Show','Kids','Lifestyle','Finance'].map(g => (
+                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              {/* Row 1: Resolution | Aspect Ratio */}
-              <div className="grid grid-cols-2 gap-4">
+
+              {/* Row 4: Resolution, Aspect Ratio, Language */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-foreground">Resolution</Label>
                   <Select value={resolution} onValueChange={(v) => setResolution(v as any)}>
@@ -1008,10 +1082,6 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-
-              {/* Row 2: Language | Category */}
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-foreground">Language (optional)</Label>
                   <Select value={language} onValueChange={(v) => setLanguage(v)}>
@@ -1038,56 +1108,25 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label className="text-foreground">Category</Label>
-                  <Select value={primaryGenre} onValueChange={(v) => setPrimaryGenre(v)}>
-                    <SelectTrigger className="bg-control-surface border-border text-foreground">
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {['News','Movies','Sports','Music','Comedy','Documentary','Talk Show','Kids','Lifestyle','Finance'].map(g => (
-                        <SelectItem key={g} value={g}>{g}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
 
-              {/* Tags input */}
-              <div>
-                <Label className="text-foreground">Tags</Label>
-                <div className="mt-2 flex flex-wrap items-center gap-2 p-2 bg-control-surface border border-border rounded">
-                  {tags.map((t, idx) => (
-                    <span key={`${t}-${idx}`} className="group inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white text-foreground text-xs border border-border">
-                      {t}
-                      <button
-                        aria-label={`Remove ${t}`}
-                        className="hidden group-hover:inline-flex text-muted-foreground hover:text-foreground"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setTags(prev => prev.filter((tag, i) => i !== idx));
-                        }}
-                      >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                  <input
-                    value={tagInput}
-                    onChange={(e) => setTagInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === ' ' || e.key === 'Spacebar') {
-                        const newTag = tagInput.trim();
-                        if (newTag) {
-                          e.preventDefault();
-                          setTags(prev => Array.from(new Set([...prev, newTag])));
-                          setTagInput('');
-                        }
-                      }
-                    }}
-                    placeholder="Type tag and press space"
-                    className="flex-1 min-w-[120px] bg-transparent outline-none text-sm"
-                  />
+              {/* Row 5: Poster Upload and Preview */}
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-foreground">Poster *</Label>
+                  <Input type="file" accept="image/*" onChange={handlePosterChange} className="bg-control-surface border-border text-foreground" />
+                  <div className="text-xs text-muted-foreground mt-1">No file chosen</div>
+                  {posterWarning && <div className="text-xs text-orange-500 mt-1">{posterWarning}</div>}
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-foreground">Poster Preview</Label>
+                  <div className="mt-2 w-32 aspect-video rounded overflow-hidden border border-border bg-control-surface flex items-center justify-center">
+                    {posterDataUrl ? (
+                      <img src={posterDataUrl} alt="Poster preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-muted-foreground text-xs">No poster selected</div>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">
