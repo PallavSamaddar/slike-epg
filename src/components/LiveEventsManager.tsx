@@ -65,6 +65,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
   const [tagInput, setTagInput] = useState<string>('');
   const [selectedPlaylist, setSelectedPlaylist] = useState<string>('Default Playlist');
   const [selectedCampaign, setSelectedCampaign] = useState<string>('');
+  const [epgMaster, setEpgMaster] = useState<string>('1 Day');
   const [viewMode, setViewMode] = useState<'list' | 'grid'>('grid');
   const [currentPage, setCurrentPage] = useState(1);
   const channelsPerPage = 8;
@@ -355,6 +356,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
       aspectRatio,
       primaryGenre: primaryGenre || null,
       language: language || null,
+      epgMaster,
       tags,
       createdAt: Date.now(),
     };
@@ -369,6 +371,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
     setPrimaryGenre(undefined);
     setLanguage('English');
     setAspectRatio('Landscape (16:9)');
+    setEpgMaster('1 Day');
     setTags([]);
     setTagInput('');
     setSelectedCampaign('');
@@ -1110,7 +1113,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                 </div>
               </div>
 
-              {/* Row 5: Poster Upload and Preview */}
+              {/* Row 5: Poster Upload, Poster Preview, and EPG Master */}
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label className="text-foreground">Poster *</Label>
@@ -1118,7 +1121,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   <div className="text-xs text-muted-foreground mt-1">No file chosen</div>
                   {posterWarning && <div className="text-xs text-orange-500 mt-1">{posterWarning}</div>}
                 </div>
-                <div className="col-span-2">
+                <div>
                   <Label className="text-foreground">Poster Preview</Label>
                   <div className="mt-2 w-32 aspect-video rounded overflow-hidden border border-border bg-control-surface flex items-center justify-center">
                     {posterDataUrl ? (
@@ -1127,6 +1130,18 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                       <div className="text-muted-foreground text-xs">No poster selected</div>
                     )}
                   </div>
+                </div>
+                <div>
+                  <Label className="text-foreground">EPG Master</Label>
+                  <Select value={epgMaster} onValueChange={(v) => setEpgMaster(v)}>
+                    <SelectTrigger className="bg-control-surface border-border text-foreground">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1 Day">1 Day</SelectItem>
+                      <SelectItem value="7 Days">7 Days</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-2">

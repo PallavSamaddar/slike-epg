@@ -807,9 +807,18 @@ export const EPGPreview = ({
       imageUrl: program.imageUrl,
     };
 
-    // Add to the mock data and sort by time
+    // Use a more robust state update that ensures we get the latest state
     setMockEPGData(prev => {
-      const updated = [...prev, newProgram];
+      // Filter out any programs with the same time slot to avoid conflicts
+      const filtered = prev.filter(item => {
+        const itemTime = new Date(item.time).getTime();
+        const newTime = new Date(newProgram.time).getTime();
+        const timeDiff = Math.abs(itemTime - newTime);
+        // If times are within 1 minute, consider it a conflict and remove the old one
+        return timeDiff > 60000; // 1 minute in milliseconds
+      });
+      
+      const updated = [...filtered, newProgram];
       return updated.sort((a, b) => {
         const timeA = new Date(a.time).getTime();
         const timeB = new Date(b.time).getTime();
@@ -888,6 +897,22 @@ export const EPGPreview = ({
     toast({
       title: 'Program updated',
       description: 'Program settings have been saved successfully.',
+    });
+  };
+
+  const deleteProgram = (program: any) => {
+    // Remove the program from mockEPGData
+    setMockEPGData(prev => 
+      prev.filter(item => item.id !== program.id)
+    );
+    
+    setHasProgramChanges(false);
+    setIsProgramSettingsOpen(false);
+    setSelectedProgram(null);
+    
+    toast({
+      title: 'Program deleted',
+      description: 'Program has been removed from the EPG.',
     });
   };
 
@@ -2528,6 +2553,7 @@ export const EPGPreview = ({
         isOpen={isProgramSettingsOpen}
         onClose={closeProgramSettings}
         onSave={saveProgramSettings}
+        onDelete={deleteProgram}
         program={selectedProgram}
         hasUnsavedChanges={hasProgramChanges}
         onUnsavedClose={handleUnsavedClose}

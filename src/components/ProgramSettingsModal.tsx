@@ -27,7 +27,8 @@ import {
   Youtube,
   AlertCircle,
   CheckCircle,
-  Loader2
+  Loader2,
+  Trash2
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -58,6 +59,7 @@ interface ProgramSettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (program: ScheduleBlock, videos: Video[]) => void;
+  onDelete?: (program: ScheduleBlock) => void;
   program: ScheduleBlock | null;
   hasUnsavedChanges: boolean;
   onUnsavedClose: () => void;
@@ -527,6 +529,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   program,
   hasUnsavedChanges,
   onUnsavedClose
@@ -546,6 +549,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [isPlaylistContentExpanded, setIsPlaylistContentExpanded] = useState(false);
   const [isPlaylistContentLoading, setIsPlaylistContentLoading] = useState(false);
   const [playlistVideos, setPlaylistVideos] = useState<Video[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const ariaLiveRef = useRef<HTMLSpanElement>(null);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -631,6 +635,23 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
       }
     }
   }, [isPlaylistContentExpanded, playlistVideos.length, program]);
+
+  // Handle delete program
+  const handleDeleteProgram = useCallback(() => {
+    if (program) {
+      // Call the onDelete prop if it exists
+      if (onDelete) {
+        onDelete(program);
+      }
+      setShowDeleteConfirm(false);
+      onClose();
+      
+      toast({
+        title: 'Program deleted',
+        description: 'The program has been successfully removed from the EPG.',
+      });
+    }
+  }, [program, onDelete, onClose, toast]);
 
   // Update dirty state when local state changes
   useEffect(() => {
@@ -858,6 +879,15 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="shrink-0 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 hover:text-red-800"
+                >
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Program
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
                   onClick={handleClose}
                   className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                 >
@@ -876,16 +906,16 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
               </div>
             </div>
             <div className="flex items-center gap-4 px-4 pb-3 text-sm text-gray-600">
-              <span>Tonight {localProgram.time}–{(() => {
+              <span><span className="font-bold">Tonight</span> {localProgram.time}–{(() => {
                 const [hours, minutes] = localProgram.time.split(':').map(Number);
                 const endMinutes = hours * 60 + minutes + localProgram.duration;
                 const endHours = Math.floor(endMinutes / 60);
                 const endMins = endMinutes % 60;
                 return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
               })()} IST</span>
-              <span>Program Duration: {Math.floor(localProgram.duration / 60)}h {localProgram.duration % 60}m</span>
-              <span>Total Videos: {localVideos.length}</span>
-              <span>Total Duration: {totalDuration}m</span>
+              <span><span className="font-bold">Program Duration:</span> {Math.floor(localProgram.duration / 60)}h {localProgram.duration % 60}m</span>
+              <span><span className="font-bold">Total Videos:</span> {localVideos.length}</span>
+              <span><span className="font-bold">Total Duration:</span> {totalDuration}m</span>
               {lastSaved && (
                 <span className="text-xs text-gray-500">
                   Last saved {formatRelativeTime(lastSaved)} · {formatAbsoluteTime(lastSaved)}
@@ -1233,6 +1263,52 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         </div>
         )}
       </DialogContent>
+
+      {/* Delete Confirmation Modal */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Trash2 className="h-5 w-5 text-red-600" />
+              Delete Program
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm text-gray-600 mb-4">
+              Are you sure you want to delete this program? This action cannot be undone.
+            </p>
+            <div className="bg-gray-50 p-3 rounded-md">
+              <p className="text-sm font-medium text-gray-900">{localProgram?.title}</p>
+              <p className="text-xs text-gray-500">
+                {localProgram?.time} - {(() => {
+                  if (!localProgram) return '';
+                  const [hours, minutes] = localProgram.time.split(':').map(Number);
+                  const endMinutes = hours * 60 + minutes + localProgram.duration;
+                  const endHours = Math.floor(endMinutes / 60);
+                  const endMins = endMinutes % 60;
+                  return `${endHours.toString().padStart(2, '0')}:${endMins.toString().padStart(2, '0')}`;
+                })()} IST
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteConfirm(false)}
+              className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleDeleteProgram}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Program
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 };
