@@ -1872,8 +1872,8 @@ export const EPGPreview = ({
 
   const getTypeColor = (type: string) => {
     return type === "Event"
-      ? "bg-pcr-live text-white"
-      : "bg-mcr-playlist text-white";
+      ? "bg-blue-600 text-white"
+      : "bg-blue-500 text-white";
   };
 
   const generatePreview = (format: string) => {
