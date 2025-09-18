@@ -42,8 +42,8 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ManageAdsModal } from "./ManageAdsModal";
 import { RepeatScheduleModal } from "./RepeatScheduleModal";
-import { ProgramSettingsModal } from "./ProgramSettingsModal";
 import { CreateProgramModal } from "./CreateProgramModal";
+import { useProgramSettings } from "../contexts/ProgramSettingsContext";
 import {
   Dialog,
   DialogContent,
@@ -583,10 +583,8 @@ export const EPGPreview = ({
       "Cooking",
     ];
     const playlists = [
-      "Default Playlist",
-      "Sports Highlights",
-      "Music Mix",
       "Tech Reviews",
+      "Sports Highlights",
     ];
     const titles = [
       "Midnight Kickoff",
@@ -738,57 +736,77 @@ export const EPGPreview = ({
 
   const { toast } = useToast();
 
+  // Use shared Program Settings context
+  const { openProgramSettings } = useProgramSettings();
+
   // Program Settings Modal handlers
-  const openProgramSettings = useCallback((program: any) => {
-    // Get the playlist content based on the program's playlist
-    let playlistContent = defaultPlaylistContent;
-    
-    // If program has a different playlist, you can extend this logic
-    // For now, all programs use the default playlist
-    if (program.playlist && program.playlist !== "Default Playlist") {
-      // In the future, you can add logic to load different playlists
-      // For now, we'll use the default playlist
-      playlistContent = defaultPlaylistContent;
-    }
-    
-    // Use saved videos if available, otherwise use playlist content
-    const videosToUse = program.videos && program.videos.length > 0 
-      ? program.videos 
-      : playlistContent;
-    
+  const handleOpenProgramSettings = useCallback((program: any) => {
     // If this is an existing program without videos, update it in mockEPGData
     if (!program.videos && program.id && !program.id.startsWith('new-')) {
       setMockEPGData(prev => 
         prev.map(item => 
           item.id === program.id 
-            ? { ...item, videos: playlistContent }
+            ? { ...item, videos: defaultPlaylistContent }
             : item
         )
       );
     }
     
-    // Transform EPGPreviewItem to ScheduleBlock format for ProgramSettingsModal
-    const transformedProgram = {
-      ...program,
-      time: program.time.split('T')[1], // Extract time part from ISO format (e.g., "2025-09-14T01:00" -> "01:00")
-      videos: videosToUse, // Use saved videos or playlist content
-      tags: program.genre ? [program.genre] : [], // Convert genre to tags array
-      playlistId: program.playlist || "Default Playlist" // Map playlist to playlistId
-    };
-    setSelectedProgram(transformedProgram);
-    setHasProgramChanges(false);
-    setIsProgramSettingsOpen(true);
-  }, [defaultPlaylistContent, setMockEPGData]);
+    // Use the shared context to open the modal
+    openProgramSettings(program, 'epg-preview');
+  }, [defaultPlaylistContent, setMockEPGData, openProgramSettings]);
 
-  const closeProgramSettings = () => {
-    if (hasProgramChanges) {
-      setShowUnsavedConfirm(true);
-    } else {
-      setIsProgramSettingsOpen(false);
-      setSelectedProgram(null);
-      setHasProgramChanges(false);
-    }
-  };
+  // Handle program save from shared context
+  const handleSaveProgramSettings = useCallback((program: any, videos: any[]) => {
+    // Update the program in mockEPGData
+    setMockEPGData(prev => 
+      prev.map(item => 
+        item.id === program.id 
+          ? { 
+              ...item, 
+              ...program,
+              videos: videos,
+              time: item.time.split('T')[0] + 'T' + program.time, // Reconstruct full ISO time
+              genre: program.tags?.[0] || item.genre, // Convert tags back to genre
+              playlist: program.playlistId || item.playlist
+            }
+          : item
+      )
+    );
+    setHasUnsavedChanges(true);
+    
+    // Immediately sync to Scheduler tab by saving to localStorage
+    setTimeout(() => {
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const dayItems = mockEPGData.filter((p) => p.time.startsWith(todayStr));
+      try {
+        localStorage.setItem(`epg:preview:day:${todayStr}`, JSON.stringify(dayItems));
+        window.dispatchEvent(new CustomEvent('epg-preview-data-updated'));
+      } catch {
+        // Error persisting to localStorage
+      }
+    }, 0);
+  }, [setMockEPGData, mockEPGData]);
+
+  // Handle program delete from shared context
+  const handleDeleteProgram = useCallback((program: any) => {
+    setMockEPGData(prev => prev.filter(item => item.id !== program.id));
+    setHasUnsavedChanges(true);
+    
+    // Immediately sync to Scheduler tab
+    setTimeout(() => {
+      const today = new Date();
+      const todayStr = today.toISOString().split("T")[0];
+      const dayItems = mockEPGData.filter((p) => p.time.startsWith(todayStr));
+      try {
+        localStorage.setItem(`epg:preview:day:${todayStr}`, JSON.stringify(dayItems));
+        window.dispatchEvent(new CustomEvent('epg-preview-data-updated'));
+      } catch {
+        // Error persisting to localStorage
+      }
+    }, 0);
+  }, [setMockEPGData, mockEPGData]);
 
   // Create Program Modal handlers
   const handleCreateProgram = useCallback((program: any) => {
@@ -846,9 +864,6 @@ export const EPGPreview = ({
   };
 
   const confirmDiscard = () => {
-    setIsProgramSettingsOpen(false);
-    setSelectedProgram(null);
-    setHasProgramChanges(false);
     setShowUnsavedConfirm(false);
   };
 
@@ -856,65 +871,7 @@ export const EPGPreview = ({
     setShowUnsavedConfirm(false);
   };
 
-  const saveProgramSettings = (program: any, videos: any[]) => {
-    // Calculate custom content statistics
-    const customVideos = videos.filter(video => video.source === 'custom');
-    const customContentCount = customVideos.length;
-    const customContentDuration = customVideos.reduce((total, video) => total + (video.duration || 0), 0);
-    
-    
-    // Update the program in mockEPGData
-    setMockEPGData(prev => 
-      prev.map(item => 
-        item.id === program.id 
-          ? { 
-              ...item, 
-              title: program.title,
-              type: program.type,
-              duration: program.duration,
-              geoZone: program.geoZone,
-              description: program.description,
-              status: program.status,
-              genre: program.tags?.[0] || item.genre, // Map tags to genre
-              playlist: program.playlist,
-              customContentCount, // Track custom content count
-              customContentDuration, // Track custom content duration
-              videos, // Store the actual videos (playlist + custom content)
-              // Reconstruct the ISO time format from the simple time format
-              time: item.time.includes('T') ? 
-                item.time.split('T')[0] + 'T' + program.time : 
-                program.time
-            }
-          : item
-      )
-    );
-    setHasUnsavedChanges(true);
-    setIsProgramSettingsOpen(false);
-    setSelectedProgram(null);
-    setHasProgramChanges(false);
-    
-    
-    toast({
-      title: 'Program updated',
-      description: 'Program settings have been saved successfully.',
-    });
-  };
 
-  const deleteProgram = (program: any) => {
-    // Remove the program from mockEPGData
-    setMockEPGData(prev => 
-      prev.filter(item => item.id !== program.id)
-    );
-    
-    setHasProgramChanges(false);
-    setIsProgramSettingsOpen(false);
-    setSelectedProgram(null);
-    
-    toast({
-      title: 'Program deleted',
-      description: 'Program has been removed from the EPG.',
-    });
-  };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -1000,10 +957,30 @@ export const EPGPreview = ({
   };
 
 
-  // Program Settings Modal state
-  const [isProgramSettingsOpen, setIsProgramSettingsOpen] = useState(false);
-  const [selectedProgram, setSelectedProgram] = useState<any>(null);
-  const [hasProgramChanges, setHasProgramChanges] = useState(false);
+  // Listen for program save/delete events from shared context
+  useEffect(() => {
+    const handleProgramSaved = (event: CustomEvent) => {
+      const { program, videos, source } = event.detail;
+      if (source === 'epg-preview') {
+        handleSaveProgramSettings(program, videos);
+      }
+    };
+
+    const handleProgramDeleted = (event: CustomEvent) => {
+      const { program, source } = event.detail;
+      if (source === 'epg-preview') {
+        handleDeleteProgram(program);
+      }
+    };
+
+    window.addEventListener('program-saved', handleProgramSaved as EventListener);
+    window.addEventListener('program-deleted', handleProgramDeleted as EventListener);
+
+    return () => {
+      window.removeEventListener('program-saved', handleProgramSaved as EventListener);
+      window.removeEventListener('program-deleted', handleProgramDeleted as EventListener);
+    };
+  }, []);
   
   // Create Program Modal state
   const [isCreateProgramModalOpen, setIsCreateProgramModalOpen] = useState(false);
@@ -1352,7 +1329,7 @@ export const EPGPreview = ({
               )}
               <button
                 onClick={() =>
-                  openProgramSettings({
+                  handleOpenProgramSettings({
                     ...item,
                     type: activeTabId === "master-epg" ? "VOD" : item.type,
                   })
@@ -2548,16 +2525,6 @@ export const EPGPreview = ({
           </DialogContent>
         </Dialog>
       )}
-      {/* Program Settings Modal */}
-      <ProgramSettingsModal
-        isOpen={isProgramSettingsOpen}
-        onClose={closeProgramSettings}
-        onSave={saveProgramSettings}
-        onDelete={deleteProgram}
-        program={selectedProgram}
-        hasUnsavedChanges={hasProgramChanges}
-        onUnsavedClose={handleUnsavedClose}
-      />
       {/* Create Program Modal */}
       <CreateProgramModal
         isOpen={isCreateProgramModalOpen}

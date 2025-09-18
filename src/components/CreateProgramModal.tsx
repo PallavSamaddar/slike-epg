@@ -98,7 +98,7 @@ export const CreateProgramModal: React.FC<CreateProgramModalProps> = ({
   const { toast } = useToast();
   const [formData, setFormData] = useState<FormData>({
     title: '',
-    playlistId: 'default',
+    playlistId: '',
     description: '',
     categoryId: '',
     startTime: '00:00',
@@ -196,7 +196,7 @@ export const CreateProgramModal: React.FC<CreateProgramModalProps> = ({
       
       setFormData({
         title: '',
-        playlistId: lastUsedPlaylist,
+        playlistId: '',
         description: '',
         categoryId: '',
         startTime: availableSlot.startTime,
@@ -501,7 +501,7 @@ export const CreateProgramModal: React.FC<CreateProgramModalProps> = ({
                   onValueChange={(value) => handleFormChange('playlistId', value)}
                 >
                   <SelectTrigger className={`mt-1 border-gray-300 ${errors.playlistId ? 'border-red-500' : ''}`}>
-                    <SelectValue />
+                    <SelectValue placeholder="Select Program Playlist" />
                   </SelectTrigger>
                   <SelectContent>
                     {PLAYLISTS.map(playlist => (

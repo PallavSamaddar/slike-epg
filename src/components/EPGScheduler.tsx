@@ -15,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ManageAdsModal } from '@/components/ManageAdsModal';
-import { ProgramSettingsModal } from '@/components/ProgramSettingsModal';
+import { useProgramSettings } from '../contexts/ProgramSettingsContext';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface Video {
@@ -339,10 +339,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   const [hasScheduleChanges, setHasScheduleChanges] = useState(false);
   // Map of ISO date -> array of ad markers for that date
   const [adMarkersByDate, setAdMarkersByDate] = useState<Record<string, Array<{ time: string; campaign: string; duration: string; type?: string }>>>({});
-  // Program settings modal state
-  const [isProgramSettingsOpen, setIsProgramSettingsOpen] = useState(false);
-  const [selectedProgram, setSelectedProgram] = useState<ScheduleBlock | null>(null);
-  const [hasProgramChanges, setHasProgramChanges] = useState(false);
+  // Use shared Program Settings context
+  const { openProgramSettings } = useProgramSettings();
   const [showUnsavedConfirm, setShowUnsavedConfirm] = useState(false);
   
   const availableGenres = ['Movies', 'Classic', 'Games', 'Fun', 'Sports', 'News', 'Entertainment', 'Documentary', 'Drama', 'Comedy', 'Action', 'Thriller', 'Romance', 'Family', 'Kids'];
@@ -478,7 +476,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         const key = `epg:preview:day:${selectedDate}`;
         const raw = localStorage.getItem(key);
         if (raw) {
-          const items: { id: string; time: string; title: string; type: 'VOD' | 'Event'; duration: number; status: string; genre: string; }[] = JSON.parse(raw);
+          const items: any[] = JSON.parse(raw);
           // Map preview items to schedule blocks for the times that exist
           setScheduleBlocks(prev => {
             const byTime = new Map(prev.map(b => [b.time, b]));
@@ -490,12 +488,24 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                 block.type = item.type;
                 block.status = item.status as any;
                 block.tags = [item.genre];
+                block.description = item.description;
+                block.geoZone = item.geoZone || 'Global';
+                // Load playlist/video data if available
+                if (item.videos && item.videos.length > 0) {
+                  block.videos = item.videos;
+                } else {
+                  // Use default playlist content if no videos are saved
+                  block.videos = [
+                    { id: 'default-1', name: 'Default Content', duration: 60, type: 'VOD', source: 'playlist', playlistName: 'Default Playlist' }
+                  ];
+                }
               }
             });
             return [...byTime.values()];
           });
         }
       } catch (error) {
+        console.error('Error loading preview data:', error);
       }
     };
 
@@ -778,49 +788,56 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
   };
 
   // Program settings modal functions
-  const openProgramSettings = (block: ScheduleBlock) => {
-    setSelectedProgram(block);
-    setHasProgramChanges(false);
-    setIsProgramSettingsOpen(true);
+  const handleOpenProgramSettings = (block: ScheduleBlock) => {
+    // Transform ScheduleBlock to the format expected by the shared context
+    const transformedBlock = {
+      ...block,
+      time: block.time.includes('T') ? block.time : `2024-01-01T${block.time}`, // Ensure ISO format
+      genre: block.tags?.[0] || '', // Convert tags to genre
+      playlist: 'Default Playlist' // Default playlist
+    };
+    openProgramSettings(transformedBlock, 'scheduler');
   };
 
-  const closeProgramSettings = () => {
-    if (hasProgramChanges) {
-      setShowUnsavedConfirm(true);
-    } else {
-      setIsProgramSettingsOpen(false);
-      setSelectedProgram(null);
-      setHasProgramChanges(false);
-    }
-  };
+  // Listen for program save/delete events from shared context
+  useEffect(() => {
+    const handleProgramSaved = (event: CustomEvent) => {
+      const { program, videos, source } = event.detail;
+      if (source === 'scheduler') {
+        setScheduleBlocks(prev => 
+          prev.map(block => 
+            block.id === program.id 
+              ? { ...program, videos }
+              : block
+          )
+        );
+        setHasScheduleChanges(true);
+      }
+    };
 
-  const handleUnsavedClose = () => {
-    setShowUnsavedConfirm(true);
-  };
+    const handleProgramDeleted = (event: CustomEvent) => {
+      const { program, source } = event.detail;
+      if (source === 'scheduler') {
+        setScheduleBlocks(prev => prev.filter(block => block.id !== program.id));
+        setHasScheduleChanges(true);
+      }
+    };
+
+    window.addEventListener('program-saved', handleProgramSaved as EventListener);
+    window.addEventListener('program-deleted', handleProgramDeleted as EventListener);
+
+    return () => {
+      window.removeEventListener('program-saved', handleProgramSaved as EventListener);
+      window.removeEventListener('program-deleted', handleProgramDeleted as EventListener);
+    };
+  }, []);
 
   const confirmDiscard = () => {
-    setIsProgramSettingsOpen(false);
-    setSelectedProgram(null);
-    setHasProgramChanges(false);
     setShowUnsavedConfirm(false);
   };
 
   const cancelDiscard = () => {
     setShowUnsavedConfirm(false);
-  };
-
-  const saveProgramSettings = (program: ScheduleBlock, videos: Video[]) => {
-    setScheduleBlocks(prev => 
-      prev.map(block => 
-        block.id === program.id 
-          ? { ...program, videos }
-          : block
-      )
-    );
-    setHasScheduleChanges(true);
-    setIsProgramSettingsOpen(false);
-    setSelectedProgram(null);
-    setHasProgramChanges(false);
   };
 
   const addGenreToBlock = (blockId: string, genre: string) => {
@@ -1316,7 +1333,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                       <div className="flex items-center gap-1">
                                         <Badge className={`text-xs ${isCurrentBlock(day.key, block.id) ? 'bg-white/20 text-white' : 'bg-black/10 text-black'}`}>{block.type}</Badge>
                                         <button
-                                          onClick={() => openProgramSettings(block)}
+                                          onClick={() => handleOpenProgramSettings(block)}
                                           className={`p-1 rounded hover:bg-black/20 transition-colors ${isCurrentBlock(day.key, block.id) ? 'text-white' : 'text-black'}`}
                                           title="Program Settings"
                                         >
@@ -1379,15 +1396,6 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
         onSave={handleManageAdsSave}
       />
 
-      {/* Program Settings Modal */}
-      <ProgramSettingsModal
-        isOpen={isProgramSettingsOpen}
-        onClose={closeProgramSettings}
-        onSave={saveProgramSettings}
-        program={selectedProgram}
-        hasUnsavedChanges={hasProgramChanges}
-        onUnsavedClose={handleUnsavedClose}
-      />
 
       {/* Unsaved Changes Confirmation Dialog */}
       <Dialog open={showUnsavedConfirm} onOpenChange={setShowUnsavedConfirm}>

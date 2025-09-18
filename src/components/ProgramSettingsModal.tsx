@@ -21,14 +21,15 @@ import {
   Eye, 
   GripVertical, 
   Plus,
-  Playlist,
   Video,
   Radio,
   Youtube,
   AlertCircle,
   CheckCircle,
   Loader2,
-  Trash2
+  Trash2,
+  RotateCcw,
+  PlusCircle
 } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
@@ -53,6 +54,8 @@ interface ScheduleBlock {
   description?: string;
   videos: Video[];
   playlist?: string;
+  playlistId?: string;
+  defaultPlaylistContent?: Video[];
 }
 
 interface ProgramSettingsModalProps {
@@ -183,6 +186,41 @@ const DirtyStateBadge = ({ isDirty, lastSaved }: { isDirty: boolean; lastSaved: 
   );
 };
 
+// Sortable Playlist Item Component
+const SortablePlaylistItem = ({ 
+  id, 
+  children, 
+  isChannelPlaylist = false 
+}: { 
+  id: string; 
+  children: React.ReactNode;
+  isChannelPlaylist?: boolean;
+}) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ 
+    id,
+    disabled: isChannelPlaylist // Disable dragging for channel playlist
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      {children}
+    </div>
+  );
+};
+
 // Sortable Video Item Component
 const SortableVideoItem = ({ video, index, onDelete, group, isInvalidTarget }: { 
   video: Video; 
@@ -302,8 +340,137 @@ const SortableVideoItem = ({ video, index, onDelete, group, isInvalidTarget }: {
   );
 };
 
+// Add Playlist Modal Component
+const AddPlaylistModal = ({ 
+  isOpen, 
+  onClose, 
+  onAddPlaylist 
+}: { 
+  isOpen: boolean; 
+  onClose: () => void; 
+  onAddPlaylist: (playlist: {id: string, name: string, videos: Video[]}) => void;
+}) => {
+  const [playlistType, setPlaylistType] = useState<'new' | 'existing'>('new');
+  const [playlistName, setPlaylistName] = useState('');
+  const [selectedExistingPlaylist, setSelectedExistingPlaylist] = useState('');
+
+  const existingPlaylists = [
+    { id: 'tech', name: 'Tech Reviews' },
+    { id: 'sports', name: 'Sports Highlights' },
+    { id: 'music', name: 'Music Mix' },
+    { id: 'default', name: 'Default Playlist' }
+  ];
+
+  const handleAdd = () => {
+    if (playlistType === 'new' && playlistName.trim()) {
+      onAddPlaylist({
+        id: `playlist-${Date.now()}`,
+        name: playlistName.trim(),
+        videos: []
+      });
+    } else if (playlistType === 'existing' && selectedExistingPlaylist) {
+      const playlist = existingPlaylists.find(p => p.id === selectedExistingPlaylist);
+      if (playlist) {
+        onAddPlaylist({
+          id: playlist.id,
+          name: playlist.name,
+          videos: [] // Empty initially, user can add content
+        });
+      }
+    }
+    onClose();
+    setPlaylistName('');
+    setSelectedExistingPlaylist('');
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Add Playlist</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div>
+            <Label>Playlist Type</Label>
+            <div className="flex gap-4 mt-2">
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="new-playlist"
+                  name="playlistType"
+                  value="new"
+                  checked={playlistType === 'new'}
+                  onChange={(e) => setPlaylistType(e.target.value as 'new')}
+                />
+                <Label htmlFor="new-playlist">New Playlist</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="radio"
+                  id="existing-playlist"
+                  name="playlistType"
+                  value="existing"
+                  checked={playlistType === 'existing'}
+                  onChange={(e) => setPlaylistType(e.target.value as 'existing')}
+                />
+                <Label htmlFor="existing-playlist">Existing Playlist</Label>
+              </div>
+            </div>
+          </div>
+
+          {playlistType === 'new' ? (
+            <div>
+              <Label htmlFor="playlistName">Playlist Name</Label>
+              <Input
+                id="playlistName"
+                value={playlistName}
+                onChange={(e) => setPlaylistName(e.target.value)}
+                placeholder="Enter playlist name..."
+                className="mt-1"
+              />
+            </div>
+          ) : (
+            <div>
+              <Label htmlFor="existingPlaylist">Select Playlist</Label>
+              <Select value={selectedExistingPlaylist} onValueChange={setSelectedExistingPlaylist}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select existing playlist" />
+                </SelectTrigger>
+                <SelectContent>
+                  {existingPlaylists.map(playlist => (
+                    <SelectItem key={playlist.id} value={playlist.id}>
+                      {playlist.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button 
+            onClick={handleAdd}
+            disabled={
+              (playlistType === 'new' && !playlistName.trim()) ||
+              (playlistType === 'existing' && !selectedExistingPlaylist)
+            }
+          >
+            Add Playlist
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 // Add Content Panel Component
-const AddContentPanel = ({ onAddContent }: { onAddContent: (content: Video) => void }) => {
+const AddContentPanel = ({ onAddContent, onAddToPlaylist }: { 
+  onAddContent: (content: Video) => void;
+  onAddToPlaylist?: (content: Video, playlistId: string) => void;
+}) => {
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleDragStart = (e: React.DragEvent, content: Video) => {
@@ -375,7 +542,14 @@ const AddContentPanel = ({ onAddContent }: { onAddContent: (content: Video) => v
                           variant="ghost"
                           size="sm"
                           className="h-6 w-6 p-0"
-                          onClick={() => onAddContent(video)}
+                          onClick={() => {
+                            if (onAddToPlaylist) {
+                              // Add to program playlist by default
+                              onAddToPlaylist(video, 'program-playlist');
+                            } else {
+                              onAddContent(video);
+                            }
+                          }}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
@@ -420,7 +594,14 @@ const AddContentPanel = ({ onAddContent }: { onAddContent: (content: Video) => v
                           variant="ghost"
                           size="sm"
                           className="h-6 w-6 p-0"
-                          onClick={() => onAddContent(recording)}
+                          onClick={() => {
+                            if (onAddToPlaylist) {
+                              // Add to program playlist by default
+                              onAddToPlaylist(recording, 'program-playlist');
+                            } else {
+                              onAddContent(recording);
+                            }
+                          }}
                         >
                           <Plus className="h-3 w-3" />
                         </Button>
@@ -550,8 +731,34 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   const [isPlaylistContentLoading, setIsPlaylistContentLoading] = useState(false);
   const [playlistVideos, setPlaylistVideos] = useState<Video[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isProgramPlaylistExpanded, setIsProgramPlaylistExpanded] = useState(false);
+  const [isChannelPlaylistExpanded, setIsChannelPlaylistExpanded] = useState(false);
+  const [programPlaylistVideos, setProgramPlaylistVideos] = useState<Video[]>([]);
+  const [isProgramPlaylistLooping, setIsProgramPlaylistLooping] = useState(false);
+  const [showAddPlaylistModal, setShowAddPlaylistModal] = useState(false);
+  const [additionalPlaylists, setAdditionalPlaylists] = useState<Array<{id: string, name: string, videos: Video[], isExpanded: boolean, isLooping: boolean}>>([]);
+  const [playlistOrder, setPlaylistOrder] = useState<string[]>(['program-playlist', 'channel-playlist']);
   const ariaLiveRef = useRef<HTMLSpanElement>(null);
   const throttleTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Channel Playlist - Dummy content that's the same for all programs
+  const channelPlaylistDummyContent: Video[] = [
+    { id: 'ch1', name: 'Channel Intro Video', duration: 5, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch2', name: 'News Update - Morning', duration: 3, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch3', name: 'Weather Report', duration: 2, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch4', name: 'Sports Highlights', duration: 8, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch5', name: 'Entertainment News', duration: 4, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch6', name: 'Technology Update', duration: 6, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch7', name: 'Health & Wellness Tips', duration: 5, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch8', name: 'Local Community News', duration: 4, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch9', name: 'Business Update', duration: 3, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch10', name: 'Educational Content', duration: 7, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch11', name: 'Lifestyle Segment', duration: 5, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch12', name: 'Traffic Update', duration: 2, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch13', name: 'Market Analysis', duration: 6, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch14', name: 'Cultural Program', duration: 10, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' },
+    { id: 'ch15', name: 'Channel Outro', duration: 3, type: 'VOD', source: 'playlist', playlistName: 'Channel Default' }
+  ];
 
   // Initialize local state when program changes - with lazy loading
   React.useEffect(() => {
@@ -563,14 +770,24 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         setLocalProgram({ ...program });
         
         // Initialize videos with proper source and playlist information
-        // Only load custom videos initially, playlist videos will be loaded on demand
+        // Separate custom videos and program playlist videos
         const customVideos = program.videos.filter(video => video.source === 'custom').map(video => ({
           ...video,
           source: video.source || 'custom',
           playlistName: video.playlistName || program.playlistId
         }));
         
+        // Get program playlist videos (videos that belong to the program's selected playlist)
+        const programPlaylistVideos = program.videos.filter(video => 
+          video.source === 'playlist' && video.playlistName === program.playlist
+        ).map(video => ({
+          ...video,
+          source: 'playlist' as const,
+          playlistName: program.playlist
+        }));
+        
         setLocalVideos(customVideos);
+        setProgramPlaylistVideos(programPlaylistVideos as Video[]);
         setLocalHasChanges(false);
         
         // Reset playlist content state
@@ -578,8 +795,32 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         setIsPlaylistContentLoading(false);
         setPlaylistVideos([]);
         
-        // Create initial snapshot for dirty state tracking
-        const snapshot = createStateSnapshot(program, customVideos);
+        // Create initial snapshot for dirty state tracking including all playlist states
+        const snapshot = {
+          program: {
+            id: program.id,
+            title: program.title,
+            type: program.type,
+            description: program.description,
+            playlist: program.playlist,
+            geoZone: program.geoZone,
+            tags: [...program.tags]
+          },
+          videos: customVideos.map(v => ({
+            id: v.id,
+            name: v.name,
+            duration: v.duration,
+            type: v.type
+          })),
+          programPlaylistVideos: programPlaylistVideos.map(v => ({
+            id: v.id,
+            name: v.name,
+            duration: v.duration,
+            type: v.type
+          })),
+          additionalPlaylists: [],
+          isProgramPlaylistLooping: false
+        };
         setInitialSnapshot(snapshot);
         setIsDirty(false);
         setLastSaved(null);
@@ -598,7 +839,43 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
     
     throttleTimeoutRef.current = setTimeout(() => {
       if (localProgram && initialSnapshot) {
-        const currentSnapshot = createStateSnapshot(localProgram, localVideos);
+        // Create comprehensive snapshot including all playlist states
+        const currentSnapshot = {
+          program: {
+            id: localProgram.id,
+            title: localProgram.title,
+            type: localProgram.type,
+            description: localProgram.description,
+            playlist: localProgram.playlist,
+            geoZone: localProgram.geoZone,
+            tags: [...localProgram.tags]
+          },
+          videos: localVideos.map(v => ({
+            id: v.id,
+            name: v.name,
+            duration: v.duration,
+            type: v.type
+          })),
+          programPlaylistVideos: programPlaylistVideos.map(v => ({
+            id: v.id,
+            name: v.name,
+            duration: v.duration,
+            type: v.type
+          })),
+          additionalPlaylists: additionalPlaylists.map(p => ({
+            id: p.id,
+            name: p.name,
+            videos: p.videos.map(v => ({
+              id: v.id,
+              name: v.name,
+              duration: v.duration,
+              type: v.type
+            })),
+            isLooping: p.isLooping
+          })),
+          isProgramPlaylistLooping: isProgramPlaylistLooping
+        };
+        
         const dirty = !deepEqual(currentSnapshot, initialSnapshot);
         setIsDirty(dirty);
         setLocalHasChanges(dirty);
@@ -611,7 +888,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         }
       }
     }, 150); // 150ms throttle
-  }, [localProgram, localVideos, initialSnapshot]);
+  }, [localProgram, localVideos, programPlaylistVideos, additionalPlaylists, isProgramPlaylistLooping, initialSnapshot]);
 
   // Handle playlist content expansion and loading
   const handlePlaylistContentToggle = useCallback(async () => {
@@ -628,8 +905,9 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         // Simulate loading delay for better UX
         await new Promise(resolve => setTimeout(resolve, 500));
         
-        // Load playlist videos from the program's original videos
-        const originalPlaylistVideos = program?.videos?.filter(video => video.source === 'playlist') || [];
+        // Load playlist videos from the program's defaultPlaylistContent or existing videos
+        const originalPlaylistVideos = program?.defaultPlaylistContent || 
+          program?.videos?.filter(video => video.source === 'playlist') || [];
         setPlaylistVideos(originalPlaylistVideos);
         setIsPlaylistContentLoading(false);
       }
@@ -719,16 +997,236 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
     });
   }, [toast]);
 
+  const handleAddToPlaylist = useCallback((content: Video, playlistId: string) => {
+    const newVideo: Video = {
+      ...content,
+      id: `${content.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      source: 'custom',
+      playlistName: undefined
+    };
+
+    if (playlistId === 'program-playlist') {
+      setProgramPlaylistVideos(prev => [newVideo, ...prev]);
+      toast({
+        title: 'Content added',
+        description: `${content.name} has been added to the program playlist.`,
+      });
+    } else if (playlistId && playlistId !== 'channel-playlist') {
+      setAdditionalPlaylists(prev => prev.map(playlist => 
+        playlist.id === playlistId 
+          ? { ...playlist, videos: [newVideo, ...playlist.videos] }
+          : playlist
+      ));
+      const playlistName = additionalPlaylists.find(p => p.id === playlistId)?.name || 'playlist';
+      toast({
+        title: 'Content added',
+        description: `${content.name} has been added to ${playlistName}.`,
+      });
+    } else if (playlistId === 'channel-playlist') {
+      setPlaylistVideos(prev => [newVideo, ...prev]);
+      toast({
+        title: 'Content added',
+        description: `${content.name} has been added to the channel playlist.`,
+      });
+    }
+  }, [additionalPlaylists, toast]);
+
   const handleDeleteVideo = useCallback((videoId: string) => {
+    // Remove from local videos (custom content)
     setLocalVideos(prev => prev.filter(v => v.id !== videoId));
+    
+    // Remove from program playlist videos
+    setProgramPlaylistVideos(prev => prev.filter(v => v.id !== videoId));
+    
+    // Remove from additional playlists
+    setAdditionalPlaylists(prev => prev.map(playlist => ({
+      ...playlist,
+      videos: playlist.videos.filter(v => v.id !== videoId)
+    })));
+    
+    // Remove from channel playlist videos
+    setPlaylistVideos(prev => prev.filter(v => v.id !== videoId));
   }, []);
+
+  // Handle adding new playlist with accordion behavior
+  const handleAddPlaylist = useCallback((playlist: {id: string, name: string, videos: Video[]}) => {
+    // Close all other playlists first
+    setIsProgramPlaylistExpanded(false);
+    setIsChannelPlaylistExpanded(false);
+    setAdditionalPlaylists(prev => prev.map(p => ({ ...p, isExpanded: false })));
+    
+    // Add the new playlist and expand it
+    setAdditionalPlaylists(prev => [...prev, {
+      ...playlist,
+      isExpanded: true,
+      isLooping: false
+    }]);
+    
+    // Add the new playlist to the order (before channel-playlist)
+    setPlaylistOrder(prev => {
+      const newOrder = [...prev];
+      const channelIndex = newOrder.indexOf('channel-playlist');
+      newOrder.splice(channelIndex, 0, playlist.id);
+      return newOrder;
+    });
+  }, []);
+
+  // Handle program playlist toggle with accordion behavior
+  const handleProgramPlaylistToggle = useCallback(async () => {
+    if (isProgramPlaylistExpanded) {
+      // Collapse
+      setIsProgramPlaylistExpanded(false);
+    } else {
+      // Close all other playlists first
+      setIsChannelPlaylistExpanded(false);
+      setAdditionalPlaylists(prev => prev.map(playlist => ({ ...playlist, isExpanded: false })));
+      
+      // Then expand program playlist
+      setIsProgramPlaylistExpanded(true);
+    }
+  }, [isProgramPlaylistExpanded]);
+
+  // Handle channel playlist toggle with accordion behavior
+  const handleChannelPlaylistToggle = useCallback(async () => {
+    if (isChannelPlaylistExpanded) {
+      // Collapse
+      setIsChannelPlaylistExpanded(false);
+    } else {
+      // Close all other playlists first
+      setIsProgramPlaylistExpanded(false);
+      setAdditionalPlaylists(prev => prev.map(playlist => ({ ...playlist, isExpanded: false })));
+      
+      // Then expand channel playlist and load content
+      setIsChannelPlaylistExpanded(true);
+      
+      if (playlistVideos.length === 0) {
+        setIsPlaylistContentLoading(true);
+        
+        // Simulate loading delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Use the dummy channel playlist content (same for all programs)
+        setPlaylistVideos(channelPlaylistDummyContent);
+        setIsPlaylistContentLoading(false);
+      }
+    }
+  }, [isChannelPlaylistExpanded, playlistVideos.length, channelPlaylistDummyContent]);
+
+  // Handle additional playlist toggle with accordion behavior
+  const handleAdditionalPlaylistToggle = useCallback(async (playlistId: string) => {
+    const targetPlaylist = additionalPlaylists.find(p => p.id === playlistId);
+    
+    if (targetPlaylist?.isExpanded) {
+      // Collapse the target playlist
+      setAdditionalPlaylists(prev => prev.map(playlist => 
+        playlist.id === playlistId 
+          ? { ...playlist, isExpanded: false }
+          : playlist
+      ));
+    } else {
+      // Close all other playlists first
+      setIsProgramPlaylistExpanded(false);
+      setIsChannelPlaylistExpanded(false);
+      setAdditionalPlaylists(prev => prev.map(playlist => ({ ...playlist, isExpanded: false })));
+      
+      // Then expand the target playlist
+      setAdditionalPlaylists(prev => prev.map(playlist => 
+        playlist.id === playlistId 
+          ? { ...playlist, isExpanded: true }
+          : playlist
+      ));
+    }
+  }, [additionalPlaylists]);
+
+  // Handle program playlist loop toggle
+  const handleProgramPlaylistLoopToggle = useCallback(() => {
+    setIsProgramPlaylistLooping(prev => !prev);
+  }, []);
+
+  // Handle additional playlist loop toggle
+  const handleAdditionalPlaylistLoopToggle = useCallback((playlistId: string) => {
+    setAdditionalPlaylists(prev => prev.map(playlist => 
+      playlist.id === playlistId 
+        ? { ...playlist, isLooping: !playlist.isLooping }
+        : playlist
+    ));
+  }, []);
+
+  // Handle playlist reordering
+  const handlePlaylistReorder = useCallback((activeId: string, overId: string) => {
+    if (activeId !== overId) {
+      setPlaylistOrder(prev => {
+        const oldIndex = prev.findIndex(id => id === activeId);
+        const newIndex = prev.findIndex(id => id === overId);
+        
+        if (oldIndex !== -1 && newIndex !== -1) {
+          // Don't allow moving channel-playlist from its last position
+          if (activeId === 'channel-playlist' && newIndex < prev.length - 1) {
+            toast({
+              title: 'Cannot move Channel Playlist',
+              description: 'Channel Playlist must remain at the bottom.',
+              variant: 'destructive',
+            });
+            return prev;
+          }
+          
+          // Don't allow moving other playlists to the last position (reserved for channel-playlist)
+          if (activeId !== 'channel-playlist' && newIndex === prev.length - 1) {
+            toast({
+              title: 'Invalid position',
+              description: 'This position is reserved for Channel Playlist.',
+              variant: 'destructive',
+            });
+            return prev;
+          }
+          
+          return arrayMove(prev, oldIndex, newIndex);
+        }
+        return prev;
+      });
+    }
+  }, [toast]);
 
   const handleSave = useCallback(() => {
     if (localProgram) {
       onSave(localProgram, localVideos);
       
-      // Reset dirty state and update snapshot
-      const newSnapshot = createStateSnapshot(localProgram, localVideos);
+      // Reset dirty state and update snapshot with all playlist states
+      const newSnapshot = {
+        program: {
+          id: localProgram.id,
+          title: localProgram.title,
+          type: localProgram.type,
+          description: localProgram.description,
+          playlist: localProgram.playlist,
+          geoZone: localProgram.geoZone,
+          tags: [...localProgram.tags]
+        },
+        videos: localVideos.map(v => ({
+          id: v.id,
+          name: v.name,
+          duration: v.duration,
+          type: v.type
+        })),
+        programPlaylistVideos: programPlaylistVideos.map(v => ({
+          id: v.id,
+          name: v.name,
+          duration: v.duration,
+          type: v.type
+        })),
+        additionalPlaylists: additionalPlaylists.map(p => ({
+          id: p.id,
+          name: p.name,
+          videos: p.videos.map(v => ({
+            id: v.id,
+            name: v.name,
+            duration: v.duration,
+            type: v.type
+          })),
+          isLooping: p.isLooping
+        })),
+        isProgramPlaylistLooping: isProgramPlaylistLooping
+      };
       setInitialSnapshot(newSnapshot);
       setIsDirty(false);
       setLocalHasChanges(false);
@@ -744,29 +1242,68 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
         description: 'Program settings have been saved successfully.',
       });
     }
-  }, [localProgram, localVideos, onSave, toast]);
+  }, [localProgram, localVideos, programPlaylistVideos, additionalPlaylists, isProgramPlaylistLooping, onSave, toast]);
 
   const handleClose = useCallback(() => {
     if (localHasChanges) {
-      onUnsavedClose();
+      // Show confirmation dialog for unsaved changes
+      if (window.confirm('You have unsaved changes. Are you sure you want to discard them?')) {
+        onClose();
+      }
     } else {
       onClose();
     }
-  }, [localHasChanges, onUnsavedClose, onClose]);
+  }, [localHasChanges, onClose]);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
+  const handleDrop = useCallback((e: React.DragEvent, targetPlaylistId?: string) => {
     e.preventDefault();
     const data = e.dataTransfer.getData('application/json');
     if (data) {
       try {
         const draggedData = JSON.parse(data);
         if (draggedData.type === 'content-video') {
-          handleAddContent(draggedData.video);
+          const newVideo: Video = {
+            ...draggedData.video,
+            id: `${draggedData.video.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            source: 'custom',
+            playlistName: undefined
+          };
+
+          if (targetPlaylistId === 'program-playlist') {
+            // Add to program playlist
+            setProgramPlaylistVideos(prev => [newVideo, ...prev]);
+            toast({
+              title: 'Content added',
+              description: `${draggedData.video.name} has been added to the program playlist.`,
+            });
+          } else if (targetPlaylistId && targetPlaylistId !== 'channel-playlist') {
+            // Add to additional playlist
+            setAdditionalPlaylists(prev => prev.map(playlist => 
+              playlist.id === targetPlaylistId 
+                ? { ...playlist, videos: [newVideo, ...playlist.videos] }
+                : playlist
+            ));
+            toast({
+              title: 'Content added',
+              description: `${draggedData.video.name} has been added to ${additionalPlaylists.find(p => p.id === targetPlaylistId)?.name || 'playlist'}.`,
+            });
+          } else if (targetPlaylistId === 'channel-playlist') {
+            // Add to channel playlist (this might not be desired, but keeping for completeness)
+            setPlaylistVideos(prev => [newVideo, ...prev]);
+            toast({
+              title: 'Content added',
+              description: `${draggedData.video.name} has been added to the channel playlist.`,
+            });
+          } else {
+            // Default behavior - add to custom content
+            handleAddContent(draggedData.video);
+          }
         }
       } catch (error) {
+        console.error('Error handling drop:', error);
       }
     }
-  }, [handleAddContent]);
+  }, [handleAddContent, additionalPlaylists, toast]);
 
   const totalDuration = localVideos.reduce((total, video) => total + video.duration, 0);
   
@@ -931,8 +1468,16 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
               {/* Optional sticky subheader for LHS */}
               <div className="shrink-0 bg-white border-b border-gray-200 px-4 py-2">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-semibold">Program Content</div>
-                  
+                  <div className="text-sm font-semibold">Videos</div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAddPlaylistModal(true)}
+                    className="h-8"
+                  >
+                    <PlusCircle className="h-4 w-4 mr-1" />
+                    Add Playlist
+                  </Button>
                 </div>
               </div>
               {/* The actual scroll area for LHS */}
@@ -940,20 +1485,10 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
 
                 {/* Program Form */}
                 <div className="space-y-6 min-h-[800px]">
-                  {/* Program Content Drop Zone - Moved to top for better visibility */}
+                  {/* Program Content Drop Zone - New Accordion Structure */}
                   <Card className="bg-white border border-gray-200 rounded-lg">
-                    <CardHeader>
-                      <CardTitle className="text-lg">Videos</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div
-                        className="min-h-[400px] border-2 border-dashed border-gray-300 rounded-lg p-4"
-                        onDragOver={(e) => {
-                          e.preventDefault();
-                          e.dataTransfer.dropEffect = 'copy';
-                        }}
-                        onDrop={handleDrop}
-                      >
+                    <CardContent className="p-0">
+                      <div className="min-h-[400px] p-4">
                         <DndContext
                           sensors={sensors}
                           collisionDetection={closestCenter}
@@ -979,101 +1514,223 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                             setInvalidDragTarget(null);
                             
                             if (active && over && active.id !== over.id) {
-                              // Get the source and target video groups
-                              const activeVideo = localVideos.find(v => v.id === active.id);
-                              const overVideo = localVideos.find(v => v.id === over.id);
+                              // Check if this is a playlist reorder or video reorder
+                              const isPlaylistReorder = playlistOrder.includes(active.id as string) && playlistOrder.includes(over.id as string);
                               
-                              // Only allow reordering within the same group
-                              if (activeVideo && overVideo && activeVideo.source === overVideo.source) {
-                                handleVideoReorder(active.id as string, over.id as string);
+                              if (isPlaylistReorder) {
+                                handlePlaylistReorder(active.id as string, over.id as string);
                               } else {
-                                // Show feedback for invalid drag
-                                toast({
-                                  title: 'Invalid drag operation',
-                                  description: 'Videos can only be reordered within their own group (Custom or Playlist).',
-                                  variant: 'destructive',
-                                });
+                                // Get the source and target video groups
+                                const activeVideo = localVideos.find(v => v.id === active.id);
+                                const overVideo = localVideos.find(v => v.id === over.id);
+                                
+                                // Only allow reordering within the same group
+                                if (activeVideo && overVideo && activeVideo.source === overVideo.source) {
+                                  handleVideoReorder(active.id as string, over.id as string);
+                                } else {
+                                  // Show feedback for invalid drag
+                                  toast({
+                                    title: 'Invalid drag operation',
+                                    description: 'Videos can only be reordered within their own group.',
+                                    variant: 'destructive',
+                                  });
+                                }
                               }
                             }
                           }}
                         >
-                          <SortableContext items={localVideos.map(v => v.id)} strategy={verticalListSortingStrategy}>
+                          <SortableContext items={[...playlistOrder, ...localVideos.map(v => v.id)]} strategy={verticalListSortingStrategy}>
                             <div className="space-y-4">
-                              {/* Custom Videos Group */}
-                              {localVideos.filter(v => v.source === 'custom').length > 0 && (
-                                <div className="space-y-2">
-                                  <div className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md">
-                                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                    <span className="text-sm font-medium text-blue-700">Custom Content</span>
-                                  </div>
-                                  {localVideos
-                                    .filter(v => v.source === 'custom')
-                                    .map((video, index) => (
-                                      <SortableVideoItem
-                                        key={video.id}
-                                        video={video}
-                                        index={index + 1}
-                                        onDelete={handleDeleteVideo}
-                                        group="custom"
-                                        isInvalidTarget={invalidDragTarget === video.id}
-                                      />
-                                    ))}
-                                </div>
-                              )}
-
-                              {/* Playlist Videos Group - Always visible and expandable */}
-                              <div className="space-y-2">
-                                <div 
-                                  className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md cursor-pointer hover:bg-green-100 transition-colors"
-                                  onClick={handlePlaylistContentToggle}
-                                >
-                                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                  <span className="text-sm font-medium text-green-700">Playlist Content</span>
-                                  <div className="ml-auto">
-                                    {isPlaylistContentLoading ? (
-                                      <Loader2 className="h-4 w-4 animate-spin text-green-600" />
-                                    ) : isPlaylistContentExpanded ? (
-                                      <ChevronDown className="h-4 w-4 text-green-600" />
-                                    ) : (
-                                      <ChevronRight className="h-4 w-4 text-green-600" />
-                                    )}
-                                  </div>
-                                </div>
-                                
-                                {isPlaylistContentExpanded && (
-                                  <div className="space-y-2">
-                                    {isPlaylistContentLoading ? (
-                                      <div className="flex items-center justify-center py-4">
-                                        <Loader2 className="h-6 w-6 animate-spin text-green-600" />
-                                        <span className="ml-2 text-sm text-gray-600">Loading playlist content...</span>
+                              {playlistOrder.map((playlistId) => {
+                                if (playlistId === 'program-playlist') {
+                                  return (
+                                    <SortablePlaylistItem key="program-playlist" id="program-playlist">
+                                      <div className="space-y-2">
+                                        <div 
+                                          className="flex items-center gap-2 px-2 py-1 bg-blue-50 border border-blue-200 rounded-md cursor-pointer hover:bg-blue-100 transition-colors"
+                                          onClick={handleProgramPlaylistToggle}
+                                        >
+                                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                          <span className="text-sm font-medium text-blue-700">
+                                            Playlist: {localProgram?.playlist || 'Default Playlist'}
+                                          </span>
+                                          <div className="ml-auto flex items-center gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0 hover:bg-blue-600 group"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleProgramPlaylistLoopToggle();
+                                      }}
+                                    >
+                                      <RotateCcw className={`h-4 w-4 ${isProgramPlaylistLooping ? 'text-blue-600 group-hover:text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                                    </Button>
+                                            {isProgramPlaylistExpanded ? (
+                                              <ChevronDown className="h-4 w-4 text-blue-600" />
+                                            ) : (
+                                              <ChevronRight className="h-4 w-4 text-blue-600" />
+                                            )}
+                                          </div>
+                                        </div>
+                                        
+                                        {isProgramPlaylistExpanded && (
+                                          <div 
+                                            className="space-y-2 min-h-[100px] border-2 border-dashed border-transparent hover:border-blue-300 rounded-lg p-2 transition-colors"
+                                            onDragOver={(e) => {
+                                              e.preventDefault();
+                                              e.dataTransfer.dropEffect = 'copy';
+                                            }}
+                                            onDrop={(e) => handleDrop(e, 'program-playlist')}
+                                          >
+                                            {programPlaylistVideos.length > 0 ? (
+                                              programPlaylistVideos.map((video, index) => (
+                                                <SortableVideoItem
+                                                  key={video.id}
+                                                  video={video}
+                                                  index={index + 1}
+                                                  onDelete={handleDeleteVideo}
+                                                  group="playlist"
+                                                  isInvalidTarget={invalidDragTarget === video.id}
+                                                />
+                                              ))
+                                            ) : (
+                                              <div className="text-center py-8 text-gray-500">
+                                                <Video className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                                                <p>Drag content from the right panel or click the + button to add content</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
-                                    ) : playlistVideos.length > 0 ? (
-                                      playlistVideos.map((video, index) => (
-                                        <SortableVideoItem
-                                          key={video.id}
-                                          video={video}
-                                          index={localVideos.filter(v => v.source === 'custom').length + index + 1}
-                                          onDelete={handleDeleteVideo}
-                                          group="playlist"
-                                          isInvalidTarget={invalidDragTarget === video.id}
-                                        />
-                                      ))
-                                    ) : (
-                                      <div className="text-center py-4 text-sm text-gray-500">
-                                        No playlist content available
+                                    </SortablePlaylistItem>
+                                  );
+                                } else if (playlistId === 'channel-playlist') {
+                                  return (
+                                    <SortablePlaylistItem key="channel-playlist" id="channel-playlist" isChannelPlaylist={true}>
+                                      <div className="space-y-2">
+                                        <div 
+                                          className="flex items-center gap-2 px-2 py-1 bg-green-50 border border-green-200 rounded-md cursor-pointer hover:bg-green-100 transition-colors"
+                                          onClick={handleChannelPlaylistToggle}
+                                        >
+                                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                                          <span className="text-sm font-medium text-green-700">Channel Playlist</span>
+                                          <div className="ml-auto">
+                                            {isPlaylistContentLoading ? (
+                                              <Loader2 className="h-4 w-4 animate-spin text-green-600" />
+                                            ) : isChannelPlaylistExpanded ? (
+                                              <ChevronDown className="h-4 w-4 text-green-600" />
+                                            ) : (
+                                              <ChevronRight className="h-4 w-4 text-green-600" />
+                                            )}
+                                          </div>
+                                        </div>
+                                        
+                                        {isChannelPlaylistExpanded && (
+                                          <div 
+                                            className="space-y-2 min-h-[100px] border-2 border-dashed border-transparent hover:border-green-300 rounded-lg p-2 transition-colors"
+                                            onDragOver={(e) => {
+                                              e.preventDefault();
+                                              e.dataTransfer.dropEffect = 'copy';
+                                            }}
+                                            onDrop={(e) => handleDrop(e, 'channel-playlist')}
+                                          >
+                                            {isPlaylistContentLoading ? (
+                                              <div className="flex items-center justify-center py-4">
+                                                <Loader2 className="h-6 w-6 animate-spin text-green-600" />
+                                                <span className="ml-2 text-sm text-gray-600">Loading playlist content...</span>
+                                              </div>
+                                            ) : playlistVideos.length > 0 ? (
+                                              playlistVideos.map((video, index) => (
+                                                <SortableVideoItem
+                                                  key={video.id}
+                                                  video={video}
+                                                  index={programPlaylistVideos.length + additionalPlaylists.reduce((acc, p) => acc + p.videos.length, 0) + index + 1}
+                                                  onDelete={handleDeleteVideo}
+                                                  group="playlist"
+                                                  isInvalidTarget={invalidDragTarget === video.id}
+                                                />
+                                              ))
+                                            ) : (
+                                              <div className="text-center py-8 text-gray-500">
+                                                <Video className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                                                <p>Loading channel playlist content...</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
                                       </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-
-                              {/* Empty state message - only show when no custom videos */}
-                              {localVideos.filter(v => v.source === 'custom').length === 0 && (
-                                <div className="text-center py-8 text-gray-500">
-                                  <Video className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                                  <p>Drag content from the right panel or click the + button to add content</p>
-                                </div>
-                              )}
+                                    </SortablePlaylistItem>
+                                  );
+                                } else {
+                                  // Additional playlists
+                                  const playlist = additionalPlaylists.find(p => p.id === playlistId);
+                                  if (!playlist) return null;
+                                  
+                                  return (
+                                    <SortablePlaylistItem key={playlist.id} id={playlist.id}>
+                                      <div className="space-y-2">
+                                        <div 
+                                          className="flex items-center gap-2 px-2 py-1 bg-purple-50 border border-purple-200 rounded-md cursor-pointer hover:bg-purple-100 transition-colors"
+                                          onClick={() => handleAdditionalPlaylistToggle(playlist.id)}
+                                        >
+                                          <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                                          <span className="text-sm font-medium text-purple-700">
+                                            Playlist: {playlist.name}
+                                          </span>
+                                          <div className="ml-auto flex items-center gap-2">
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 w-6 p-0 hover:bg-purple-600 group"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleAdditionalPlaylistLoopToggle(playlist.id);
+                                              }}
+                                            >
+                                              <RotateCcw className={`h-4 w-4 ${playlist.isLooping ? 'text-purple-600 group-hover:text-white' : 'text-gray-400 group-hover:text-white'}`} />
+                                            </Button>
+                                            {playlist.isExpanded ? (
+                                              <ChevronDown className="h-4 w-4 text-purple-600" />
+                                            ) : (
+                                              <ChevronRight className="h-4 w-4 text-purple-600" />
+                                            )}
+                                          </div>
+                                        </div>
+                                        
+                                        {playlist.isExpanded && (
+                                          <div 
+                                            className="space-y-2 min-h-[100px] border-2 border-dashed border-transparent hover:border-purple-300 rounded-lg p-2 transition-colors"
+                                            onDragOver={(e) => {
+                                              e.preventDefault();
+                                              e.dataTransfer.dropEffect = 'copy';
+                                            }}
+                                            onDrop={(e) => handleDrop(e, playlist.id)}
+                                          >
+                                            {playlist.videos.length > 0 ? (
+                                              playlist.videos.map((video, index) => (
+                                                <SortableVideoItem
+                                                  key={video.id}
+                                                  video={video}
+                                                  index={programPlaylistVideos.length + additionalPlaylists.findIndex(p => p.id === playlist.id) * 10 + index + 1}
+                                                  onDelete={handleDeleteVideo}
+                                                  group="playlist"
+                                                  isInvalidTarget={invalidDragTarget === video.id}
+                                                />
+                                              ))
+                                            ) : (
+                                              <div className="text-center py-8 text-gray-500">
+                                                <Video className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                                                <p>Drag content from the right panel or click the + button to add content</p>
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                      </div>
+                                    </SortablePlaylistItem>
+                                  );
+                                }
+                              })}
                             </div>
                           </SortableContext>
                         </DndContext>
@@ -1256,13 +1913,23 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                 <div className="text-sm font-semibold">Add Content</div>
               </div>
               <div id="program-settings-rhs-scroll" className="flex-1 overflow-y-auto px-4 py-4" style={{ maxHeight: 'calc(100vh - 200px)' }}>
-                <AddContentPanel onAddContent={handleAddContent} />
+                <AddContentPanel 
+              onAddContent={handleAddContent} 
+              onAddToPlaylist={handleAddToPlaylist}
+            />
               </div>
             </aside>
           </div>
         </div>
         )}
       </DialogContent>
+
+      {/* Add Playlist Modal */}
+      <AddPlaylistModal
+        isOpen={showAddPlaylistModal}
+        onClose={() => setShowAddPlaylistModal(false)}
+        onAddPlaylist={handleAddPlaylist}
+      />
 
       {/* Delete Confirmation Modal */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
