@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useSearchParams } from "react-router-dom";
 import {
   Download,
   FileText,
@@ -56,6 +57,7 @@ import { Textarea } from "@/components/ui/textarea";
 import WeeklyView from "./WeeklyView";
 import MonthlyView from "./MonthlyView";
 import { EPGScheduler } from "./EPGScheduler";
+import EPGTab from "./EPGTab";
 import {
   DndContext,
   closestCenter,
@@ -206,6 +208,7 @@ export const EPGPreview = ({
 }: {
   onNavigate?: (view: string) => void;
 }) => {
+  const [searchParams, setSearchParams] = useSearchParams();
   // Default playlist with 100+ VOD content items
   // Helper function to format duration
   const formatDuration = (minutes: number) => {
@@ -366,6 +369,31 @@ export const EPGPreview = ({
     source: 'playlist' as const,
     playlistName: 'Default Playlist'
   })), []);
+  // Initialize state from URL parameters
+  const getTodayIST = () => {
+    const now = new Date();
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST is UTC+5:30
+    return new Date(now.getTime() + istOffset);
+  };
+
+  const initializeFromURL = () => {
+    const tab = searchParams.get('tab') || 'epg';
+    const sub = searchParams.get('sub') || 'daily';
+    const dateParam = searchParams.get('date');
+    
+    let initialDate = getTodayIST();
+    if (dateParam) {
+      const parsedDate = new Date(dateParam + 'T12:00:00');
+      if (!isNaN(parsedDate.getTime())) {
+        initialDate = parsedDate;
+      }
+    }
+    
+    return { tab, sub, initialDate };
+  };
+
+  const { tab: initialTab, sub: initialSub, initialDate } = initializeFromURL();
+
   const [selectedFormat, setSelectedFormat] = useState("xmltv");
   const [includeMetadata, setIncludeMetadata] = useState(true);
   const [distributor, setDistributor] = useState("Gracenote");
@@ -373,16 +401,20 @@ export const EPGPreview = ({
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem("epgViewMode") as ViewMode) || "daily";
   });
-  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [selectDateTabLabel, setSelectDateTabLabel] = useState("Select Date");
 
   // Tab management state
   const [tabs, setTabs] = useState([
-    { id: "preview", label: "EPG Preview", isStatic: true, isClosable: false },
+    { id: "epg", label: "EPG", isStatic: true, isClosable: false },
     { id: "scheduler", label: "Scheduler", isStatic: true, isClosable: false },
-    { id: "calendar", label: "Calendar", isStatic: true, isClosable: false },
+    { id: "preview", label: "EPG Preview - OLD", isStatic: true, isClosable: false },
   ]);
-  const [activeTabId, setActiveTabId] = useState("preview");
+  
+  const [activeTabId, setActiveTabId] = useState(initialTab);
+  
+  // New EPG tab state
+  const [activeSubTab, setActiveSubTab] = useState(initialSub);
 
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
   const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
@@ -464,26 +496,64 @@ export const EPGPreview = ({
     }
   }, [isSelectDateCalendarOpen]);
 
+  // URL update functions
+  const updateURL = (updates: { tab?: string; sub?: string; date?: string }) => {
+    const newParams = new URLSearchParams(searchParams);
+    
+    if (updates.tab !== undefined) {
+      if (updates.tab === 'epg') {
+        newParams.set('tab', updates.tab);
+      } else {
+        newParams.set('tab', updates.tab);
+        newParams.delete('sub'); // Remove sub param for non-EPG tabs
+        newParams.delete('date'); // Remove date param for non-EPG tabs
+      }
+    }
+    
+    if (updates.sub !== undefined && (updates.tab === 'epg' || activeTabId === 'epg')) {
+      newParams.set('sub', updates.sub);
+    }
+    
+    if (updates.date !== undefined && (updates.tab === 'epg' || activeTabId === 'epg')) {
+      newParams.set('date', updates.date);
+    }
+    
+    setSearchParams(newParams, { replace: true });
+  };
+
   // Handle tab switching
   const handleTabChange = (tabId: string) => {
     setActiveTabId(tabId);
+    updateURL({ tab: tabId });
     // do not reset unsaved flag on view switches; keep changes until saved
 
     // Map tab IDs to view modes and active tabs
     switch (tabId) {
+      case "epg":
+        setActiveTab("epg");
+        break;
       case "preview":
         setActiveTab("preview");
         break;
       case "scheduler":
         setActiveTab("scheduler");
         break;
-      case "calendar":
-        setActiveTab("calendar");
-        setViewMode("weekly"); // Default to weekly view for calendar tab
-        break;
       default:
         break;
     }
+  };
+
+  // Handle sub-tab changes
+  const handleSubTabChange = (subTab: string) => {
+    setActiveSubTab(subTab);
+    updateURL({ sub: subTab });
+  };
+
+  // Handle date changes
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+    const dateStr = date.toISOString().split('T')[0];
+    updateURL({ date: dateStr });
   };
 
   // Centralized navigation: open a specific date in Select Date tab
@@ -519,13 +589,13 @@ export const EPGPreview = ({
 
   // Save button enablement and tooltip messages
   const isSaveEpgEnabled = (): boolean => {
-    if (activeTabId === "calendar") return false; // Calendar tab is view-only
+    if (activeTabId === "epg") return false; // New EPG tab is view-only
     if (activeTabId === "scheduler") return false; // Scheduler tab has its own save functionality
     return hasUnsavedChanges;
   };
 
   const getSaveEpgTooltipMessage = (): string => {
-    if (activeTabId === "calendar") return "Calendar view is read-only";
+    if (activeTabId === "epg") return "EPG view is read-only";
     if (activeTabId === "scheduler")
       return "Scheduler has its own save functionality";
     if (!hasUnsavedChanges) return "No changes to save";
@@ -2043,6 +2113,38 @@ export const EPGPreview = ({
   const renderCurrentView = () => {
     const dailyPrograms = selectedDayPrograms;
 
+    // New EPG Tab - Contains Daily, Weekly, Monthly views
+    if (activeTabId === "epg") {
+      return (
+        <EPGTab
+          programs={mockEPGData}
+          onProgramCopy={(program, newDate) => {
+            const newTime = program.time.split("T")[1];
+            const newProgram = {
+              ...program,
+              id: `copy-${program.id}-${Date.now()}`,
+              time: `${newDate}T${newTime}`,
+            };
+            setMockEPGData((prev) => [...prev, newProgram]);
+            toast({
+              title: `Program copied to ${newDate} successfully`,
+            });
+          }}
+          onProgramEdit={(program) => handleOpenProgramSettings(program)}
+          onDateClick={(dateStr) => {
+            const [y, m, d] = dateStr.split("-").map(Number);
+            const date = new Date(y, (m || 1) - 1, d || 1);
+            handleDateChange(date);
+            handleSubTabChange('daily');
+          }}
+          selectedDate={selectedDate}
+          onDateChange={handleDateChange}
+          activeSubTab={activeSubTab}
+          onSubTabChange={handleSubTabChange}
+        />
+      );
+    }
+
     // Preview Tab - Contains Master EPG, Today's EPG, and Date Selection
     if (activeTabId === "preview") {
       return (
@@ -2212,62 +2314,6 @@ export const EPGPreview = ({
       );
     }
 
-    // Calendar Tab - Contains Weekly and Monthly Views
-    if (activeTabId === "calendar") {
-      return (
-        <Card className="bg-card-dark border-border transition-opacity duration-300 animate-fadeIn">
-          <CardContent>
-            {/* Sub-navigation for Calendar Tab */}
-            <div className="mb-4 border-b border-gray-200">
-              <div className="flex items-center gap-4 mb-2">
-                <Button
-                  variant={viewMode === "weekly" ? "broadcast" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("weekly")}
-                >
-                  Weekly View
-                </Button>
-                <Button
-                  variant={viewMode === "monthly" ? "broadcast" : "ghost"}
-                  size="sm"
-                  onClick={() => setViewMode("monthly")}
-                >
-                  Monthly View
-                </Button>
-              </div>
-            </div>
-
-            {/* Calendar Content */}
-            <div className="p-6">
-              {viewMode === "weekly" ? (
-                <WeeklyView
-                  programs={mockEPGData}
-                  onProgramCopy={(program, newDate) => {
-                    const newTime = program.time.split("T")[1];
-                    const newProgram = {
-                      ...program,
-                      id: `copy-${program.id}-${Date.now()}`,
-                      time: `${newDate}T${newTime}`,
-                    };
-                    setMockEPGData((prev) => [...prev, newProgram]);
-                    toast({
-                      title: `Program copied to ${newDate} successfully`,
-                    });
-                  }}
-                  onProgramEdit={(program) => setEditingProgram(program)}
-                  onDateClick={handleDateChangeFromCalendar}
-                />
-              ) : (
-                <MonthlyView
-                  programs={mockEPGData}
-                  onDateClick={handleDateChangeFromCalendar}
-                />
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
 
     return null;
   };
@@ -2512,13 +2558,25 @@ export const EPGPreview = ({
               </Tabs>
             </div>
             <div className="flex justify-end gap-2 p-4 border-t border-border">
-              <Button variant="outline" onClick={() => handleDownload("json")}>
+              <Button 
+                variant="outline" 
+                onClick={() => handleDownload("json")}
+                className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Download JSON
               </Button>
-              <Button variant="outline" onClick={() => handleDownload("xml")}>
+              <Button 
+                variant="outline" 
+                onClick={() => handleDownload("xml")}
+                className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Download XML
               </Button>
-              <Button variant="outline" onClick={() => handleDownload("xls")}>
+              <Button 
+                variant="outline" 
+                onClick={() => handleDownload("xls")}
+                className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 Download XLS
               </Button>
             </div>

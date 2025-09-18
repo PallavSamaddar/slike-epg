@@ -392,7 +392,11 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
             <p className="text-muted-foreground">Real-time Fast Channel Monitoring control</p>
           </div>
           <div>
-            <Button variant="broadcast" onClick={() => setIsCreateOpen(true)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCreateOpen(true)}
+              className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Fast Channel
             </Button>
@@ -541,20 +545,20 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                               {/* Details and Channel EPG - Same row */}
                               <div className="flex gap-1">
                                 <Button
-                                  variant="control"
+                                  variant="outline"
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     setPreviewSource(source);
                                     setPreviewDialogOpen(true);
                                   }}
-                                  className="flex-1 text-xs"
+                                  className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                                 >
                                   <Calendar className="h-3 w-3 mr-1" />
                                   Details
                                 </Button>
                                 <Button
-                                  variant="control"
+                                  variant="outline"
                                   size="sm"
                                   onClick={(e) => {
                                     e.stopPropagation();
@@ -564,7 +568,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                     } catch {}
                                     window.location.href = '/channel-epg';
                                   }}
-                                  className="flex-1 text-xs"
+                                  className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                                 >
                                   <Calendar className="h-3 w-3 mr-1" />
                                   Channel EPG
@@ -670,20 +674,20 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                           {/* Details and Channel EPG - Same row */}
                           <div className="flex gap-1">
                             <Button
-                              variant="control"
+                              variant="outline"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setPreviewSource(source);
                                 setPreviewDialogOpen(true);
                               }}
-                              className="flex-1 text-xs"
+                              className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                             >
                               <Calendar className="h-3 w-3 mr-1" />
                               Details
                             </Button>
                             <Button
-                              variant="control"
+                              variant="outline"
                               size="sm"
                               onClick={(e) => {
                                 e.stopPropagation();
@@ -693,7 +697,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                 } catch {}
                                 window.location.href = '/channel-epg';
                               }}
-                              className="flex-1 text-xs"
+                              className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
                             >
                               <Calendar className="h-3 w-3 mr-1" />
                               Channel EPG
@@ -714,7 +718,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-3"
+                    className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Previous
                   </Button>
@@ -723,10 +727,14 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                       <Button
                         key={page}
-                        variant={currentPage === page ? 'default' : 'outline'}
+                        variant="outline"
                         size="sm"
                         onClick={() => setCurrentPage(page)}
-                        className="w-8 h-8 p-0"
+                        className={`w-8 h-8 p-0 shrink-0 ${
+                          currentPage === page 
+                            ? 'bg-broadcast-blue border-broadcast-blue text-white hover:bg-broadcast-blue hover:border-broadcast-blue hover:text-white' 
+                            : 'bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700'
+                        }`}
                       >
                         {page}
                       </Button>
@@ -738,7 +746,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3"
+                    className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Next
                   </Button>
@@ -765,16 +773,16 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                   <div className="space-y-4">
                     {/* Feed Selection */}
                     <Tabs value={feedType} onValueChange={(value) => setFeedType(value as 'input' | 'output')}>
-                      <TabsList className="grid w-full grid-cols-2 bg-slate-700 p-1">
+                      <TabsList className="grid w-full grid-cols-2 bg-gray-200 p-1">
                         <TabsTrigger 
                           value="input"
-                          className="text-slate-300 data-[state=active]:bg-broadcast-blue data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200"
+                          className="text-gray-700 data-[state=active]:bg-broadcast-blue data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200"
                         >
                           Input Feed
                         </TabsTrigger>
                         <TabsTrigger 
                           value="output"
-                          className="text-slate-300 data-[state=active]:bg-broadcast-blue data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200"
+                          className="text-gray-700 data-[state=active]:bg-broadcast-blue data-[state=active]:text-white data-[state=active]:shadow-lg transition-all duration-200"
                         >
                           Output Feed
                         </TabsTrigger>
@@ -834,13 +842,20 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
 
                     {/* Action Buttons */}
                     <div className="flex gap-3 justify-center">
-                       <Button variant="outline" className="border-white text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue">
+                       <Button 
+                         variant="outline" 
+                         className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                       >
                          <Settings className="h-4 w-4 mr-2" />
                          Manage Event
                        </Button>
                       <Button 
-                        variant={previewSource.status === 'offline' ? 'default' : 'destructive'}
-                        className={previewSource.status === 'offline' ? 'bg-green-600 hover:bg-green-700' : ''}
+                        variant="outline"
+                        className={`px-3 shrink-0 ${
+                          previewSource.status === 'offline' 
+                            ? 'bg-green-600 border-green-600 text-white hover:bg-green-700 hover:border-green-700 hover:text-white' 
+                            : 'bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700'
+                        } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {previewSource.status === 'offline' ? (
                           <>
