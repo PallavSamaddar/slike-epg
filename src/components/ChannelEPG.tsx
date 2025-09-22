@@ -667,7 +667,7 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                   onClick={() => setIsCreateProgramModalOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -679,7 +679,7 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
                   variant="outline"
                   size="sm"
                   onClick={() => setIsPreviewModalOpen(true)}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Export Settings
@@ -695,7 +695,7 @@ export const ChannelEPG = ({ onNavigate }: { onNavigate?: (view: string) => void
                           size="sm"
                           onClick={handleSaveEpg}
                           disabled={isSaving || !isSaveEpgEnabled()}
-                          className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                          className="shrink-0"
                         >
                           {isSaving ? (
                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />

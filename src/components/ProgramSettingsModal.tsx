@@ -1417,7 +1417,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setShowDeleteConfirm(true)}
-                  className="shrink-0 bg-red-50 border-red-200 text-red-700 hover:bg-red-100 hover:border-red-300 hover:text-red-800"
+                  className="shrink-0"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Program
@@ -1426,7 +1426,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleClose}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                 >
                   {isDirty ? 'Discard Changes' : 'Close'}
                 </Button>
@@ -1435,7 +1435,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                   size="sm"
                   onClick={handleSave}
                   disabled={!isDirty}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                  className="shrink-0"
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save Changes
@@ -1962,7 +1962,7 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
             <Button
               variant="outline"
               onClick={() => setShowDeleteConfirm(false)}
-              className="bg-gray-100 border-gray-300 text-gray-700 hover:bg-gray-200"
+              className=""
             >
               Cancel
             </Button>

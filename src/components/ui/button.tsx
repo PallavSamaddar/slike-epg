@@ -9,22 +9,22 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-slate-600 text-white hover:bg-broadcast-blue border-slate-600 hover:border-broadcast-blue transition-colors",
+        default: "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
         destructive:
           "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline:
-          "border border-slate-600 bg-slate-600 text-white hover:bg-broadcast-blue hover:text-white hover:border-broadcast-blue transition-colors",
+          "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
         secondary:
-          "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+          "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
         // Broadcast-specific variants
-        broadcast: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
-        live: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
-        scheduled: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+        broadcast: "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
+        live: "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
+        scheduled: "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
         offline: "bg-status-offline text-white hover:bg-status-offline/90",
-        playlist: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
-        control: "bg-slate-600 text-white hover:bg-broadcast-blue transition-colors",
+        playlist: "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
+        control: "bg-gray-100 border-gray-500 text-gray-700 hover:bg-blue-100 hover:border-blue-500 hover:text-blue-700 border transition-colors",
         dropdown: "bg-broadcast-blue text-white hover:bg-slate-600",
       },
       size: {

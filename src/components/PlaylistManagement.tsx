@@ -658,7 +658,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                   onClick={handleClearFilters}
                   variant="outline" 
                   size="sm"
-                  className="h-8 text-xs bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                  className="h-8 text-xs"
                   aria-label="Clear all filters"
                 >
                   Clear
@@ -672,7 +672,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                 variant="outline" 
                 size="sm"
                 onClick={() => setColumnChooserOpen(true)}
-                className="h-8 text-xs bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                className="h-8 text-xs"
               >
                 <Settings className="h-3 w-3 mr-1" />
                 Columns ▾
@@ -804,7 +804,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                   variant="outline"
                   size="sm"
                   onClick={() => handleBulkAction('delete')}
-                  className="h-8 text-xs bg-[#DC2626] text-white border-[#B91C1C] hover:bg-[#B91C1C] focus-visible:ring-2 focus-visible:ring-[#EF4444] font-semibold"
+                  className="h-8 text-xs"
                 >
                   Delete
                 </Button>
@@ -930,7 +930,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                               variant="ghost"
                               size="sm"
                               onClick={() => handleCopyPlaylistId(playlist.id)}
-                              className="h-6 w-6 p-0 bg-[#F2F4F8] border-[#9CA3AF] text-[#6B7280] hover:bg-[#E5E7EB] hover:text-[#374151] hover:border-[#9CA3AF] transition-colors"
+                              className="h-6 w-6 p-0"
                               aria-label={`Copy playlist ID ${playlist.id}`}
                             >
                               <Copy className="h-3 w-3" />
@@ -993,7 +993,7 @@ const PlaylistManagement = ({ onNavigate }: Props) => {
                               variant="outline" 
                               size="sm"
                               onClick={() => onNavigate?.(`playlists/${playlist.id}/edit`)}
-                              className="h-8 px-3 bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                              className="h-8 px-3"
                             >
                               <Edit className="h-4 w-4 mr-1" />
                               Edit

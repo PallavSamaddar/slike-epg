@@ -190,7 +190,7 @@ const EPGTab: FC<EPGTabProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={handleCalendarClick}
-                  className="flex items-center gap-2 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="flex items-center gap-2 shrink-0"
                   data-calendar-trigger
                   aria-label="Select date"
                 >
@@ -246,7 +246,7 @@ const EPGTab: FC<EPGTabProps> = ({
                     XLSX.writeFile(workbook, `epg_${dateStr}.xls`);
                     toast({ title: "XLS file downloaded successfully." });
                   }}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                   aria-label="Download EPG as XLS"
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -292,7 +292,7 @@ const EPGTab: FC<EPGTabProps> = ({
                     saveAs(blob, `epg_${dateStr}.json`);
                     toast({ title: "JSON file downloaded successfully." });
                   }}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                   aria-label="Download EPG as JSON"
                 >
                   <Download className="h-4 w-4 mr-2" />
@@ -352,7 +352,7 @@ const EPGTab: FC<EPGTabProps> = ({
                     saveAs(blob, `epg_${dateStr}.xml`);
                     toast({ title: "XML file downloaded successfully." });
                   }}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                   aria-label="Download EPG as XML"
                 >
                   <Download className="h-4 w-4 mr-2" />

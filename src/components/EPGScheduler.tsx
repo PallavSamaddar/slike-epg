@@ -1115,7 +1115,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                   variant="outline"
                   size="sm"
                   onClick={() => setIsManageAdsModalOpen(true)}
-                  className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className=""
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Ads
@@ -1131,7 +1131,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                     });
                     setHasScheduleChanges(false);
                   }}
-                  className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                  className=""
                 >
                   <Save className="h-4 w-4 mr-2" />
                   Save

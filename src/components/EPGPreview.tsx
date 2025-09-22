@@ -395,8 +395,8 @@ export const EPGPreview = ({
   const { tab: initialTab, sub: initialSub, initialDate } = initializeFromURL();
 
   const [selectedFormat, setSelectedFormat] = useState("xmltv");
-  const [includeMetadata, setIncludeMetadata] = useState(true);
   const [distributor, setDistributor] = useState("Gracenote");
+  const [exportFrequency, setExportFrequency] = useState("24");
   const [activeTab, setActiveTab] = useState("master-epg");
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     return (localStorage.getItem("epgViewMode") as ViewMode) || "daily";
@@ -408,7 +408,7 @@ export const EPGPreview = ({
   const [tabs, setTabs] = useState([
     { id: "epg", label: "EPG", isStatic: true, isClosable: false },
     { id: "scheduler", label: "Scheduler", isStatic: true, isClosable: false },
-    { id: "preview", label: "EPG Preview - OLD", isStatic: true, isClosable: false },
+    { id: "preview", label: "Scheduler - 2", isStatic: true, isClosable: false },
   ]);
   
   const [activeTabId, setActiveTabId] = useState(initialTab);
@@ -692,7 +692,7 @@ export const EPGPreview = ({
         type: hour % 2 === 0 ? "VOD" : "Event",
         duration: 60,
         geoZone: "Global",
-        description: `${title} - ${genre} segment`,
+        description: `${title}`,
         status: "scheduled",
         genre,
         playlist,
@@ -1412,20 +1412,43 @@ export const EPGPreview = ({
           </div>
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <p className="text-sm text-muted-foreground">
-                {item.description}
-              </p>
               {(() => {
                 const contentInfo = getProgramContentInfo(item);
                 return (
-                  <div className="mt-2 space-y-1">
+                  <div className="space-y-1">
                     <div className="text-xs text-muted-foreground">
                       Playlist: {item.playlist || "Default Playlist"} - {contentInfo.playlistVideos} videos
                     </div>
                     <div className="text-xs text-muted-foreground">
                       Custom Content: {contentInfo.customVideos} Videos
                     </div>
-                    
+                  </div>
+                );
+              })()}
+            </div>
+            <div className="flex-shrink-0 w-80 text-right">
+              {(() => {
+                const videos = item.videos || defaultPlaylistContent;
+                const playlistVideos = videos.filter(video => video.source === 'playlist');
+                const customVideos = videos.filter(video => video.source === 'custom');
+                
+                return (
+                  <div className="space-y-1">
+                    {playlistVideos.slice(0, 3).map((video, index) => (
+                      <div key={video.id} className="text-xs text-gray-600">
+                        {video.name} ({Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')})
+                      </div>
+                    ))}
+                    {playlistVideos.length > 3 && (
+                      <div className="text-xs text-gray-500">
+                        +{playlistVideos.length - 3} more videos
+                      </div>
+                    )}
+                    {customVideos.length > 0 && (
+                      <div className="text-xs text-gray-500">
+                        +{customVideos.length} custom videos
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -1855,7 +1878,7 @@ export const EPGPreview = ({
             variant="outline"
             onClick={handleAdd}
             disabled={!isFormValid}
-            className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+            className=""
           >
             {programToEdit ? "Save Changes" : "Add to Schedule"}
           </Button>
@@ -2187,7 +2210,7 @@ export const EPGPreview = ({
                     size="sm"
                     onClick={handleSaveEpg}
                     disabled={isSaving || !isSaveEpgEnabled()}
-                    className="bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                    className=""
                   >
                     {isSaving ? (
                       <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -2336,7 +2359,7 @@ export const EPGPreview = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                   onClick={() => setIsCreateProgramModalOpen(true)}
                 >
                   <Plus className="h-4 w-4 mr-2" />
@@ -2348,7 +2371,7 @@ export const EPGPreview = ({
                   variant="outline"
                   size="sm"
                   onClick={() => setIsExportSettingsModalOpen(true)}
-                  className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                  className="shrink-0"
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Export Settings
@@ -2364,7 +2387,7 @@ export const EPGPreview = ({
                           size="sm"
                           onClick={handleSaveEpg}
                           disabled={isSaving || !isSaveEpgEnabled()}
-                          className="shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:bg-gray-50 disabled:border-gray-300 disabled:text-gray-400"
+                          className="shrink-0"
                         >
                           {isSaving ? (
                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
@@ -2470,40 +2493,49 @@ export const EPGPreview = ({
               </Select>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="metadata"
-                checked={includeMetadata}
-                onCheckedChange={setIncludeMetadata}
-              />
-              <Label htmlFor="metadata">Include Metadata</Label>
+            <div>
+              <Label htmlFor="exportFrequency">Export Frequency</Label>
+              <Select value={exportFrequency} onValueChange={setExportFrequency}>
+                <SelectTrigger className="bg-control-surface border-border text-foreground">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1">1 hr</SelectItem>
+                  <SelectItem value="2">2 hrs</SelectItem>
+                  <SelectItem value="4">4 hrs</SelectItem>
+                  <SelectItem value="6">6 hrs</SelectItem>
+                  <SelectItem value="8">8 hrs</SelectItem>
+                  <SelectItem value="12">12 hrs</SelectItem>
+                  <SelectItem value="18">18 hrs</SelectItem>
+                  <SelectItem value="24">24 hrs</SelectItem>
+                  <SelectItem value="30">30 hrs</SelectItem>
+                  <SelectItem value="36">36 hrs</SelectItem>
+                  <SelectItem value="42">42 hrs</SelectItem>
+                  <SelectItem value="48">48 hrs</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="space-y-2">
-              <Button variant="broadcast" className="w-full">
-                <Download className="h-4 w-4 mr-2" />
-                Export EPG Data
-              </Button>
               <Button
-                variant="control"
-                className="w-full"
-                onClick={() => {
-                  setIsExportSettingsModalOpen(false);
-                  setIsPreviewModalOpen(true);
-                }}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Preview EPG
-              </Button>
-              <Button
-                variant="control"
+                variant="outline"
                 className="w-full"
                 onClick={() => {
                   toast({ title: "EPG FTP updated successfully" });
                   setIsExportSettingsModalOpen(false);
                 }}
               >
-                Export to FTP
+                Export FTP Now
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  toast({ title: "Export settings saved successfully" });
+                  setIsExportSettingsModalOpen(false);
+                }}
+              >
+                Save Settings
               </Button>
             </div>
           </div>
@@ -2561,21 +2593,21 @@ export const EPGPreview = ({
               <Button 
                 variant="outline" 
                 onClick={() => handleDownload("json")}
-                className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 shrink-0"
               >
                 Download JSON
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => handleDownload("xml")}
-                className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 shrink-0"
               >
                 Download XML
               </Button>
               <Button 
                 variant="outline" 
                 onClick={() => handleDownload("xls")}
-                className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-3 shrink-0"
               >
                 Download XLS
               </Button>

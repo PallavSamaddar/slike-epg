@@ -2420,7 +2420,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                             onClick={handleBasicApplyFilters}
                             disabled={!basicHasUnsavedFilters || basicIsApplyingFilters}
                             size="sm"
-                            className="bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                            className=""
                           >
                             {basicIsApplyingFilters ? (
                               <>
@@ -2664,7 +2664,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
                           onClick={resolveFilters}
                           disabled={!hasUnsavedFilters || isApplyingFilters}
                           size="sm"
-                          className="bg-[#F2F4F8] border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors"
+                          className=""
                         >
                           {isApplyingFilters ? (
                             <>
@@ -2806,7 +2806,7 @@ const PlaylistCreateEditComplete = ({ onNavigate, playlistId, isEdit = false }: 
 
                       <div className="flex items-center justify-between text-xs text-[#6B7280]">
                         <span>Updated {lastUpdated.toLocaleTimeString()}</span>
-                        <Button size="sm" variant="outline" className="h-6 text-xs bg-[#F2F4F8] border border-[#9CA3AF] text-[#374151] hover:bg-[#6B7280] hover:text-white hover:border-[#6B7280] transition-colors">
+                        <Button size="sm" variant="outline" className="h-6 text-xs">
                           Refresh
                         </Button>
                       </div>

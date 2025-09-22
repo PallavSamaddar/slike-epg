@@ -395,7 +395,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
             <Button 
               variant="outline" 
               onClick={() => setIsCreateOpen(true)}
-              className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 shrink-0"
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Fast Channel
@@ -552,7 +552,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                     setPreviewSource(source);
                                     setPreviewDialogOpen(true);
                                   }}
-                                  className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                                  className="flex-1 text-xs shrink-0"
                                 >
                                   <Calendar className="h-3 w-3 mr-1" />
                                   Details
@@ -568,7 +568,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                     } catch {}
                                     window.location.href = '/channel-epg';
                                   }}
-                                  className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                                  className="flex-1 text-xs shrink-0"
                                 >
                                   <Calendar className="h-3 w-3 mr-1" />
                                   Channel EPG
@@ -681,7 +681,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                 setPreviewSource(source);
                                 setPreviewDialogOpen(true);
                               }}
-                              className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                              className="flex-1 text-xs shrink-0"
                             >
                               <Calendar className="h-3 w-3 mr-1" />
                               Details
@@ -697,7 +697,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                                 } catch {}
                                 window.location.href = '/channel-epg';
                               }}
-                              className="flex-1 text-xs shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700"
+                              className="flex-1 text-xs shrink-0"
                             >
                               <Calendar className="h-3 w-3 mr-1" />
                               Channel EPG
@@ -718,7 +718,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
                     disabled={currentPage === 1}
-                    className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 shrink-0"
                   >
                     Previous
                   </Button>
@@ -733,7 +733,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                         className={`w-8 h-8 p-0 shrink-0 ${
                           currentPage === page 
                             ? 'bg-broadcast-blue border-broadcast-blue text-white hover:bg-broadcast-blue hover:border-broadcast-blue hover:text-white' 
-                            : 'bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700'
+                            : ''
                         }`}
                       >
                         {page}
@@ -746,7 +746,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     size="sm"
                     onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
                     disabled={currentPage === totalPages}
-                    className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-3 shrink-0"
                   >
                     Next
                   </Button>
@@ -844,7 +844,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                     <div className="flex gap-3 justify-center">
                        <Button 
                          variant="outline" 
-                         className="px-3 shrink-0 bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                         className="px-3 shrink-0"
                        >
                          <Settings className="h-4 w-4 mr-2" />
                          Manage Event
@@ -854,7 +854,7 @@ export const LiveEventsManager = ({ onNavigate }: Props) => {
                         className={`px-3 shrink-0 ${
                           previewSource.status === 'offline' 
                             ? 'bg-green-600 border-green-600 text-white hover:bg-green-700 hover:border-green-700 hover:text-white' 
-                            : 'bg-gray-100 border-gray-400 text-gray-700 hover:bg-gray-100 hover:border-gray-400 hover:text-gray-700'
+                            : ''
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {previewSource.status === 'offline' ? (
