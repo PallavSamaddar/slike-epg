@@ -356,8 +356,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       tags: ['Movies', 'Late Night'],
       description: 'Late night movie programming',
       videos: [
-        { id: 'v1', name: 'Classic Horror Movie', duration: 90 },
-        { id: 'v2', name: 'Sci-Fi Thriller', duration: 105 }
+        { id: 'v1', name: 'Classic Horror Movie', duration: 90, type: 'VOD', source: 'custom' },
+        { id: 'v2', name: 'Sci-Fi Thriller', duration: 105, type: 'VOD', source: 'custom' }
       ]
     },
     {
@@ -371,8 +371,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       tags: ['Talk', 'Late Night'],
       description: 'Late night talk show',
       videos: [
-        { id: 'v3', name: 'Celebrity Interview', duration: 25 },
-        { id: 'v4', name: 'Comedy Segment', duration: 15 }
+        { id: 'v3', name: 'Celebrity Interview', duration: 25, type: 'Event', source: 'custom' },
+        { id: 'v4', name: 'Comedy Segment', duration: 15, type: 'Event', source: 'custom' }
       ]
     },
     {
@@ -386,9 +386,9 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       tags: ['Live', 'News'],
       description: 'Live morning news broadcast',
       videos: [
-        { id: 'v5', name: 'Breaking News Report', duration: 20 },
-        { id: 'v6', name: 'Weather Update', duration: 10 },
-        { id: 'v7', name: 'Sports Highlights', duration: 15 }
+        { id: 'v5', name: 'Breaking News Report', duration: 20, type: 'Live', source: 'custom' },
+        { id: 'v6', name: 'Weather Update', duration: 10, type: 'Live', source: 'custom' },
+        { id: 'v7', name: 'Sports Highlights', duration: 15, type: 'Live', source: 'custom' }
       ]
     },
     {
@@ -402,9 +402,9 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       tags: ['Talk', 'Entertainment'],
       description: 'Morning talk show',
       videos: [
-        { id: 'v8', name: 'Guest Interview 1', duration: 20 },
-        { id: 'v9', name: 'Musical Performance', duration: 15 },
-        { id: 'v10', name: 'Guest Interview 2', duration: 20 }
+        { id: 'v8', name: 'Guest Interview 1', duration: 20, type: 'Event', source: 'custom' },
+        { id: 'v9', name: 'Musical Performance', duration: 15, type: 'Event', source: 'custom' },
+        { id: 'v10', name: 'Guest Interview 2', duration: 20, type: 'Event', source: 'custom' }
       ]
     },
     {
@@ -418,8 +418,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       tags: ['Lifestyle', 'Entertainment'],
       description: 'Light entertainment programming',
       videos: [
-        { id: 'v11', name: 'Cooking Segment', duration: 25 },
-        { id: 'v12', name: 'Home Tips', duration: 20 }
+        { id: 'v11', name: 'Cooking Segment', duration: 25, type: 'VOD', source: 'custom' },
+        { id: 'v12', name: 'Home Tips', duration: 20, type: 'VOD', source: 'custom' }
       ]
     },
     {
@@ -433,8 +433,8 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
       tags: ['Games', 'Fun'],
       description: 'Interactive game show',
       videos: [
-        { id: 'v13', name: 'Trivia Round', duration: 30 },
-        { id: 'v14', name: 'Prize Challenge', duration: 25 }
+        { id: 'v13', name: 'Trivia Round', duration: 30, type: 'VOD', source: 'custom' },
+        { id: 'v14', name: 'Prize Challenge', duration: 25, type: 'VOD', source: 'custom' }
       ]
     },
     {
@@ -1167,16 +1167,18 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                         {timeSlots.map((time) => (
                           <div key={`${day.key}-${time}`} className="flex items-center gap-4 py-2 border-b border-border/30 px-4">
                             <div className="w-16 text-xs text-muted-foreground font-mono">{time}</div>
-                            {/* Ad flags next to time label */}
+                            {/* Ad badge next to time label */}
                             {adMarkersByDate[day.key]?.some(m => m.time === time) ? (
-                              <div className="w-8 relative z-50 flex items-center justify-center">
+                              <div className="w-12 relative z-50 flex items-center justify-center">
                                 {adMarkersByDate[day.key]
                                   .filter(m => m.time === time)
                                   .map((m, idx) => (
                                     <TooltipProvider key={`${day.key}-${time}-ad-left-${idx}`}>
                                       <Tooltip>
                                         <TooltipTrigger asChild>
-                                          <Flag className="h-5 w-5 text-yellow-400" />
+                                          <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 py-1 rounded-md shadow-md border border-red-400">
+                                            <span className="text-xs font-bold">AD</span>
+                                          </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
                                           <div className="text-xs">
@@ -1191,7 +1193,7 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                   ))}
                               </div>
                             ) : (
-                              <div className="w-8" />
+                              <div className="w-12" />
                             )}
                             <div 
                               className="flex-1 min-h-[60px] relative"
@@ -1348,16 +1350,22 @@ export const EPGScheduler = ({ onNavigate }: { onNavigate?: (view: string) => vo
                                     <div className="flex gap-3">
                                       <div className="flex-1">
                                         <div className="space-y-1 max-h-32 overflow-y-auto">
-                                          {block.videos.map(video => (
-                                            <VideoItem
-                                              key={video.id}
-                                              video={video}
-                                              blockId={block.id}
-                                              blockTime={block.time}
-                                              onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
-                                              isInCurrentBlock={isCurrentBlock(day.key, block.id)}
-                                            />
-                                          ))}
+                                          {block.videos && block.videos.length > 0 ? (
+                                            block.videos.map(video => (
+                                              <VideoItem
+                                                key={video.id}
+                                                video={video}
+                                                blockId={block.id}
+                                                blockTime={block.time}
+                                                onDeleteVideo={(videoId) => deleteVideoFromBlock(block.id, videoId)}
+                                                isInCurrentBlock={isCurrentBlock(day.key, block.id)}
+                                              />
+                                            ))
+                                          ) : (
+                                            <div className={`text-xs p-2 text-center ${isCurrentBlock(day.key, block.id) ? 'text-white/70' : 'text-black/70'}`}>
+                                              No content added yet
+                                            </div>
+                                          )}
                                         </div>
                                       </div>
                                       <div className="flex-shrink-0 text-right"></div>
