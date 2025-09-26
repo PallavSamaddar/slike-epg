@@ -954,33 +954,72 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
 
   const handleVideoReorder = useCallback((activeId: string, overId: string) => {
     if (activeId !== overId) {
-      setLocalVideos(prev => {
-        const oldIndex = prev.findIndex(v => v.id === activeId);
-        const newIndex = prev.findIndex(v => v.id === overId);
+      // Check all video arrays to find the video
+      const allVideos = [
+        ...localVideos,
+        ...programPlaylistVideos,
+        ...additionalPlaylists.flatMap(p => p.videos),
+        ...playlistVideos
+      ];
+      
+      const activeVideo = allVideos.find(v => v.id === activeId);
+      const overVideo = allVideos.find(v => v.id === overId);
+      
+      if (!activeVideo || !overVideo) return;
+      
+      // Determine which array contains the videos
+      const activeInLocal = localVideos.find(v => v.id === activeId);
+      const overInLocal = localVideos.find(v => v.id === overId);
+      
+      if (activeInLocal && overInLocal) {
+        // Reorder within local videos
+        setLocalVideos(prev => {
+          const oldIndex = prev.findIndex(v => v.id === activeId);
+          const newIndex = prev.findIndex(v => v.id === overId);
+          return arrayMove(prev, oldIndex, newIndex);
+        });
+      } else {
+        // Check if both videos are in the same playlist by checking which array they belong to
+        const activeInProgramPlaylist = programPlaylistVideos.find(v => v.id === activeId);
+        const overInProgramPlaylist = programPlaylistVideos.find(v => v.id === overId);
         
-        if (oldIndex !== -1 && newIndex !== -1) {
-          const activeVideo = prev[oldIndex];
-          const overVideo = prev[newIndex];
-          
-          // Only allow reordering within the same group
-          if (activeVideo.source === overVideo.source) {
-            const newVideos = arrayMove(prev, oldIndex, newIndex);
-            
-            // TODO: If reordering playlist videos, update the global playlist order
-            // This would require a global state management system to sync across all programs
-            // that use the same playlist. For now, changes are local to this program.
-            if (activeVideo.source === 'playlist') {
-              // Future implementation: Update global playlist order
-              // updateGlobalPlaylistOrder(activeVideo.playlistName, newVideos);
+        const activeInChannelPlaylist = playlistVideos.find(v => v.id === activeId);
+        const overInChannelPlaylist = playlistVideos.find(v => v.id === overId);
+        
+        const activeInAdditionalPlaylist = additionalPlaylists.find(p => p.videos.some(v => v.id === activeId));
+        const overInAdditionalPlaylist = additionalPlaylists.find(p => p.videos.some(v => v.id === overId));
+        
+        if (activeInProgramPlaylist && overInProgramPlaylist) {
+          // Reorder within program playlist
+          setProgramPlaylistVideos(prev => {
+            const oldIndex = prev.findIndex(v => v.id === activeId);
+            const newIndex = prev.findIndex(v => v.id === overId);
+            return arrayMove(prev, oldIndex, newIndex);
+          });
+        } else if (activeInChannelPlaylist && overInChannelPlaylist) {
+          // Reorder within channel playlist
+          setPlaylistVideos(prev => {
+            const oldIndex = prev.findIndex(v => v.id === activeId);
+            const newIndex = prev.findIndex(v => v.id === overId);
+            return arrayMove(prev, oldIndex, newIndex);
+          });
+        } else if (activeInAdditionalPlaylist && overInAdditionalPlaylist && activeInAdditionalPlaylist.id === overInAdditionalPlaylist.id) {
+          // Reorder within the same additional playlist
+          setAdditionalPlaylists(prev => prev.map(playlist => {
+            if (playlist.id === activeInAdditionalPlaylist.id) {
+              const oldIndex = playlist.videos.findIndex(v => v.id === activeId);
+              const newIndex = playlist.videos.findIndex(v => v.id === overId);
+              return {
+                ...playlist,
+                videos: arrayMove(playlist.videos, oldIndex, newIndex)
+              };
             }
-            
-            return newVideos;
-          }
+            return playlist;
+          }));
         }
-        return prev;
-      });
+      }
     }
-  }, []);
+  }, [localVideos, programPlaylistVideos, additionalPlaylists, playlistVideos, localProgram]);
 
   const handleAddContent = useCallback((content: Video) => {
     const newVideo: Video = {
@@ -1062,13 +1101,8 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
       isLooping: false
     }]);
     
-    // Add the new playlist to the order (before channel-playlist)
-    setPlaylistOrder(prev => {
-      const newOrder = [...prev];
-      const channelIndex = newOrder.indexOf('channel-playlist');
-      newOrder.splice(channelIndex, 0, playlist.id);
-      return newOrder;
-    });
+    // Add the new playlist to the order (at the very beginning, before program-playlist)
+    setPlaylistOrder(prev => [playlist.id, ...prev]);
   }, []);
 
   // Handle program playlist toggle with accordion behavior
@@ -1163,8 +1197,8 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
           // Don't allow moving channel-playlist from its last position
           if (activeId === 'channel-playlist' && newIndex < prev.length - 1) {
             toast({
-              title: 'Cannot move Channel Playlist',
-              description: 'Channel Playlist must remain at the bottom.',
+              title: 'Cannot move Channel Default Playlist',
+              description: 'Channel Default Playlist must remain at the bottom.',
               variant: 'destructive',
             });
             return prev;
@@ -1174,7 +1208,27 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
           if (activeId !== 'channel-playlist' && newIndex === prev.length - 1) {
             toast({
               title: 'Invalid position',
-              description: 'This position is reserved for Channel Playlist.',
+              description: 'This position is reserved for Channel Default Playlist.',
+              variant: 'destructive',
+            });
+            return prev;
+          }
+          
+          // Don't allow moving program-playlist to the first position (reserved for custom playlists)
+          if (activeId === 'program-playlist' && newIndex === 0) {
+            toast({
+              title: 'Invalid position',
+              description: 'Program Default Playlist must come after Custom Playlists.',
+              variant: 'destructive',
+            });
+            return prev;
+          }
+          
+          // Don't allow moving custom playlists to the last two positions (reserved for program and channel playlists)
+          if (activeId !== 'program-playlist' && activeId !== 'channel-playlist' && newIndex >= prev.length - 2) {
+            toast({
+              title: 'Invalid position',
+              description: 'Custom Playlists must come before Program and Channel Default Playlists.',
               variant: 'destructive',
             });
             return prev;
@@ -1306,6 +1360,12 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
   }, [handleAddContent, additionalPlaylists, toast]);
 
   const totalDuration = localVideos.reduce((total, video) => total + video.duration, 0);
+  
+  // Calculate playlist durations in hours
+  const calculatePlaylistDuration = (videos: Video[]) => {
+    const totalMinutes = videos.reduce((total, video) => total + video.duration, 0);
+    return (totalMinutes / 60).toFixed(1);
+  };
   
   // Convert program duration from hours to minutes
   const programDurationMinutes = localProgram ? localProgram.duration * 60 : 0;
@@ -1520,26 +1580,57 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                               if (isPlaylistReorder) {
                                 handlePlaylistReorder(active.id as string, over.id as string);
                               } else {
-                                // Get the source and target video groups
-                                const activeVideo = localVideos.find(v => v.id === active.id);
-                                const overVideo = localVideos.find(v => v.id === over.id);
+                                // Get the source and target video groups from all video arrays
+                                const allVideos = [
+                                  ...localVideos,
+                                  ...programPlaylistVideos,
+                                  ...additionalPlaylists.flatMap(p => p.videos),
+                                  ...playlistVideos
+                                ];
                                 
-                                // Only allow reordering within the same group
-                                if (activeVideo && overVideo && activeVideo.source === overVideo.source) {
-                                  handleVideoReorder(active.id as string, over.id as string);
-                                } else {
-                                  // Show feedback for invalid drag
-                                  toast({
-                                    title: 'Invalid drag operation',
-                                    description: 'Videos can only be reordered within their own group.',
-                                    variant: 'destructive',
-                                  });
+                                const activeVideo = allVideos.find(v => v.id === active.id);
+                                const overVideo = allVideos.find(v => v.id === over.id);
+                                
+                                if (activeVideo && overVideo) {
+                                  // Check if both videos are in the same playlist by checking which array they belong to
+                                  const activeInProgramPlaylist = programPlaylistVideos.find(v => v.id === active.id);
+                                  const overInProgramPlaylist = programPlaylistVideos.find(v => v.id === over.id);
+                                  
+                                  const activeInChannelPlaylist = playlistVideos.find(v => v.id === active.id);
+                                  const overInChannelPlaylist = playlistVideos.find(v => v.id === over.id);
+                                  
+                                  const activeInAdditionalPlaylist = additionalPlaylists.find(p => p.videos.some(v => v.id === active.id));
+                                  const overInAdditionalPlaylist = additionalPlaylists.find(p => p.videos.some(v => v.id === over.id));
+                                  
+                                  const activeInLocal = localVideos.find(v => v.id === active.id);
+                                  const overInLocal = localVideos.find(v => v.id === over.id);
+                                  
+                                  // Allow reordering if both videos are in the same playlist/group
+                                  if ((activeInProgramPlaylist && overInProgramPlaylist) ||
+                                      (activeInChannelPlaylist && overInChannelPlaylist) ||
+                                      (activeInAdditionalPlaylist && overInAdditionalPlaylist && activeInAdditionalPlaylist.id === overInAdditionalPlaylist.id) ||
+                                      (activeInLocal && overInLocal)) {
+                                    handleVideoReorder(active.id as string, over.id as string);
+                                  } else {
+                                    // Show feedback for invalid drag
+                                    toast({
+                                      title: 'Invalid drag operation',
+                                      description: 'Videos can only be reordered within their own group.',
+                                      variant: 'destructive',
+                                    });
+                                  }
                                 }
                               }
                             }
                           }}
                         >
-                          <SortableContext items={[...playlistOrder, ...localVideos.map(v => v.id)]} strategy={verticalListSortingStrategy}>
+                          <SortableContext items={[
+                            ...playlistOrder, 
+                            ...localVideos.map(v => v.id),
+                            ...programPlaylistVideos.map(v => v.id),
+                            ...additionalPlaylists.flatMap(p => p.videos.map(v => v.id)),
+                            ...playlistVideos.map(v => v.id)
+                          ]} strategy={verticalListSortingStrategy}>
                             <div className="space-y-4">
                               {playlistOrder.map((playlistId) => {
                                 if (playlistId === 'program-playlist') {
@@ -1552,9 +1643,12 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                                         >
                                           <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                                           <span className="text-sm font-medium text-blue-700">
-                                            Playlist: {localProgram?.playlist || 'Default Playlist'}
+                                            Program Default Playlist: {localProgram?.playlist || 'Default Playlist'}
                                           </span>
                                           <div className="ml-auto flex items-center gap-2">
+                                            <span className="text-xs text-blue-600 font-medium">
+                                              {calculatePlaylistDuration(programPlaylistVideos)}h
+                                            </span>
                                     <Button
                                       variant="ghost"
                                       size="sm"
@@ -1614,8 +1708,22 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                                           onClick={handleChannelPlaylistToggle}
                                         >
                                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                          <span className="text-sm font-medium text-green-700">Channel Playlist</span>
-                                          <div className="ml-auto">
+                                          <span className="text-sm font-medium text-green-700">Channel Default Playlist: Default Channel</span>
+                                          <div className="ml-auto flex items-center gap-2">
+                                            <span className="text-xs text-green-600 font-medium">
+                                              {calculatePlaylistDuration(playlistVideos)}h
+                                            </span>
+                                            <Button
+                                              variant="ghost"
+                                              size="sm"
+                                              className="h-6 w-6 p-0 hover:bg-green-600 group"
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                // Handle channel playlist loop toggle if needed
+                                              }}
+                                            >
+                                              <RotateCcw className="h-4 w-4 text-gray-400 group-hover:text-white" />
+                                            </Button>
                                             {isPlaylistContentLoading ? (
                                               <Loader2 className="h-4 w-4 animate-spin text-green-600" />
                                             ) : isChannelPlaylistExpanded ? (
@@ -1676,9 +1784,12 @@ export const ProgramSettingsModal: React.FC<ProgramSettingsModalProps> = ({
                                         >
                                           <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
                                           <span className="text-sm font-medium text-purple-700">
-                                            Playlist: {playlist.name}
+                                            Custom Playlist: {playlist.name}
                                           </span>
                                           <div className="ml-auto flex items-center gap-2">
+                                            <span className="text-xs text-purple-600 font-medium">
+                                              {calculatePlaylistDuration(playlist.videos)}h
+                                            </span>
                                             <Button
                                               variant="ghost"
                                               size="sm"

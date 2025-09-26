@@ -230,40 +230,51 @@ export const EPGPreview = ({
     // Use saved videos if available, otherwise use default playlist
     const videos = program.videos || defaultPlaylistContent;
     
-    
-    // Count videos by source
-    const playlistVideos = videos.filter(video => video.source === 'playlist').length;
+    // Count videos by source and playlist type
     const customVideos = videos.filter(video => video.source === 'custom').length;
+    const programPlaylistVideos = videos.filter(video => 
+      video.source === 'playlist' && (video.playlistName === program.playlist || (!video.playlistName && program.playlist))
+    ).length;
+    const channelPlaylistVideos = videos.filter(video => 
+      video.source === 'playlist' && video.playlistName === 'Channel Default'
+    ).length;
     
     // Calculate durations
-    const playlistDuration = videos
-      .filter(video => video.source === 'playlist')
-      .reduce((total, video) => total + (video.duration || 0), 0);
     const customDuration = videos
       .filter(video => video.source === 'custom')
       .reduce((total, video) => total + (video.duration || 0), 0);
+    const programPlaylistDuration = videos
+      .filter(video => video.source === 'playlist' && (video.playlistName === program.playlist || (!video.playlistName && program.playlist)))
+      .reduce((total, video) => total + (video.duration || 0), 0);
+    const channelPlaylistDuration = videos
+      .filter(video => video.source === 'playlist' && video.playlistName === 'Channel Default')
+      .reduce((total, video) => total + (video.duration || 0), 0);
     
-    const totalContentDuration = playlistDuration + customDuration;
+    const totalContentDuration = customDuration + programPlaylistDuration + channelPlaylistDuration;
     const programDurationMinutes = program.duration * 60; // Convert hours to minutes
     
-    
     return {
-      playlistVideos,
       customVideos,
-      playlistDuration,
+      programPlaylistVideos,
+      channelPlaylistVideos,
       customDuration,
+      programPlaylistDuration,
+      channelPlaylistDuration,
       totalContentDuration,
-      programDuration: programDurationMinutes
+      programDuration: programDurationMinutes,
+      // Keep legacy properties for backward compatibility
+      playlistVideos: programPlaylistVideos,
+      playlistDuration: programPlaylistDuration
     };
   };
 
   // Memoize the default playlist content to avoid recreation on every render
   const defaultPlaylistContent = useMemo(() => [
-    { id: 'vod-1', name: 'Action Movie Collection', duration: 120, type: 'VOD', source: 'playlist' },
-    { id: 'vod-2', name: 'Comedy Special', duration: 90, type: 'VOD', source: 'playlist' },
-    { id: 'vod-3', name: 'Documentary Series', duration: 60, type: 'VOD', source: 'playlist' },
-    { id: 'vod-4', name: 'Romantic Drama', duration: 110, type: 'VOD', source: 'playlist' },
-    { id: 'vod-5', name: 'Thriller Night', duration: 95, type: 'VOD', source: 'playlist' },
+    { id: 'vod-1', name: 'Action Movie Collection', duration: 120, type: 'VOD', source: 'playlist', playlistName: 'Default Playlist' },
+    { id: 'vod-2', name: 'Comedy Special', duration: 90, type: 'VOD', source: 'playlist', playlistName: 'Default Playlist' },
+    { id: 'vod-3', name: 'Documentary Series', duration: 60, type: 'VOD', source: 'playlist', playlistName: 'Default Playlist' },
+    { id: 'vod-4', name: 'Romantic Drama', duration: 110, type: 'VOD', source: 'playlist', playlistName: 'Default Playlist' },
+    { id: 'vod-5', name: 'Thriller Night', duration: 95, type: 'VOD', source: 'playlist', playlistName: 'Default Playlist' },
     { id: 'vod-6', name: 'Family Adventure', duration: 100, type: 'VOD', source: 'playlist' },
     { id: 'vod-7', name: 'Sci-Fi Classic', duration: 130, type: 'VOD', source: 'playlist' },
     { id: 'vod-8', name: 'Horror Showcase', duration: 85, type: 'VOD', source: 'playlist' },
@@ -364,11 +375,7 @@ export const EPGPreview = ({
     { id: 'vod-103', name: 'Mystery Collection', duration: 105, type: 'VOD', source: 'playlist' },
     { id: 'vod-104', name: 'Comedy Special Collection', duration: 60, type: 'VOD', source: 'playlist' },
     { id: 'vod-105', name: 'Adventure Collection', duration: 135, type: 'VOD', source: 'playlist' }
-  ].map(item => ({
-    ...item,
-    source: 'playlist' as const,
-    playlistName: 'Default Playlist'
-  })), []);
+  ], []);
   // Initialize state from URL parameters
   const getTodayIST = () => {
     const now = new Date();
@@ -1417,10 +1424,13 @@ export const EPGPreview = ({
                 return (
                   <div className="space-y-1">
                     <div className="text-xs text-muted-foreground">
-                      Playlist: {item.playlist || "Default Playlist"} - {contentInfo.playlistVideos} videos
+                      <strong>Custom Content:</strong> {contentInfo.customVideos} Videos
                     </div>
                     <div className="text-xs text-muted-foreground">
-                      Custom Content: {contentInfo.customVideos} Videos
+                      <strong>Program Default Playlist:</strong> {item.playlist || "Default Playlist"} - {contentInfo.programPlaylistVideos} videos
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      <strong>Channel Default Playlist:</strong> Default Channel - {contentInfo.channelPlaylistVideos} videos
                     </div>
                   </div>
                 );
