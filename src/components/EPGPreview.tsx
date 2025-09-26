@@ -414,8 +414,8 @@ export const EPGPreview = ({
   // Tab management state
   const [tabs, setTabs] = useState([
     { id: "epg", label: "EPG", isStatic: true, isClosable: false },
-    { id: "scheduler", label: "Scheduler", isStatic: true, isClosable: false },
-    { id: "preview", label: "Scheduler - 2", isStatic: true, isClosable: false },
+    { id: "preview", label: "Scheduler", isStatic: true, isClosable: false },
+    { id: "scheduler", label: "Scheduler - old", isStatic: true, isClosable: false },
   ]);
   
   const [activeTabId, setActiveTabId] = useState(initialTab);
