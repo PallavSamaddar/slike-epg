@@ -424,6 +424,7 @@ export const EPGPreview = ({
   const [activeSubTab, setActiveSubTab] = useState(initialSub);
 
   const [isManageAdsModalOpen, setIsManageAdsModalOpen] = useState(false);
+  const [adMarkersByDate, setAdMarkersByDate] = useState<Record<string, Array<{ time: string; campaign: string; duration: string; type?: string }>>>({});
   const [isRepeatModalOpen, setIsRepeatModalOpen] = useState(false);
   const [editingGenres, setEditingGenres] = useState<string | null>(null);
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
@@ -1138,6 +1139,66 @@ export const EPGPreview = ({
 
   const [isSaving, setIsSaving] = useState(false);
 
+  // Format date to YYYY-MM-DD for ad markers
+  const formatLocalDateKey = (d: Date) => {
+    const y = d.getFullYear();
+    const m = (d.getMonth() + 1).toString().padStart(2, '0');
+    const day = d.getDate().toString().padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
+  // Handler for Manage Ads modal
+  const handleManageAdsSave = (adConfig: Record<string, unknown>) => {
+    // adConfig: { campaign: string; duration: string; frequency: string }
+    try {
+      const { campaign, duration, frequency } = adConfig as { campaign: string; duration: string; frequency: string };
+      // Frequency formats like "00:30hr", "1:00hr" etc.
+      // Compute marker times for the current selectedDate from 00:00 to 24:00.
+      const [freqHourStr, freqMinStrWithHr] = frequency.split(':');
+      const freqHours = parseInt(freqHourStr, 10) || 0;
+      const freqMinutes = parseInt((freqMinStrWithHr || '0').replace(/hr/i, ''), 10) || 0;
+      let stepMinutes = freqHours * 60 + freqMinutes;
+      if (!stepMinutes || stepMinutes <= 0) {
+        stepMinutes = 30; // default fallback to 30 minutes
+      }
+
+      const markers: Array<{ time: string; campaign: string; duration: string; type?: string }> = [];
+      let minutes = 0;
+      // Avoid infinite loop on bad input
+      const maxIterations = 24 * 60 + 1;
+      let iter = 0;
+      while (minutes < 24 * 60 && iter < maxIterations && stepMinutes > 0) {
+        const hh = Math.floor(minutes / 60).toString().padStart(2, '0');
+        const mm = (minutes % 60).toString().padStart(2, '0');
+        markers.push({ time: `${hh}:${mm}`, campaign, duration });
+        minutes += stepMinutes;
+        iter += 1;
+      }
+
+      // Use the same date format as selectedKey for consistency
+      const dateKey = selectedDate.toISOString().split("T")[0];
+      setAdMarkersByDate(prev => {
+        const updated = {
+          ...prev,
+          [dateKey]: markers,
+        };
+        console.log('[Ad Marker Debug] Saving ad markers:');
+        console.log('  - Date key:', dateKey);
+        console.log('  - Selected date:', selectedDate);
+        console.log('  - Markers:', markers);
+        console.log('  - Updated adMarkersByDate:', updated);
+        return updated;
+      });
+      toast({
+        title: 'Ads scheduled',
+        description: `${markers.length} ad marker${markers.length === 1 ? '' : 's'} added on ${selectedDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}.`,
+      });
+    } catch (e) {
+      console.error('Error saving ads:', e);
+    }
+    setIsManageAdsModalOpen(false);
+  };
+
   const handleSaveEpg = () => {
     // If in draft mode, enforce at least one program before creation
     if (isDraftMode) {
@@ -1302,6 +1363,37 @@ export const EPGPreview = ({
     listeners?: Record<string, unknown>;
     showStatus?: boolean;
   }) => {
+    // Extract time in HH:MM format for ad marker matching
+    const timePart = item.time.split("T")[1] || ""; // Get HH:MM:SS or HH:MM
+    const programStartTime = timePart.substring(0, 5); // Get HH:MM
+    const [programHour, programMin] = programStartTime.split(":").map(Number);
+    const programStartMinutes = (programHour || 0) * 60 + (programMin || 0);
+    const programEndMinutes = programStartMinutes + (item.duration || 0);
+    
+    // Use selectedKey to match the date format used for filtering programs
+    const dateKey = selectedDate.toISOString().split("T")[0];
+    const allAdMarkers = adMarkersByDate[dateKey] || [];
+    
+    // Match ad markers that fall within the program's time range or start at the same time
+    const adMarkersForTime = allAdMarkers.filter(m => {
+      const [adHour, adMin] = m.time.split(":").map(Number);
+      const adMinutes = (adHour || 0) * 60 + (adMin || 0);
+      // Check if ad time is within program range or starts at program start
+      return adMinutes >= programStartMinutes && adMinutes < programEndMinutes;
+    });
+    
+    // Debug logging - always log to help diagnose
+    if (allAdMarkers.length > 0 || adMarkersForTime.length > 0) {
+      console.log('[Ad Marker Debug] Program:', item.title);
+      console.log('  - Program time:', item.time);
+      console.log('  - Program start:', programStartTime, `(${programStartMinutes} min)`);
+      console.log('  - Program duration:', item.duration, 'min');
+      console.log('  - Program end:', programEndMinutes, 'min');
+      console.log('  - Date key:', dateKey);
+      console.log('  - All ad markers for date:', allAdMarkers);
+      console.log('  - Matching markers:', adMarkersForTime);
+    }
+
     return (
       <div className={`p-3 rounded bg-background border border-border flex items-start gap-4 transition-all duration-500 ${
         highlightedProgramId === item.id 
@@ -1317,9 +1409,35 @@ export const EPGPreview = ({
               className="w-full h-full object-cover"
             />
           </div>
-          <span className="text-xs font-mono text-broadcast-blue mt-1">
-            {formatTimeRange(item.time.split("T")[1], item.duration)}
-          </span>
+          <div className="flex items-center justify-center gap-1 mt-1">
+            <span className="text-xs font-mono text-broadcast-blue">
+              {formatTimeRange(item.time.split("T")[1], item.duration)}
+            </span>
+            {/* Ad badge next to time */}
+            {adMarkersForTime.length > 0 && (
+              <div className="flex items-center gap-1">
+                {adMarkersForTime.map((m, idx) => (
+                  <TooltipProvider key={`${dateKey}-${programStartTime}-ad-${idx}`}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="bg-gradient-to-r from-red-600 to-orange-600 text-white px-2 py-0.5 rounded-md shadow-md border border-red-400">
+                          <span className="text-xs font-bold">AD</span>
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="text-xs">
+                          <div><span className="font-semibold">Campaign:</span> {m.campaign}</div>
+                          <div><span className="font-semibold">Duration:</span> {m.duration}</div>
+                          {m.type && <div><span className="font-semibold">Type:</span> {m.type}</div>}
+                          <div><span className="font-semibold">Time:</span> {m.time}</div>
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex-grow min-w-0">
           <div className="flex items-center justify-between mb-2">
@@ -2218,6 +2336,15 @@ export const EPGPreview = ({
                   <Button
                     variant="outline"
                     size="sm"
+                    onClick={() => setIsManageAdsModalOpen(true)}
+                    className=""
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Ads
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
                     onClick={handleSaveEpg}
                     disabled={isSaving || !isSaveEpgEnabled()}
                     className=""
@@ -2632,6 +2759,13 @@ export const EPGPreview = ({
         onSave={handleCreateProgram}
         existingPrograms={mockEPGData}
         channelDate={new Date()}
+      />
+
+      {/* Manage Ads Modal */}
+      <ManageAdsModal
+        isOpen={isManageAdsModalOpen}
+        onClose={() => setIsManageAdsModalOpen(false)}
+        onSave={handleManageAdsSave}
       />
 
       {/* Unsaved Changes Confirmation Dialog */}
